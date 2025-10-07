@@ -1,18 +1,17 @@
 package main
 
 import (
-  "log"
-  "net/http"
-  "os"
+	"log"
+	"net/http"
 )
 
 func main() {
-  http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-    w.Write([]byte("ok"))
-  })
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("ok")); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
+	})
 
-  port := os.Getenv("PORT")
-  if port == "" { port = "8080" }
-  log.Println("listening on :" + port)
-  log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
