@@ -3,16 +3,11 @@ name: Lint
 on:
   pull_request:
     branches: [ master ]
-    paths:
-      - "back/**"
-      - "front/**"
-      - ".github/workflows/lint.yml"
+    paths: [ "back/**", "front/**", ".github/workflows/lint.yml" ]
   push:
     branches: [ master ]
-    paths:
-      - "back/**"
-      - "front/**"
-      - ".github/workflows/lint.yml"
+    paths: [ "back/**", "front/**", ".github/workflows/lint.yml" ]
+
 
 concurrency:
   group: lint-${{ github.ref }}
@@ -26,21 +21,19 @@ jobs:
       run:
         working-directory: back
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
-          cache: true
+          go-version-file: back/go.mod
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.60
+          version: v2.4.0
           working-directory: back
           args: --timeout=5m
+
 
   react-lint:
     name: React Lint
