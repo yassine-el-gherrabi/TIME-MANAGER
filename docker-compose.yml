@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: app_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./seed:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: app_backend
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE:-disable}
+      
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: app_frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - REACT_APP_API_URL=/api
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+  reverse-proxy:
+    image: devopsfaith/krakend:latest
+    container_name: app_reverse_proxy
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./krakend.json:/etc/krakend/krakend.json
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app_network
+    command: ["run", "-d", "-c", "/etc/krakend/krakend.json"]
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  db_data:
