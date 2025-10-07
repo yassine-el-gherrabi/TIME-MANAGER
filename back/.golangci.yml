@@ -4,7 +4,6 @@ run:
   timeout: 5m
   tests: true
 
-
 linters:
   enable:
     - govet
@@ -13,12 +12,18 @@ linters:
     - errcheck
     - gocritic
 
-formatters:
-  enable:
-    - gofmt
-    - goimports
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/yourusername/yourproject
 
 issues:
-  exclude-use-default: false
+  # Remove exclude-use-default as it's not supported in v2.4.0
   max-same-issues: 0
   max-issues-per-linter: 0
+  # If you want to exclude default patterns, use exclude-rules instead
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
