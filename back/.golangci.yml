@@ -11,6 +11,9 @@ linters:
     - ineffassign
     - errcheck
     - gocritic
+
+formatters:
+  enable:
     - gofmt
     - goimports
 
