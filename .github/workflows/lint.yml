@@ -30,7 +30,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.4.0
+          version: latest  # or a specific version like v1.61.0
           working-directory: back
           args: --timeout=5m
 
