@@ -9,8 +9,20 @@
     "plugin:react-hooks/recommended",
     "prettier"
   ],
-  "env": { "browser": true, "es2021": true, "node": true, "jest": true },
-  "settings": { "react": { "version": "detect" } },
+  "env": { 
+    "browser": true, 
+    "es2021": true, 
+    "node": true, 
+    "jest": true 
+  },
+  "settings": { 
+    "react": { 
+      "version": "detect" 
+    } 
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-uses-react": "off"
+  },
   "ignorePatterns": ["dist/", "build/", "node_modules/"]
 }
-    
