@@ -3,16 +3,21 @@ package handlers
 import (
 	"net/http"
 
-	"back/database"
-	"back/models"
-	"back/utils"
-
 	"github.com/gin-gonic/gin"
+
+	"back/models"
+	"back/services"
 )
 
+var authService = services.NewAuthService()
+
 type registerReq struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Email       string      `json:"email" binding:"required,email"`
+	Password    string      `json:"password" binding:"required,min=8"`
+	FirstName   string      `json:"first_name" binding:"required,min=2"`
+	LastName    string      `json:"last_name" binding:"required,min=2"`
+	PhoneNumber string      `json:"phone_number"`
+	Role        models.Role `json:"role"`
 }
 
 type loginReq struct {
@@ -26,17 +31,32 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	hash, err := utils.HashPassword(body.Password)
+
+	user, err := authService.Register(services.RegisterData{
+		Email:       body.Email,
+		Password:    body.Password,
+		FirstName:   body.FirstName,
+		LastName:    body.LastName,
+		PhoneNumber: body.PhoneNumber,
+		Role:        body.Role,
+	})
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "hash failed"})
+		if err.Error() == "rôle invalide" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
-	u := models.User{Email: body.Email, PasswordHash: hash}
-	if err := database.DB.Create(&u).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email déjà utilisé"})
-		return
-	}
-	c.JSON(http.StatusCreated, gin.H{"id": u.ID, "email": u.Email})
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":         user.ID,
+		"email":      user.Email,
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
+		"role":       user.Role,
+	})
 }
 
 func Login(jwtGen func(userID uint) (string, error)) gin.HandlerFunc {
@@ -46,20 +66,28 @@ func Login(jwtGen func(userID uint) (string, error)) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		var u models.User
-		if err := database.DB.Where("email = ?", body.Email).First(&u).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "identifiants invalides"})
-			return
-		}
-		if !utils.CheckPassword(u.PasswordHash, body.Password) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "identifiants invalides"})
-			return
-		}
-		tok, err := jwtGen(u.ID)
+
+		user, err := authService.Login(body.Email, body.Password)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"token": tok})
+
+		token, err := jwtGen(user.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "erreur lors de la génération du token"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"token": token,
+			"user": gin.H{
+				"id":         user.ID,
+				"email":      user.Email,
+				"first_name": user.FirstName,
+				"last_name":  user.LastName,
+				"role":       user.Role,
+			},
+		})
 	}
 }
