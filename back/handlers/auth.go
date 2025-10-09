@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"back/database"
 	"back/models"
 	"back/utils"
+	"github.com/gin-gonic/gin"
 )
 
 type registerReq struct {
