@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"back/database"
 	"back/models"
+	"github.com/gin-gonic/gin"
 )
 
 func GetProfile(c *gin.Context) {
