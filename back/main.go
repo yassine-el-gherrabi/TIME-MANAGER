@@ -41,7 +41,7 @@ func main() {
 		auth.GET("/profile", handlers.GetProfile)
 	}
 
-	log.Printf("🚀 API sur : http://localhost:%s", cfg.AppPort)
+	log.Printf("API sur : http://localhost:%s", cfg.AppPort)
 	if err := r.Run(":" + cfg.AppPort); err != nil {
 		log.Fatal(err)
 	}
