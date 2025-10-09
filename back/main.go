@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// #
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
