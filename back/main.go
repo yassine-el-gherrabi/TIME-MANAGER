@@ -36,10 +36,15 @@ func main() {
 		return utils.GenerateJWT(cfg.JWTSecret, cfg.JWTTTL, uid)
 	}))
 
-	auth := r.Group("/user", middleware.AuthRequired(cfg))
-	{
-		auth.GET("/profile", handlers.GetProfile)
-	}
+	protected := r.Group("/", middleware.AuthRequired(cfg))
+
+	protected.GET("/me", handlers.GetProfile)
+
+	users := protected.Group("/users")
+	users.GET("", handlers.GetUsers)
+	users.GET("/:id", handlers.GetUser)
+	users.PUT("/:id", handlers.UpdateUser)
+	users.DELETE("/:id", handlers.DeleteUser)
 
 	log.Printf("API sur : http://localhost:%s", cfg.AppPort)
 	if err := r.Run(":" + cfg.AppPort); err != nil {
