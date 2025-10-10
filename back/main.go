@@ -31,8 +31,8 @@ func main() {
 
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 
-	r.POST("/auth/register", handlers.Register)
-	r.POST("/auth/login", handlers.Login(func(uid uint) (string, error) {
+	r.POST("/register", handlers.Register)
+	r.POST("/login", handlers.Login(func(uid uint) (string, error) {
 		return utils.GenerateJWT(cfg.JWTSecret, cfg.JWTTTL, uid)
 	}))
 
