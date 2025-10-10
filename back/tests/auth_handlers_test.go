@@ -8,18 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
 	"back/handlers"
 	"back/models"
 	"back/services"
 )
-
-func setupAuthTestRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	return gin.New()
-}
 
 type registerReq struct {
 	Email       string      `json:"email"`
