@@ -3,6 +3,7 @@
 ## 🎯 Contexte du Projet Time Manager
 
 Le **Time Manager** est une application de gestion du temps pour employés et managers avec :
+
 - **Backend** : API RESTful (Go/Elixir Phoenix dans votre cas)
 - **Frontend** : Application web React.js
 - **Fonctionnalités** : Clock in/out, gestion d'équipes, dashboards, KPIs
@@ -17,7 +18,9 @@ Le **Time Manager** est une application de gestion du temps pour employés et ma
 ### 1. **Technologies Choisies et Pourquoi**
 
 #### ✅ React.js (choisi parmi React/Vue/Angular)
+
 **Pourquoi React ?**
+
 - **Écosystème mature** : Énorme communauté, nombreuses librairies
 - **Performance** : Virtual DOM optimisé pour les interfaces dynamiques
 - **Flexibilité** : Pas d'opinions fortes, s'adapte à tous types d'architectures
@@ -25,14 +28,18 @@ Le **Time Manager** est une application de gestion du temps pour employés et ma
 - **Employabilité** : Très demandé sur le marché du travail
 
 #### ✅ Create React App (CRA)
+
 **Pourquoi CRA ?**
+
 - **Setup rapide** : Configuration Webpack/Babel préconfigurée
 - **Best practices** : Configuration optimisée pour la production
 - **Maintenance** : Mise à jour simplifiée des dépendances
 - **Focus développement** : Permet de se concentrer sur le code métier
 
 #### ✅ React Router DOM v6
+
 **Pourquoi React Router ?**
+
 - **Standard de facto** : Solution la plus utilisée pour le routing React
 - **Déclaratif** : Routes définies comme des composants React
 - **Navigation programmatique** : Redirections depuis le code
@@ -40,20 +47,37 @@ Le **Time Manager** est une application de gestion du temps pour employés et ma
 - **Nested routes** : Parfait pour les dashboards avec sous-sections
 
 **Cas d'usage Time Manager :**
+
 ```jsx
 // Exemple de routes prévues
 <Routes>
   <Route path="/login" element={<Login />} />
-  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
+  <Route
+    path="/dashboard"
+    element={
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    }
+  >
     <Route path="clock" element={<ClockInOut />} />
     <Route path="worktime" element={<WorkingTimes />} />
   </Route>
-  <Route path="/admin" element={<ManagerRoute><AdminPanel /></ManagerRoute>} />
+  <Route
+    path="/admin"
+    element={
+      <ManagerRoute>
+        <AdminPanel />
+      </ManagerRoute>
+    }
+  />
 </Routes>
 ```
 
 #### ✅ Axios
+
 **Pourquoi Axios et pas fetch ?**
+
 - **Intercepteurs** : Permet d'ajouter automatiquement le JWT token à chaque requête
 - **Timeout** : Gestion du timeout (10s configuré)
 - **Transformation** : Conversion automatique JSON
@@ -61,9 +85,10 @@ Le **Time Manager** est une application de gestion du temps pour employés et ma
 - **Compatibilité** : Fonctionne aussi côté Node.js
 
 **Configuration pour Time Manager :**
+
 ```javascript
 // Intercepteur Request : Ajoute le JWT automatiquement
-axiosInstance.interceptors.request.use(config => {
+axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -71,20 +96,22 @@ axiosInstance.interceptors.request.use(config => {
 
 // Intercepteur Response : Gère les erreurs globalement
 axiosInstance.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response.status === 401) {
       // Token expiré → redirection login
       localStorage.removeItem('authToken');
       window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 ```
 
 #### ✅ Tailwind CSS
+
 **Pourquoi Tailwind et pas Bootstrap/Material UI ?**
+
 - **Utility-first** : Classes utilitaires, pas de CSS personnalisé
 - **Customisation** : Thème entièrement personnalisable
 - **Performance** : PurgeCSS supprime le CSS non utilisé en production
@@ -93,6 +120,7 @@ axiosInstance.interceptors.response.use(
 - **Productivité** : Pas besoin de nommer les classes, développement rapide
 
 **Configuration Time Manager :**
+
 ```js
 // tailwind.config.js
 module.exports = {
@@ -104,14 +132,16 @@ module.exports = {
         primary: 'hsl(var(--primary))',
         background: 'hsl(var(--background))',
         // ... autres couleurs
-      }
-    }
-  }
-}
+      },
+    },
+  },
+};
 ```
 
 #### ✅ Magic UI CLI
+
 **Pourquoi Magic UI ?**
+
 - **Composants modernes** : Basé sur Radix UI (accessible) + Tailwind
 - **Animations** : Intégration avec Framer Motion
 - **Accessibilité** : Composants WCAG compliant (requis par le projet)
@@ -119,43 +149,46 @@ module.exports = {
 - **Production-ready** : Composants testés et optimisés
 
 **Utilisation prévue :**
+
 - Formulaires (login, ajout employé, création d'équipe)
 - Modales (confirmation suppression, édition)
 - Tables (liste des employés, working times)
 - Charts (dashboards KPI avec graphiques)
 
 #### ✅ React Hook Form + Yup
+
 **Pourquoi React Hook Form ?**
+
 - **Performance** : Minimise les re-renders (important pour les gros formulaires)
 - **Validation** : Intégration native avec Yup
 - **API simple** : Hook `useForm()` facile à utiliser
 - **TypeScript ready** : Support TypeScript excellent
 
 **Pourquoi Yup ?**
+
 - **Schémas déclaratifs** : Validation lisible et maintenable
 - **Async validation** : Vérifie email unique côté API
 - **Messages personnalisés** : Traduction facile (FR/EN)
 - **Chainable** : `.required()`, `.email()`, `.min()`, etc.
 
 **Exemple Time Manager :**
+
 ```javascript
 const userSchema = yup.object({
-  email: yup.string()
-    .email('Email invalide')
-    .required('Email obligatoire'),
-  firstName: yup.string()
-    .required('Prénom obligatoire'),
-  phoneNumber: yup.string()
-    .matches(/^[0-9]{10}$/, 'Format invalide')
+  email: yup.string().email('Email invalide').required('Email obligatoire'),
+  firstName: yup.string().required('Prénom obligatoire'),
+  phoneNumber: yup.string().matches(/^[0-9]{10}$/, 'Format invalide'),
 });
 
 const { register, handleSubmit, errors } = useForm({
-  resolver: yupResolver(userSchema)
+  resolver: yupResolver(userSchema),
 });
 ```
 
 #### ✅ date-fns
+
 **Pourquoi date-fns et pas Moment.js ?**
+
 - **Léger** : 20KB vs 230KB pour Moment.js
 - **Immutable** : Pas de mutations (moins de bugs)
 - **Tree-shakeable** : Import seulement ce dont on a besoin
@@ -163,20 +196,16 @@ const { register, handleSubmit, errors } = useForm({
 - **i18n** : Support multilingue intégré
 
 **Cas d'usage Time Manager :**
+
 ```javascript
 import { format, differenceInHours, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 // Affichage working times
-const displayTime = format(parseISO(workingTime.start),
-  'dd/MM/yyyy HH:mm', { locale: fr }
-);
+const displayTime = format(parseISO(workingTime.start), 'dd/MM/yyyy HH:mm', { locale: fr });
 
 // Calcul heures travaillées
-const hoursWorked = differenceInHours(
-  parseISO(workingTime.end),
-  parseISO(workingTime.start)
-);
+const hoursWorked = differenceInHours(parseISO(workingTime.end), parseISO(workingTime.start));
 ```
 
 ---
@@ -264,10 +293,10 @@ src/
 @layer base {
   :root {
     /* Couleurs en HSL pour manipulation facile */
-    --primary: 221.2 83.2% 53.3%;      /* Bleu principal */
-    --background: 0 0% 100%;            /* Blanc */
-    --foreground: 222.2 84% 4.9%;      /* Texte sombre */
-    --border: 214.3 31.8% 91.4%;       /* Bordures */
+    --primary: 221.2 83.2% 53.3%; /* Bleu principal */
+    --background: 0 0% 100%; /* Blanc */
+    --foreground: 222.2 84% 4.9%; /* Texte sombre */
+    --border: 214.3 31.8% 91.4%; /* Bordures */
     /* ... autres couleurs */
   }
 
@@ -282,6 +311,7 @@ src/
 ```
 
 **Avantages :**
+
 - **Thème dynamique** : Switch dark/light sans recharger
 - **Consistance** : Même palette partout
 - **Accessibilité** : Contraste optimisé
@@ -298,6 +328,7 @@ borderRadius: {
 ```
 
 **Utilisation :**
+
 ```jsx
 <button className="rounded-lg">  {/* 8px */}
 <input className="rounded-md">   {/* 6px */}
@@ -315,12 +346,13 @@ const axiosInstance = axios.create({
   baseURL: process.env.REACT_APP_API_URL, // http://localhost:8080 en dev
   timeout: 10000, // 10 secondes max par requête
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 ```
 
 **Pourquoi cette config ?**
+
 - **baseURL depuis .env** : Différent selon dev/prod
 - **Timeout 10s** : Évite les requêtes infinies
 - **Headers par défaut** : JSON pour toutes les requêtes
@@ -345,11 +377,12 @@ axiosInstance.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 ```
 
 **Flow authentification :**
+
 1. User se login → API retourne JWT token
 2. Frontend stocke token dans `localStorage.setItem('authToken', token)`
 3. **Toutes** les requêtes suivantes ont automatiquement `Authorization: Bearer <token>`
@@ -384,11 +417,12 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 ```
 
 **Avantages :**
+
 - **Gestion centralisée** : Un seul endroit pour gérer les erreurs
 - **Logout automatique** : Si token expiré, redirection login
 - **Logs structurés** : Facilite le debugging
@@ -406,7 +440,7 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH_TOKEN: '/auth/refresh',
-    ME: '/auth/me'
+    ME: '/auth/me',
   },
 
   USERS: {
@@ -414,7 +448,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => `/users/${id}`,
     CREATE: '/users',
     UPDATE: (id) => `/users/${id}`,
-    DELETE: (id) => `/users/${id}`
+    DELETE: (id) => `/users/${id}`,
   },
 
   // ... TEAMS, WORKING_TIMES, CLOCKS
@@ -422,6 +456,7 @@ export const API_ENDPOINTS = {
 ```
 
 **Utilisation dans services :**
+
 ```javascript
 // src/services/userService.js
 import axiosInstance from '@/api/axiosInstance';
@@ -432,11 +467,12 @@ export const userService = {
   getById: (id) => axiosInstance.get(API_ENDPOINTS.USERS.DETAIL(id)),
   create: (data) => axiosInstance.post(API_ENDPOINTS.USERS.CREATE, data),
   update: (id, data) => axiosInstance.put(API_ENDPOINTS.USERS.UPDATE(id), data),
-  delete: (id) => axiosInstance.delete(API_ENDPOINTS.USERS.DELETE(id))
+  delete: (id) => axiosInstance.delete(API_ENDPOINTS.USERS.DELETE(id)),
 };
 ```
 
 **Avantages :**
+
 - **Centralisation** : Tous les endpoints au même endroit
 - **Maintenance** : Changement d'endpoint = 1 seul fichier
 - **Type-safety** : Fonctions avec paramètres évitent les erreurs
@@ -454,11 +490,12 @@ export const ROUTES = {
   USER_DETAIL: '/users/:id',
   WORKING_TIMES: '/working-times',
   CLOCKS: '/clocks',
-  NOT_FOUND: '*'
+  NOT_FOUND: '*',
 };
 ```
 
 **Utilisation :**
+
 ```javascript
 import { ROUTES } from '@/config/routes.config';
 
@@ -466,7 +503,14 @@ import { ROUTES } from '@/config/routes.config';
 navigate(ROUTES.DASHBOARD);
 
 // Protected route
-<Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+<Route
+  path={ROUTES.DASHBOARD}
+  element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  }
+/>;
 ```
 
 #### ⚙️ app.config.js (Constantes App)
@@ -478,31 +522,32 @@ export const APP_CONFIG = {
 
   PAGINATION: {
     DEFAULT_PAGE_SIZE: 10,
-    PAGE_SIZE_OPTIONS: [10, 25, 50, 100]
+    PAGE_SIZE_OPTIONS: [10, 25, 50, 100],
   },
 
   DATE_FORMATS: {
-    DISPLAY: 'dd/MM/yyyy',          // Affichage français
+    DISPLAY: 'dd/MM/yyyy', // Affichage français
     DISPLAY_TIME: 'dd/MM/yyyy HH:mm',
-    API: 'yyyy-MM-dd',              // Format ISO pour API
-    API_TIME: "yyyy-MM-dd'T'HH:mm:ss"
+    API: 'yyyy-MM-dd', // Format ISO pour API
+    API_TIME: "yyyy-MM-dd'T'HH:mm:ss",
   },
 
   STORAGE_KEYS: {
     AUTH_TOKEN: 'authToken',
     USER_DATA: 'userData',
-    THEME: 'theme'
+    THEME: 'theme',
   },
 
   ROLES: {
     ADMIN: 'admin',
     MANAGER: 'manager',
-    EMPLOYEE: 'employee'
-  }
+    EMPLOYEE: 'employee',
+  },
 };
 ```
 
 **Utilisation :**
+
 ```javascript
 import { APP_CONFIG } from '@/config/app.config';
 
@@ -543,12 +588,14 @@ if (user.role === APP_CONFIG.ROLES.MANAGER) {
 ```
 
 **Qu'est-ce que ESLint ?**
+
 - **Linter JavaScript** : Détecte les erreurs de code
 - **Best practices** : Force l'utilisation de bonnes pratiques
 - **Hooks** : Vérifie les règles des React Hooks
 - **Consistance** : Code uniforme dans toute l'équipe
 
 **Exemples d'erreurs détectées :**
+
 - `useState` utilisé dans une condition (interdit)
 - Variables non utilisées
 - Code mort (unreachable)
@@ -558,19 +605,21 @@ if (user.role === APP_CONFIG.ROLES.MANAGER) {
 
 ```json
 {
-  "singleQuote": true,      // 'string' au lieu de "string"
-  "semi": true,             // Point-virgule obligatoire
-  "trailingComma": "all",   // Virgule finale partout
-  "printWidth": 100         // Max 100 caractères par ligne
+  "singleQuote": true, // 'string' au lieu de "string"
+  "semi": true, // Point-virgule obligatoire
+  "trailingComma": "all", // Virgule finale partout
+  "printWidth": 100 // Max 100 caractères par ligne
 }
 ```
 
 **Qu'est-ce que Prettier ?**
+
 - **Formateur de code** : Formate automatiquement
 - **Opinionated** : Pas de débat sur le style
 - **Intégration** : Fonctionne avec ESLint
 
 **Scripts package.json :**
+
 ```json
 {
   "scripts": {
@@ -594,10 +643,11 @@ REACT_APP_ENV=development
 ```
 
 **Utilisation :**
+
 ```javascript
 // Axios pointe sur backend local
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL // http://localhost:8080
+  baseURL: process.env.REACT_APP_API_URL, // http://localhost:8080
 });
 
 // Logs actifs seulement en dev
@@ -614,10 +664,12 @@ REACT_APP_ENV=production
 ```
 
 **Pourquoi `/api` ?**
+
 - En production, le reverse proxy (KrakenD/Nginx) route `/api` → backend
 - Frontend et backend sur le même domaine → pas de CORS
 
 **Architecture production :**
+
 ```
 User → https://timemanager.com
        ├── /          → Frontend (React build statique)
@@ -656,6 +708,7 @@ import { ROUTES } from '../../../../../config/routes.config';
 ```
 
 **Problèmes :**
+
 - Difficile à lire
 - Fragile (si on déplace un fichier, tout casse)
 - Erreurs fréquentes
@@ -669,6 +722,7 @@ import { ROUTES } from '@config/routes.config';
 ```
 
 **Avantages :**
+
 - Lisibilité maximale
 - Refactoring facile
 - Auto-complétion IDE meilleure
@@ -727,6 +781,7 @@ react-lint:
    - Merge autorisé
 
 **Pourquoi c'est important ?**
+
 - **Qualité garantie** : Code toujours lint/formaté
 - **Automatisation** : Pas besoin de penser à lancer manuellement
 - **Team work** : Même qualité pour tous les devs
@@ -778,17 +833,17 @@ react-lint:
 
 ### Dépendances Installées
 
-| Package | Version | Usage |
-|---------|---------|-------|
-| react | 19.2.0 | Framework UI |
-| react-router-dom | 6.x | Routing |
-| axios | latest | HTTP client |
-| tailwindcss | latest | CSS utility-first |
-| magicui-cli | 0.1.6 | UI components |
-| framer-motion | latest | Animations |
-| react-hook-form | latest | Forms |
-| yup | latest | Validation |
-| date-fns | latest | Date utilities |
+| Package          | Version | Usage             |
+| ---------------- | ------- | ----------------- |
+| react            | 19.2.0  | Framework UI      |
+| react-router-dom | 6.x     | Routing           |
+| axios            | latest  | HTTP client       |
+| tailwindcss      | latest  | CSS utility-first |
+| magicui-cli      | 0.1.6   | UI components     |
+| framer-motion    | latest  | Animations        |
+| react-hook-form  | latest  | Forms             |
+| yup              | latest  | Validation        |
+| date-fns         | latest  | Date utilities    |
 
 ### Scripts Disponibles
 
@@ -811,10 +866,10 @@ npm test               # Lance tests unitaires
 
 ### Variables d'Environnement
 
-| Variable | Dev | Prod |
-|----------|-----|------|
-| REACT_APP_API_URL | http://localhost:8080 | /api |
-| REACT_APP_ENV | development | production |
+| Variable          | Dev                   | Prod       |
+| ----------------- | --------------------- | ---------- |
+| REACT_APP_API_URL | http://localhost:8080 | /api       |
+| REACT_APP_ENV     | development           | production |
 
 ---
 
