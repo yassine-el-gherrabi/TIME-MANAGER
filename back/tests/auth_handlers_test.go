@@ -55,7 +55,9 @@ func TestRegister_Success(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Code)
 
 	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 
 	assert.Equal(t, reqBody.Email, response["email"])
 	assert.Equal(t, reqBody.FirstName, response["first_name"])
@@ -131,7 +133,6 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	req1.Header.Set("Content-Type", "application/json")
 	w1 := httptest.NewRecorder()
 	router.ServeHTTP(w1, req1)
-
 	assert.Equal(t, http.StatusCreated, w1.Code)
 
 	body, _ = json.Marshal(reqBody)
@@ -139,7 +140,6 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	req2.Header.Set("Content-Type", "application/json")
 	w2 := httptest.NewRecorder()
 	router.ServeHTTP(w2, req2)
-
 	assert.Equal(t, http.StatusConflict, w2.Code)
 }
 
@@ -181,12 +181,14 @@ func TestLogin_Success(t *testing.T) {
 	router.POST("/login", handlers.Login(mockJWTGen))
 
 	service := services.NewAuthService()
-	service.Register(services.RegisterData{
+	if _, err := service.Register(services.RegisterData{
 		Email:     "login@example.com",
 		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
-	})
+	}); err != nil {
+		t.Fatalf("failed to seed user: %v", err)
+	}
 
 	reqBody := loginReq{
 		Email:    "login@example.com",
@@ -203,7 +205,9 @@ func TestLogin_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 
 	assert.Equal(t, "mock-jwt-token", response["token"])
 	assert.NotNil(t, response["user"])
@@ -226,12 +230,14 @@ func TestLogin_WrongPassword(t *testing.T) {
 	router.POST("/login", handlers.Login(mockJWTGen))
 
 	service := services.NewAuthService()
-	service.Register(services.RegisterData{
+	if _, err := service.Register(services.RegisterData{
 		Email:     "login@example.com",
 		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
-	})
+	}); err != nil {
+		t.Fatalf("failed to seed user: %v", err)
+	}
 
 	reqBody := loginReq{
 		Email:    "login@example.com",
@@ -288,12 +294,14 @@ func TestLogin_JWTGenerationError(t *testing.T) {
 	router.POST("/login", handlers.Login(mockJWTGen))
 
 	service := services.NewAuthService()
-	service.Register(services.RegisterData{
+	if _, err := service.Register(services.RegisterData{
 		Email:     "login@example.com",
 		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
-	})
+	}); err != nil {
+		t.Fatalf("failed to seed user: %v", err)
+	}
 
 	reqBody := loginReq{
 		Email:    "login@example.com",
