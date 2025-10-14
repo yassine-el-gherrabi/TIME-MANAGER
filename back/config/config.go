@@ -17,8 +17,10 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	_ = loadDotenvUpwards()
-	//
+	if err := loadDotenvFromBackRoot(); err != nil {
+		return nil, err
+	}
+
 	cfg := &Config{
 		AppPort:   getEnv("APP_PORT", "8080"),
 		DBURL:     getEnv("DATABASE_URL", ""),
@@ -49,19 +51,25 @@ func getEnv(key, def string) string {
 	return def
 }
 
-func loadDotenvUpwards() error {
+func loadDotenvFromBackRoot() error {
 	wd, _ := os.Getwd()
-	dir := wd
-	for i := 0; i < 6; i++ {
-		p := filepath.Join(dir, ".env")
-		if _, err := os.Stat(p); err == nil {
-			return godotenv.Load(p)
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
+
+	// Trouve le dossier "back" dans le chemin courant
+	for {
+		if filepath.Base(wd) == "back" {
 			break
 		}
-		dir = parent
+		parent := filepath.Dir(wd)
+		if parent == wd {
+			return errors.New("dossier 'back' non trouvé")
+		}
+		wd = parent
 	}
-	return nil
+
+	envPath := filepath.Join(wd, ".env")
+	if _, err := os.Stat(envPath); err != nil {
+		return errors.New(".env non trouvé à la racine du dossier 'back'")
+	}
+
+	return godotenv.Load(envPath)
 }
