@@ -1,0 +1,48 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths: [ "back/**", ".github/workflows/test.yml" ]
+  push:
+    branches: [ master ]
+    paths: [ "back/**", ".github/workflows/test.yml" ]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go-test:
+    name: Go Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: back
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: back/go.mod
+          cache: true
+          cache-dependency-path: back/go.sum
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Generate coverage report
+        run: go tool cover -func=coverage.out
+
+      - name: Upload coverage to Codecov (optional)
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./back/coverage.out
+          flags: backend
+          fail_ci_if_error: false
