@@ -14,6 +14,7 @@ const (
 	RoleAdmin    Role = "admin"
 )
 
+// #
 type User struct {
 	ID           uint           `json:"id" gorm:"primaryKey"`
 	Email        string         `json:"email" gorm:"uniqueIndex;size:255;not null"`
