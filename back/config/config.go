@@ -57,7 +57,6 @@ func loadDotenvFromBackRoot() error {
 		return err
 	}
 
-	// Remonte jusqu'à trouver le dossier "back"
 	for filepath.Base(wd) != "back" {
 		parent := filepath.Dir(wd)
 		if parent == wd {
