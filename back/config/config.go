@@ -52,12 +52,13 @@ func getEnv(key, def string) string {
 }
 
 func loadDotenvFromBackRoot() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
+	wd, _ := os.Getwd()
 
-	for filepath.Base(wd) != "back" {
+	// Trouve le dossier "back" dans le chemin courant
+	for {
+		if filepath.Base(wd) == "back" {
+			break
+		}
 		parent := filepath.Dir(wd)
 		if parent == wd {
 			return errors.New("dossier 'back' non trouvé")
