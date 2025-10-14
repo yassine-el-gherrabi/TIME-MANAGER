@@ -29,10 +29,9 @@ func (s *AuthService) Register(data RegisterData) (*models.User, error) {
 	if data.Role == "" {
 		data.Role = models.RoleEmployee
 	}
-	if data.Role != models.RoleEmployee && data.Role != models.RoleManager {
+	if data.Role != models.RoleEmployee && data.Role != models.RoleManager && data.Role != models.RoleAdmin {
 		return nil, errors.New("rôle invalide")
 	}
-
 	hash, err := utils.HashPassword(data.Password)
 	if err != nil {
 		return nil, errors.New("erreur lors du hashage du mot de passe")
