@@ -18,7 +18,7 @@ type Config struct {
 
 func Load() (*Config, error) {
 	_ = loadDotenvUpwards()
-	//
+
 	cfg := &Config{
 		AppPort:   getEnv("APP_PORT", "8080"),
 		DBURL:     getEnv("DATABASE_URL", ""),
@@ -29,6 +29,7 @@ func Load() (*Config, error) {
 		return nil, errors.New("DATABASE_URL manquant")
 	}
 	if cfg.JWTSecret == "" {
+
 		return nil, errors.New("JWT_SECRET manquant")
 	}
 
