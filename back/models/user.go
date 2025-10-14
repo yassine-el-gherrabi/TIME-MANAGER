@@ -27,6 +27,7 @@ type User struct {
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
+// #
 func (User) TableName() string {
 	return "users"
 }
