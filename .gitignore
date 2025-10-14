@@ -1,1 +1,58 @@
+# Environment Variables
 .env
+.env.local
+.env.*.local
+*.env
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+*.exe
+*.out
+*.app
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.sublime-*
+.fleet/
+
+# Testing
+coverage/
+*.cover
+.coverage
+.pytest_cache/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+*.pid
+*.seed
+
+# Database
+*.db
+*.sqlite
+*.sqlite3

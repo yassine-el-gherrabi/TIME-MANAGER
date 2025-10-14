@@ -18,7 +18,7 @@ type Config struct {
 
 func Load() (*Config, error) {
 	_ = loadDotenvUpwards()
-
+	//
 	cfg := &Config{
 		AppPort:   getEnv("APP_PORT", "8080"),
 		DBURL:     getEnv("DATABASE_URL", ""),

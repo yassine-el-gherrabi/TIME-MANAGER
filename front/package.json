@@ -1,6 +1,7 @@
 {
-  "name": "front",
-  "version": "0.1.0",
+  "name": "time-manager-frontend",
+  "version": "1.0.0",
+  "description": "Time Manager - Professional React Frontend Application",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -47,6 +48,7 @@
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "magicui-cli": "^0.1.6",
     "prettier": "^3.6.2"
   }
 }

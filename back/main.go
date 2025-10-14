@@ -32,17 +32,22 @@ func main() {
 
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 
-	r.POST("/auth/register", handlers.Register)
-	r.POST("/auth/login", handlers.Login(func(uid uint) (string, error) {
+	r.POST("/register", handlers.Register)
+	r.POST("/login", handlers.Login(func(uid uint) (string, error) {
 		return utils.GenerateJWT(cfg.JWTSecret, cfg.JWTTTL, uid)
 	}))
 
-	auth := r.Group("/user", middleware.AuthRequired(cfg))
-	{
-		auth.GET("/profile", handlers.GetProfile)
-	}
+	protected := r.Group("/", middleware.AuthRequired(cfg))
 
-	log.Printf("🚀 API sur : http://localhost:%s", cfg.AppPort)
+	protected.GET("/me", handlers.GetProfile)
+
+	users := protected.Group("/users")
+	users.GET("", handlers.GetUsers)
+	users.GET("/:id", handlers.GetUser)
+	users.PUT("/:id", handlers.UpdateUser)
+	users.DELETE("/:id", handlers.DeleteUser)
+
+	log.Printf("API sur : http://localhost:%s", cfg.AppPort)
 	if err := r.Run(":" + cfg.AppPort); err != nil {
 		log.Fatal(err)
 	}
