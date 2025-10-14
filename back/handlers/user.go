@@ -33,6 +33,7 @@ func GetProfile(c *gin.Context) {
 	})
 }
 
+// GetUsers - accessible par managers et admins
 func GetUsers(c *gin.Context) {
 	users, err := userService.GetAll()
 	if err != nil {
@@ -43,6 +44,7 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+// GetUser - accessible par managers et admins
 func GetUser(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -68,6 +70,7 @@ type updateUserReq struct {
 	Role        models.Role `json:"role"`
 }
 
+// UpdateUser - avec vérifications des permissions
 func UpdateUser(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -75,9 +78,32 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	roleVal, _ := c.Get("role")
+	currentUserRole := roleVal.(models.Role)
+
 	var body updateUserReq
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Récupérer l'utilisateur cible
+	targetUser, err := userService.GetByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Vérifications des permissions
+	// Un manager ne peut pas modifier un admin
+	if currentUserRole == models.RoleManager && targetUser.Role == models.RoleAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "un manager ne peut pas modifier un administrateur"})
+		return
+	}
+
+	// Un manager ne peut pas promouvoir quelqu'un admin
+	if currentUserRole == models.RoleManager && body.Role == models.RoleAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "un manager ne peut pas promouvoir quelqu'un administrateur"})
 		return
 	}
 
@@ -125,11 +151,25 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := userService.Delete(uint(id)); err != nil {
+	roleVal, _ := c.Get("role")
+	currentUserRole := roleVal.(models.Role)
+
+	targetUser, err := userService.GetByID(uint(id))
+	if err != nil {
 		if err.Error() == "utilisateur non trouvé" {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erreur lors de la récupération de l'utilisateur"})
+		return
+	}
+
+	if currentUserRole == models.RoleManager && targetUser.Role == models.RoleAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "un manager ne peut pas supprimer un administrateur"})
+		return
+	}
+
+	if err := userService.Delete(uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erreur lors de la suppression"})
 		return
 	}

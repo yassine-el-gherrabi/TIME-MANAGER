@@ -63,7 +63,7 @@ func (s *UserService) Update(id uint, data UpdateUserData) (*models.User, error)
 		user.Email = *data.Email
 	}
 	if data.Role != nil {
-		if *data.Role != models.RoleEmployee && *data.Role != models.RoleManager {
+		if *data.Role != models.RoleEmployee && *data.Role != models.RoleManager && *data.Role != models.RoleAdmin {
 			return nil, errors.New("rôle invalide")
 		}
 		user.Role = *data.Role
