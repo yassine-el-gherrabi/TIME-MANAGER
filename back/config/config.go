@@ -31,6 +31,7 @@ func Load() (*Config, error) {
 		return nil, errors.New("DATABASE_URL manquant")
 	}
 	if cfg.JWTSecret == "" {
+
 		return nil, errors.New("JWT_SECRET manquant")
 	}
 
