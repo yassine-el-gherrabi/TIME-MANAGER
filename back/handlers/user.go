@@ -33,6 +33,7 @@ func GetProfile(c *gin.Context) {
 	})
 }
 
+// GetUsers - accessible par managers et admins
 func GetUsers(c *gin.Context) {
 	users, err := userService.GetAll()
 	if err != nil {
@@ -43,6 +44,7 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+// GetUser - accessible par managers et admins
 func GetUser(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -68,6 +70,7 @@ type updateUserReq struct {
 	Role        models.Role `json:"role"`
 }
 
+// UpdateUser - avec vérifications des permissions
 func UpdateUser(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -91,11 +94,14 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// Vérifications des permissions
+	// Un manager ne peut pas modifier un admin
 	if currentUserRole == models.RoleManager && targetUser.Role == models.RoleAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"error": "un manager ne peut pas modifier un administrateur"})
 		return
 	}
 
+	// Un manager ne peut pas promouvoir quelqu'un admin
 	if currentUserRole == models.RoleManager && body.Role == models.RoleAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"error": "un manager ne peut pas promouvoir quelqu'un administrateur"})
 		return

@@ -39,6 +39,7 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
+// AdminOnly permet uniquement aux admins d'accéder
 func AdminOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
@@ -56,6 +57,7 @@ func AdminOnly() gin.HandlerFunc {
 	}
 }
 
+// ManagerOrAdmin permet aux managers et admins d'accéder
 func ManagerOrAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
