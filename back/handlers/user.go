@@ -71,18 +71,22 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	if currentRole == models.RoleEmployee {
-		var currentUser *models.User
-		currentUser, err = userService.GetByID(currentUID)
+	switch currentRole {
+	case models.RoleEmployee:
+		currentUser, err := userService.GetByID(currentUID)
 		if err != nil {
 			c.JSON(http.StatusForbidden, gin.H{"error": "accès refusé"})
 			return
 		}
-		if user.Role != models.RoleEmployee || user.TeamID == nil || currentUser.TeamID == nil || *user.TeamID != *currentUser.TeamID {
+		if user.Role != models.RoleEmployee ||
+			user.TeamID == nil ||
+			currentUser.TeamID == nil ||
+			*user.TeamID != *currentUser.TeamID {
 			c.JSON(http.StatusForbidden, gin.H{"error": "accès refusé"})
 			return
 		}
-	} else if currentRole == models.RoleManager {
+
+	case models.RoleManager:
 		if user.Role == models.RoleAdmin {
 			c.JSON(http.StatusForbidden, gin.H{"error": "accès refusé"})
 			return
