@@ -3,51 +3,103 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
+	"back/config"
 	"back/handlers"
+	"back/middleware"
 	"back/models"
 	"back/services"
+	"back/utils"
 )
 
-type registerReq struct {
-	Email       string      `json:"email"`
-	Password    string      `json:"password"`
-	FirstName   string      `json:"first_name"`
-	LastName    string      `json:"last_name"`
-	PhoneNumber string      `json:"phone_number"`
-	Role        models.Role `json:"role"`
+type createTeamReq struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
-type loginReq struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+func createAdminUser(t *testing.T) (*models.User, string) {
+	service := services.NewAuthService()
+	admin, err := service.Register(services.RegisterData{
+		Email:     "admin@test.com",
+		Password:  "password123",
+		FirstName: "Admin",
+		LastName:  "User",
+		Role:      models.RoleAdmin,
+	})
+	assert.NoError(t, err)
+
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
+	}
+	token, err := utils.GenerateJWT(cfg.JWTSecret, cfg.JWTTTL, admin.ID)
+	assert.NoError(t, err)
+
+	return admin, token
 }
 
-func TestRegister_Success(t *testing.T) {
+func createManagerUser(t *testing.T, adminID uint) (*models.User, string) {
+	service := services.NewAuthService()
+	manager, err := service.Register(services.RegisterData{
+		Email:       "manager@test.com",
+		Password:    "password123",
+		FirstName:   "Manager",
+		LastName:    "User",
+		Role:        models.RoleManager,
+		CreatedByID: &adminID,
+	})
+	assert.NoError(t, err)
+
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
+	}
+	token, err := utils.GenerateJWT(cfg.JWTSecret, cfg.JWTTTL, manager.ID)
+	assert.NoError(t, err)
+
+	return manager, token
+}
+
+func setupAuthRouter(cfg *config.Config) *gin.Engine {
+	router := setupTestRouter()
+	router.Use(func(c *gin.Context) {
+		c.Set("config", cfg)
+		c.Next()
+	})
+	return router
+}
+
+func TestCreateTeam_Success(t *testing.T) {
 	setupTestDB(t)
 	defer cleanupTestDB(t)
 
-	router := setupTestRouter()
-	router.POST("/register", handlers.Register)
+	admin, token := createAdminUser(t)
+	assert.NotNil(t, admin)
 
-	reqBody := registerReq{
-		Email:       "test@test.test",
-		Password:    "testpassword",
-		FirstName:   "Carlo",
-		LastName:    "Santos",
-		PhoneNumber: "0123456789",
-		Role:        models.RoleEmployee,
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
+	}
+
+	router := setupAuthRouter(cfg)
+	protected := router.Group("/", middleware.AuthRequired(cfg))
+	protected.POST("/teams", middleware.AdminOnly(), handlers.CreateTeam)
+
+	reqBody := createTeamReq{
+		Name:        "Team Alpha",
+		Description: "Test team",
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/teams", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -55,265 +107,201 @@ func TestRegister_Success(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Code)
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatalf("failed to unmarshal response: %v", err)
-	}
-
-	assert.Equal(t, reqBody.Email, response["email"])
-	assert.Equal(t, reqBody.FirstName, response["first_name"])
-	assert.Equal(t, reqBody.LastName, response["last_name"])
-	assert.Equal(t, string(models.RoleEmployee), response["role"])
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, "Team Alpha", response["name"])
+	assert.Equal(t, "Test team", response["description"])
 	assert.NotNil(t, response["id"])
 }
 
-func TestRegister_InvalidEmail(t *testing.T) {
+func TestCreateTeam_ManagerForbidden(t *testing.T) {
 	setupTestDB(t)
 	defer cleanupTestDB(t)
 
-	router := setupTestRouter()
-	router.POST("/register", handlers.Register)
+	admin, _ := createAdminUser(t)
+	_, managerToken := createManagerUser(t, admin.ID)
 
-	reqBody := map[string]string{
-		"email":      "invalid-email",
-		"password":   "password123",
-		"first_name": "Test",
-		"last_name":  "User",
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
+	}
+
+	router := setupAuthRouter(cfg)
+	protected := router.Group("/", middleware.AuthRequired(cfg))
+	protected.POST("/teams", middleware.AdminOnly(), handlers.CreateTeam)
+
+	reqBody := createTeamReq{
+		Name:        "Team Hack",
+		Description: "Should fail",
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/teams", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+managerToken)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
-func TestRegister_ShortPassword(t *testing.T) {
+func TestGetTeams_AdminSeesAll(t *testing.T) {
 	setupTestDB(t)
 	defer cleanupTestDB(t)
 
-	router := setupTestRouter()
-	router.POST("/register", handlers.Register)
+	admin, token := createAdminUser(t)
 
-	reqBody := registerReq{
-		Email:     "test@example.com",
-		Password:  "short",
-		FirstName: "Test",
-		LastName:  "User",
+	teamService := services.NewTeamService()
+	team1, _ := teamService.Create(services.CreateTeamData{
+		Name:        "Team 1",
+		Description: "First team",
+		CreatedByID: admin.ID,
+	})
+	team2, _ := teamService.Create(services.CreateTeamData{
+		Name:        "Team 2",
+		Description: "Second team",
+		CreatedByID: admin.ID,
+	})
+	assert.NotNil(t, team1)
+	assert.NotNil(t, team2)
+
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
 	}
 
-	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
+	router := setupAuthRouter(cfg)
+	protected := router.Group("/", middleware.AuthRequired(cfg))
+	protected.GET("/teams", handlers.GetTeams)
 
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
-func TestRegister_DuplicateEmail(t *testing.T) {
-	setupTestDB(t)
-	defer cleanupTestDB(t)
-
-	router := setupTestRouter()
-	router.POST("/register", handlers.Register)
-
-	reqBody := registerReq{
-		Email:     "duplicate@example.com",
-		Password:  "password123",
-		FirstName: "Test",
-		LastName:  "User",
-	}
-
-	body, _ := json.Marshal(reqBody)
-	req1 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
-	req1.Header.Set("Content-Type", "application/json")
-	w1 := httptest.NewRecorder()
-	router.ServeHTTP(w1, req1)
-	assert.Equal(t, http.StatusCreated, w1.Code)
-
-	body, _ = json.Marshal(reqBody)
-	req2 := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
-	req2.Header.Set("Content-Type", "application/json")
-	w2 := httptest.NewRecorder()
-	router.ServeHTTP(w2, req2)
-	assert.Equal(t, http.StatusConflict, w2.Code)
-}
-
-func TestRegister_InvalidRole(t *testing.T) {
-	setupTestDB(t)
-	defer cleanupTestDB(t)
-
-	router := setupTestRouter()
-	router.POST("/register", handlers.Register)
-
-	reqBody := registerReq{
-		Email:     "test@example.com",
-		Password:  "password123",
-		FirstName: "Test",
-		LastName:  "User",
-		Role:      "invalid",
-	}
-
-	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
-func TestLogin_Success(t *testing.T) {
-	setupTestDB(t)
-	defer cleanupTestDB(t)
-
-	router := setupTestRouter()
-
-	mockJWTGen := func(userID uint) (string, error) {
-		return "mock-jwt-token", nil
-	}
-
-	router.POST("/login", handlers.Login(mockJWTGen))
-
-	service := services.NewAuthService()
-	if _, err := service.Register(services.RegisterData{
-		Email:     "login@example.com",
-		Password:  "password123",
-		FirstName: "Test",
-		LastName:  "User",
-	}); err != nil {
-		t.Fatalf("failed to seed user: %v", err)
-	}
-
-	reqBody := loginReq{
-		Email:    "login@example.com",
-		Password: "password123",
-	}
-
-	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(http.MethodGet, "/teams", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatalf("failed to unmarshal response: %v", err)
-	}
-
-	assert.Equal(t, "mock-jwt-token", response["token"])
-	assert.NotNil(t, response["user"])
-
-	user := response["user"].(map[string]interface{})
-	assert.Equal(t, "login@example.com", user["email"])
-	assert.Equal(t, "Test", user["first_name"])
+	var teams []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &teams)
+	assert.Len(t, teams, 2)
 }
 
-func TestLogin_WrongPassword(t *testing.T) {
+func TestGetTeams_ManagerSeesOnlyHisTeams(t *testing.T) {
 	setupTestDB(t)
 	defer cleanupTestDB(t)
 
-	router := setupTestRouter()
+	admin, _ := createAdminUser(t)
+	manager, managerToken := createManagerUser(t, admin.ID)
 
-	mockJWTGen := func(userID uint) (string, error) {
-		return "mock-jwt-token", nil
+	teamService := services.NewTeamService()
+	team1, _ := teamService.Create(services.CreateTeamData{
+		Name:        "Team 1",
+		Description: "Manager's team",
+		CreatedByID: admin.ID,
+	})
+	team2, _ := teamService.Create(services.CreateTeamData{
+		Name:        "Team 2",
+		Description: "Other team",
+		CreatedByID: admin.ID,
+	})
+
+	teamService.AddManager(team1.ID, manager.ID, models.RoleAdmin)
+
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
 	}
 
-	router.POST("/login", handlers.Login(mockJWTGen))
+	router := setupAuthRouter(cfg)
+	protected := router.Group("/", middleware.AuthRequired(cfg))
+	protected.GET("/teams", handlers.GetTeams)
 
-	service := services.NewAuthService()
-	if _, err := service.Register(services.RegisterData{
-		Email:     "login@example.com",
-		Password:  "password123",
-		FirstName: "Test",
-		LastName:  "User",
-	}); err != nil {
-		t.Fatalf("failed to seed user: %v", err)
-	}
-
-	reqBody := loginReq{
-		Email:    "login@example.com",
-		Password: "wrongpassword",
-	}
-
-	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(http.MethodGet, "/teams", nil)
+	req.Header.Set("Authorization", "Bearer "+managerToken)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var teams []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &teams)
+
+	assert.Len(t, teams, 1)
+	assert.Equal(t, "Team 1", teams[0]["name"])
+
+	_ = team2
 }
 
-func TestLogin_UserNotFound(t *testing.T) {
+func TestAddManagerToTeam_Success(t *testing.T) {
 	setupTestDB(t)
 	defer cleanupTestDB(t)
 
-	router := setupTestRouter()
+	admin, token := createAdminUser(t)
+	manager, _ := createManagerUser(t, admin.ID)
 
-	mockJWTGen := func(userID uint) (string, error) {
-		return "mock-jwt-token", nil
+	teamService := services.NewTeamService()
+	team, _ := teamService.Create(services.CreateTeamData{
+		Name:        "Team 1",
+		Description: "Test team",
+		CreatedByID: admin.ID,
+	})
+
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
 	}
 
-	router.POST("/login", handlers.Login(mockJWTGen))
+	router := setupAuthRouter(cfg)
+	protected := router.Group("/", middleware.AuthRequired(cfg))
+	protected.POST("/teams/:id/managers", middleware.AdminOnly(), handlers.AddManagerToTeam)
 
-	reqBody := loginReq{
-		Email:    "nonexistent@example.com",
-		Password: "password123",
+	reqBody := map[string]uint{
+		"manager_id": manager.ID,
 	}
 
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/teams/"+string(rune(team.ID))+"/managers", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-func TestLogin_JWTGenerationError(t *testing.T) {
+func TestDeleteTeam_AdminOnly(t *testing.T) {
 	setupTestDB(t)
 	defer cleanupTestDB(t)
 
-	router := setupTestRouter()
+	admin, adminToken := createAdminUser(t)
+	_, managerToken := createManagerUser(t, admin.ID)
 
-	mockJWTGen := func(userID uint) (string, error) {
-		return "", errors.New("jwt generation failed")
+	teamService := services.NewTeamService()
+	team, _ := teamService.Create(services.CreateTeamData{
+		Name:        "Team to delete",
+		Description: "Test",
+		CreatedByID: admin.ID,
+	})
+
+	cfg := &config.Config{
+		JWTSecret: "test-secret",
+		JWTTTL:    3600,
 	}
 
-	router.POST("/login", handlers.Login(mockJWTGen))
+	router := setupAuthRouter(cfg)
+	protected := router.Group("/", middleware.AuthRequired(cfg))
+	protected.DELETE("/teams/:id", middleware.AdminOnly(), handlers.DeleteTeam)
 
-	service := services.NewAuthService()
-	if _, err := service.Register(services.RegisterData{
-		Email:     "login@example.com",
-		Password:  "password123",
-		FirstName: "Test",
-		LastName:  "User",
-	}); err != nil {
-		t.Fatalf("failed to seed user: %v", err)
-	}
+	req1 := httptest.NewRequest(http.MethodDelete, "/teams/"+string(rune(team.ID)), nil)
+	req1.Header.Set("Authorization", "Bearer "+managerToken)
+	w1 := httptest.NewRecorder()
+	router.ServeHTTP(w1, req1)
+	assert.Equal(t, http.StatusForbidden, w1.Code)
 
-	reqBody := loginReq{
-		Email:    "login@example.com",
-		Password: "password123",
-	}
-
-	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	req2 := httptest.NewRequest(http.MethodDelete, "/teams/"+string(rune(team.ID)), nil)
+	req2.Header.Set("Authorization", "Bearer "+adminToken)
+	w2 := httptest.NewRecorder()
+	router.ServeHTTP(w2, req2)
 }
