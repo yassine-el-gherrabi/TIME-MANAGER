@@ -71,9 +71,7 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	// Vérifier les permissions de visibilité
 	if currentRole == models.RoleEmployee {
-		// Employee peut voir seulement les autres employees de sa team
 		var currentUser *models.User
 		currentUser, err = userService.GetByID(currentUID)
 		if err != nil {
@@ -85,7 +83,6 @@ func GetUser(c *gin.Context) {
 			return
 		}
 	} else if currentRole == models.RoleManager {
-		// Manager ne peut pas voir les admins
 		if user.Role == models.RoleAdmin {
 			c.JSON(http.StatusForbidden, gin.H{"error": "accès refusé"})
 			return
