@@ -26,7 +26,6 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Récupérer le rôle de l'utilisateur
 		var user models.User
 		if err := database.DB.First(&user, claims.UserID).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "utilisateur non trouvé"})
@@ -39,6 +38,7 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
+// AdminOnly permet uniquement aux admins d'accéder
 func AdminOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")

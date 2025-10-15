@@ -9,7 +9,9 @@ import (
 	"back/services"
 )
 
-var authService = services.NewAuthService()
+var (
+	authService = services.NewAuthService()
+)
 
 type registerReq struct {
 	Email       string      `json:"email" binding:"required,email"`
@@ -18,6 +20,7 @@ type registerReq struct {
 	LastName    string      `json:"last_name" binding:"required,min=2"`
 	PhoneNumber string      `json:"phone_number"`
 	Role        models.Role `json:"role"`
+	TeamID      *uint       `json:"team_id"`
 }
 
 type loginReq struct {
@@ -32,6 +35,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	var createdByID *uint
+	if uidVal, exists := c.Get("uid"); exists {
+		uid := uidVal.(uint)
+		createdByID = &uid
+	}
+
 	user, err := authService.Register(services.RegisterData{
 		Email:       body.Email,
 		Password:    body.Password,
@@ -39,10 +48,12 @@ func Register(c *gin.Context) {
 		LastName:    body.LastName,
 		PhoneNumber: body.PhoneNumber,
 		Role:        body.Role,
+		CreatedByID: createdByID,
+		TeamID:      body.TeamID,
 	})
 
 	if err != nil {
-		if err.Error() == "rôle invalide" {
+		if err.Error() == "rôle invalide" || err.Error() == "seul un admin peut créer des utilisateurs" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -51,11 +62,13 @@ func Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"id":         user.ID,
-		"email":      user.Email,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
-		"role":       user.Role,
+		"user": gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"role":       user.Role,
+		},
 	})
 }
 
@@ -87,6 +100,7 @@ func Login(jwtGen func(userID uint) (string, error)) gin.HandlerFunc {
 				"first_name": user.FirstName,
 				"last_name":  user.LastName,
 				"role":       user.Role,
+				"team_id":    user.TeamID,
 			},
 		})
 	}
