@@ -17,8 +17,6 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	// Try to load .env file (for local development)
-	// Ignore error if file not found (e.g., in Docker where env vars are provided)
 	_ = loadDotenvFromBackRoot()
 
 	cfg := &Config{

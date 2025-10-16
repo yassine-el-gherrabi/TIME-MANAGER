@@ -22,7 +22,6 @@ type CreateTeamData struct {
 }
 
 func (s *TeamService) Create(data CreateTeamData) (*models.Team, error) {
-	// Vérifier que le créateur est bien un admin
 	var creator models.User
 	if err := database.DB.First(&creator, data.CreatedByID).Error; err != nil {
 		return nil, errors.New("créateur non trouvé")
