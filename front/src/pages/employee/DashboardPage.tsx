@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogOut, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { handleError } from '@/utils/errorHandler';
 
 export const EmployeeDashboardPage = () => {
   const { user, logout } = useAuth();
@@ -14,8 +15,8 @@ export const EmployeeDashboardPage = () => {
       await logout();
       toast.success('Logged out successfully');
       navigate('/login', { replace: true });
-    } catch {
-      toast.error('Logout failed');
+    } catch (error) {
+      handleError(error, 'Logout');
     }
   };
 

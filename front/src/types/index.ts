@@ -1,6 +1,5 @@
 // Re-export all types for convenient imports
 export * from './models';
-export * from './api';
 
 // Common utility types
 export type Role = 'employee' | 'manager';
