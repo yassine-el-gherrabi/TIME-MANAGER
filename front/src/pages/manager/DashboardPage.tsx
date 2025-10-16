@@ -22,9 +22,9 @@ export const ManagerDashboardPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
-            <Clock className="w-6 h-6" />
+            <Clock className="h-6 w-6" />
             <h1 className="text-xl font-bold">Time Manager - Manager</h1>
           </div>
           <Button onClick={handleLogout} variant="outline" size="sm">
@@ -37,15 +37,21 @@ export const ManagerDashboardPage = () => {
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Welcome, {user?.firstName} {user?.lastName}!</CardTitle>
+            <CardTitle>
+              Welcome, {user?.firstName} {user?.lastName}!
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">
               This is your manager dashboard. Features will be added in the next iterations.
             </p>
             <div className="mt-4 space-y-2">
-              <p><strong>Email:</strong> {user?.email}</p>
-              <p><strong>Role:</strong> {user?.role}</p>
+              <p>
+                <strong>Email:</strong> {user?.email}
+              </p>
+              <p>
+                <strong>Role:</strong> {user?.role}
+              </p>
             </div>
           </CardContent>
         </Card>
