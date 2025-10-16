@@ -17,9 +17,9 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	if err := loadDotenvFromBackRoot(); err != nil {
-		return nil, err
-	}
+	// Try to load .env file (for local development)
+	// Ignore error if file not found (e.g., in Docker where env vars are provided)
+	_ = loadDotenvFromBackRoot()
 
 	cfg := &Config{
 		AppPort:   getEnv("APP_PORT", "8080"),
@@ -57,7 +57,6 @@ func loadDotenvFromBackRoot() error {
 		return err
 	}
 
-	// Remonte jusqu'à trouver le dossier "back"
 	for filepath.Base(wd) != "back" {
 		parent := filepath.Dir(wd)
 		if parent == wd {

@@ -1,70 +1,161 @@
-# Getting Started with Create React App
+# Time Manager Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Professional React + TypeScript + Vite frontend for the Time Manager application.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- ✅ React 18+ with TypeScript
+- ✅ Vite for fast development and building
+- ✅ Tailwind CSS for styling
+- ✅ shadcn/ui component library
+- ✅ React Router v6 for routing
+- ✅ Axios for HTTP requests with automatic snake_case ↔ camelCase transformation
+- ✅ Authentication with JWT tokens
+- ✅ Role-based access control (Employee/Manager)
+- ✅ Toast notifications with Sonner
+- ✅ Professional folder structure for scalability
 
-### `npm start`
+## Architecture
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+src/
+├── api/              # API layer with axios client and endpoints
+├── components/       # Reusable components
+│   └── ui/          # shadcn/ui components
+├── context/         # React contexts (AuthContext)
+├── hooks/           # Custom React hooks
+├── pages/           # Page components organized by role
+│   ├── auth/       # Authentication pages
+│   ├── employee/   # Employee pages
+│   └── manager/    # Manager pages
+├── routes/          # Routing configuration
+├── types/           # TypeScript types
+│   ├── api.ts      # Backend types (snake_case)
+│   ├── errors.ts   # Error types
+│   ├── models.ts   # Frontend types (camelCase)
+│   └── index.ts    # Type exports
+├── utils/           # Utility functions
+│   ├── transformers.ts  # snake_case ↔ camelCase transformers
+│   ├── errorHandler.ts  # Error handling utilities
+│   └── jwt.ts       # JWT validation utilities
+└── lib/             # Third-party library configuration
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Getting Started
 
-### `npm test`
+### Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Node.js 18+ and npm
+- Backend API running on `http://localhost:8080`
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+cd front
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Configuration
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Copy `.env.example` to `.env` and configure:
 
-### `npm run eject`
+```bash
+VITE_API_URL=http://localhost:8080/api
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Development
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm run dev
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+The application will be available at `http://localhost:5173`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Building
 
-## Learn More
+```bash
+npm run build
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Preview Production Build
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm run preview
+```
 
-### Code Splitting
+## Key Architectural Decisions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### snake_case ↔ camelCase Transformation
 
-### Analyzing the Bundle Size
+The backend (Go) uses `snake_case` for JSON fields, while the frontend (TypeScript) uses `camelCase` as per conventions. We handle this automatically at the API boundary:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- **Request transformation**: camelCase → snake_case (in axios request interceptor)
+- **Response transformation**: snake_case → camelCase (in axios response interceptor)
+- **Type safety**: Separate types for API (`types/api.ts`) and domain (`types/models.ts`)
 
-### Making a Progressive Web App
+Example:
+```typescript
+// Backend returns:
+{ first_name: "John", last_name: "Doe" }
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+// Frontend receives:
+{ firstName: "John", lastName: "Doe" }
+```
 
-### Advanced Configuration
+### Authentication Flow
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+1. User submits login form
+2. `AuthContext.login()` calls `authApi.login()`
+3. Backend returns `{token, user}` with snake_case fields
+4. Response interceptor transforms to camelCase
+5. Token and user stored in localStorage and React state
+6. Request interceptor adds `Bearer {token}` to all subsequent requests
+7. On 401 response, user is automatically logged out
 
-### Deployment
+### Protected Routes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Routes are protected using the `ProtectedRoute` wrapper:
 
-### `npm run build` fails to minify
+```typescript
+<Route
+    path="/employee/dashboard"
+element={
+    <ProtectedRoute allowedRoles={['employee']}>
+    <EmployeeDashboardPage />
+    </ProtectedRoute>
+}
+/>
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Role-based access control ensures:
+- Unauthenticated users → redirected to `/login`
+- Wrong role (e.g., employee accessing manager route) → redirected to appropriate dashboard
+
+## Testing
+
+Unit tests and E2E tests will be added in the next iteration.
+
+- **Unit tests**: Vitest + React Testing Library
+- **E2E tests**: Playwright
+
+## Next Steps
+
+1. Add unit tests for transformers, hooks, and components
+2. Add E2E tests for authentication flow and protected routes
+3. Implement Clock In/Out functionality
+4. Implement Employee and Manager dashboards
+5. Add Teams, WorkingTimes, and Reports features
+
+## Tech Stack
+
+- **React** 18+ - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - Component library
+- **React Router** - Routing
+- **Axios** - HTTP client
+- **Sonner** - Toast notifications
+- **Lucide React** - Icons
+- **React Hook Form** + **Zod** - Form validation
+- **date-fns** - Date utilities
