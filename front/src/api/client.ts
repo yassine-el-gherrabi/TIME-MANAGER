@@ -15,7 +15,6 @@ export const apiClient = axios.create({
  */
 export function clearAuthData(): void {
   localStorage.removeItem('token');
-  localStorage.removeItem('user');
 }
 
 /**

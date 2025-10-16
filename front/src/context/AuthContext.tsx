@@ -27,45 +27,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Initialize auth state from localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
 
-    if (storedToken && storedUser) {
-      // Check if token is expired
-      if (isTokenExpired(storedToken)) {
-        // Token expired - clear auth data and show message
-        clearAuthData();
-        toast.error('Session expirée', {
-          description: 'Votre session a expiré. Veuillez vous reconnecter.',
-        });
-        setLoading(false);
-        return;
+      if (storedToken) {
+        // Check if token is expired
+        if (isTokenExpired(storedToken)) {
+          // Token expired - clear auth data and show message
+          clearAuthData();
+          toast.error('Session expirée', {
+            description: 'Votre session a expiré. Veuillez vous reconnecter.',
+          });
+          setLoading(false);
+          return;
+        }
+
+        try {
+          // Set token first so API calls can use it
+          setToken(storedToken);
+
+          // Fetch fresh user data from API
+          const userData = await authApi.me();
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+          // Clear invalid data
+          clearAuthData();
+          setToken(null);
+          setUser(null);
+        }
       }
 
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user data:', error);
-        // Clear invalid data
-        clearAuthData();
-      }
-    }
+      setLoading(false);
+    };
 
-    setLoading(false);
+    initializeAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
     // Don't clear auth state on login failure - let the error propagate
     const response = await authApi.login(credentials);
 
-    // Store auth data
-    setToken(response.token);
+    // Store user data in memory
     setUser(response.user);
 
-    // Persist to localStorage
+    // Persist only token to localStorage
     localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(response.user));
   };
 
   const logout = async () => {

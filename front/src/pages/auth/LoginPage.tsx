@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,13 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
-  if (user) {
-    const redirectPath = user.role === 'manager' ? '/manager/dashboard' : '/employee/dashboard';
-    navigate(redirectPath, { replace: true });
-    return null;
-  }
+  // Redirect if already authenticated (proper React pattern)
+  useEffect(() => {
+    if (user) {
+      const redirectPath = user.role === 'manager' ? '/manager/dashboard' : '/employee/dashboard';
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
