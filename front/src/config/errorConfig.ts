@@ -11,55 +11,55 @@ export const ERROR_MAPPING: Record<
   400: {
     type: ErrorType.VALIDATION,
     retryable: false,
-    message: 'Invalid request. Please check your input.'
+    message: 'Invalid request. Please check your input.',
   },
   401: {
     type: ErrorType.AUTHENTICATION,
     retryable: false,
-    message: 'Authentication failed. Please check your credentials.'
+    message: 'Authentication failed. Please check your credentials.',
   },
   403: {
     type: ErrorType.AUTHORIZATION,
     retryable: false,
-    message: 'Access denied. You do not have permission.'
+    message: 'Access denied. You do not have permission.',
   },
   404: {
     type: ErrorType.NOT_FOUND,
     retryable: false,
-    message: 'Resource not found.'
+    message: 'Resource not found.',
   },
   422: {
     type: ErrorType.VALIDATION,
     retryable: false,
-    message: 'Validation failed. Please check your input.'
+    message: 'Validation failed. Please check your input.',
   },
   429: {
     type: ErrorType.VALIDATION,
     retryable: true, // Can retry after rate limit cooldown
-    message: 'Too many requests. Please try again later.'
+    message: 'Too many requests. Please try again later.',
   },
 
   // 5xx - Server Errors
   500: {
     type: ErrorType.SERVER_ERROR,
     retryable: true,
-    message: 'Server error. Please try again later.'
+    message: 'Server error. Please try again later.',
   },
   502: {
     type: ErrorType.SERVER_ERROR,
     retryable: true,
-    message: 'Bad gateway. Please try again later.'
+    message: 'Bad gateway. Please try again later.',
   },
   503: {
     type: ErrorType.SERVER_ERROR,
     retryable: true,
-    message: 'Service unavailable. Please try again later.'
+    message: 'Service unavailable. Please try again later.',
   },
   504: {
     type: ErrorType.SERVER_ERROR,
     retryable: true,
-    message: 'Gateway timeout. Please try again later.'
-  }
+    message: 'Gateway timeout. Please try again later.',
+  },
 };
 
 /**
@@ -74,7 +74,7 @@ export const RETRY_CONFIG = {
   maxRetries: 3,
   initialDelayMs: 1000,
   backoffMultiplier: 2, // Exponential backoff: 1s, 2s, 4s
-  maxDelayMs: 10000 // Maximum delay between retries
+  maxDelayMs: 10000, // Maximum delay between retries
 };
 
 /**
@@ -85,9 +85,9 @@ export const NOTIFICATION_CONFIG = {
     error: 5000,
     warning: 4000,
     success: 3000,
-    info: 3000
+    info: 3000,
   },
-  position: 'top-right' as const
+  position: 'top-right' as const,
 };
 
 /**

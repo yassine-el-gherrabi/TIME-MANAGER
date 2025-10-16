@@ -1,12 +1,7 @@
 // Utility functions to transform between snake_case (backend) and camelCase (frontend)
 
 import type { User, Team, Clock, WorkingTime } from '@/types/models';
-import type {
-  UserResponse,
-  TeamResponse,
-  ClockResponse,
-  WorkingTimeResponse,
-} from '@/types/api';
+import type { UserResponse, TeamResponse, ClockResponse, WorkingTimeResponse } from '@/types/api';
 
 /**
  * Recursively converts object keys from snake_case to camelCase
@@ -21,13 +16,14 @@ export function toCamelCase<T = unknown>(obj: unknown): T {
   }
 
   if (typeof obj === 'object' && obj.constructor === Object) {
-    return Object.keys(obj).reduce((acc, key) => {
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
-        letter.toUpperCase()
-      );
-      acc[camelKey] = toCamelCase((obj as Record<string, unknown>)[key]);
-      return acc;
-    }, {} as Record<string, unknown>) as T;
+    return Object.keys(obj).reduce(
+      (acc, key) => {
+        const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+        acc[camelKey] = toCamelCase((obj as Record<string, unknown>)[key]);
+        return acc;
+      },
+      {} as Record<string, unknown>
+    ) as T;
   }
 
   return obj as T;
@@ -46,11 +42,14 @@ export function toSnakeCase<T = unknown>(obj: unknown): T {
   }
 
   if (typeof obj === 'object' && obj.constructor === Object) {
-    return Object.keys(obj).reduce((acc, key) => {
-      const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-      acc[snakeKey] = toSnakeCase((obj as Record<string, unknown>)[key]);
-      return acc;
-    }, {} as Record<string, unknown>) as T;
+    return Object.keys(obj).reduce(
+      (acc, key) => {
+        const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+        acc[snakeKey] = toSnakeCase((obj as Record<string, unknown>)[key]);
+        return acc;
+      },
+      {} as Record<string, unknown>
+    ) as T;
   }
 
   return obj as T;

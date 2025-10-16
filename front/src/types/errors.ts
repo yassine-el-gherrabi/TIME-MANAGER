@@ -2,16 +2,16 @@
  * Error Types for API and Business Logic Errors
  */
 export const ErrorType = {
-  AUTHENTICATION: 'authentication',      // Invalid credentials
-  AUTHORIZATION: 'authorization',        // Insufficient permissions
-  VALIDATION: 'validation',             // Invalid input data
-  NOT_FOUND: 'not_found',              // Resource not found
-  SERVER_ERROR: 'server_error',         // Server-side error
-  NETWORK_ERROR: 'network_error',       // Network/connectivity issue
-  UNKNOWN: 'unknown'                    // Unclassified error
+  AUTHENTICATION: 'authentication', // Invalid credentials
+  AUTHORIZATION: 'authorization', // Insufficient permissions
+  VALIDATION: 'validation', // Invalid input data
+  NOT_FOUND: 'not_found', // Resource not found
+  SERVER_ERROR: 'server_error', // Server-side error
+  NETWORK_ERROR: 'network_error', // Network/connectivity issue
+  UNKNOWN: 'unknown', // Unclassified error
 } as const;
 
-export type ErrorType = typeof ErrorType[keyof typeof ErrorType];
+export type ErrorType = (typeof ErrorType)[keyof typeof ErrorType];
 
 /**
  * Custom API Error Class
@@ -65,7 +65,7 @@ export class ApiError extends Error {
       message: this.message,
       details: this.details,
       retryable: this.retryable,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 }

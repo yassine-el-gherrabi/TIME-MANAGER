@@ -30,12 +30,9 @@ export function transformToApiError(error: unknown): ApiError {
 
   // Generic JavaScript error
   if (error instanceof Error) {
-    return new ApiError(
-      ErrorType.UNKNOWN,
-      0,
-      error.message || 'An unexpected error occurred',
-      { originalError: error.stack }
-    );
+    return new ApiError(ErrorType.UNKNOWN, 0, error.message || 'An unexpected error occurred', {
+      originalError: error.stack,
+    });
   }
 
   // Unknown error type
@@ -87,28 +84,28 @@ export function showUserNotification(error: ApiError, context?: string): void {
     case ErrorType.AUTHENTICATION:
       toast.error(`${contextPrefix}${error.getUserMessage()}`, {
         description: 'Please check your credentials',
-        duration: NOTIFICATION_CONFIG.duration.error
+        duration: NOTIFICATION_CONFIG.duration.error,
       });
       break;
 
     case ErrorType.AUTHORIZATION:
       toast.error(`${contextPrefix}Access Denied`, {
         description: error.getUserMessage(),
-        duration: NOTIFICATION_CONFIG.duration.error
+        duration: NOTIFICATION_CONFIG.duration.error,
       });
       break;
 
     case ErrorType.VALIDATION:
       toast.warning(`${contextPrefix}Validation Error`, {
         description: error.getUserMessage(),
-        duration: NOTIFICATION_CONFIG.duration.warning
+        duration: NOTIFICATION_CONFIG.duration.warning,
       });
       break;
 
     case ErrorType.NOT_FOUND:
       toast.warning(`${contextPrefix}Not Found`, {
         description: error.getUserMessage(),
-        duration: NOTIFICATION_CONFIG.duration.warning
+        duration: NOTIFICATION_CONFIG.duration.warning,
       });
       break;
 
@@ -122,23 +119,23 @@ export function showUserNotification(error: ApiError, context?: string): void {
               onClick: () => {
                 // Retry logic will be handled by the caller
                 toast.info('Retrying...');
-              }
+              },
             }
-          : undefined
+          : undefined,
       });
       break;
 
     case ErrorType.NETWORK_ERROR:
       toast.error(`${contextPrefix}Connection Error`, {
         description: error.getUserMessage(),
-        duration: NOTIFICATION_CONFIG.duration.error
+        duration: NOTIFICATION_CONFIG.duration.error,
       });
       break;
 
     default:
       toast.error(`${contextPrefix}Error`, {
         description: error.getUserMessage(),
-        duration: NOTIFICATION_CONFIG.duration.error
+        duration: NOTIFICATION_CONFIG.duration.error,
       });
   }
 }
@@ -166,7 +163,7 @@ export function logError(error: ApiError, context?: string): void {
       context,
       type: error.type,
       status: error.statusCode,
-      message: error.message
+      message: error.message,
     });
   }
 }

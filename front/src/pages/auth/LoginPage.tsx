@@ -46,14 +46,14 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md">
         {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground mb-4">
-            <Clock className="w-8 h-8" />
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Clock className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Time Manager</h1>
+          <h1 className="mb-2 text-3xl font-bold text-foreground">Time Manager</h1>
           <p className="text-muted-foreground">Sign in to track your time</p>
         </div>
 
@@ -68,7 +68,7 @@ export const LoginPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -86,7 +86,7 @@ export const LoginPage = () => {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
@@ -116,7 +116,7 @@ export const LoginPage = () => {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground mt-8">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Need help? Contact your administrator
         </p>
       </div>
