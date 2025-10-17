@@ -36,3 +36,17 @@ func ParseJWT(tokenStr, secret string) (*Claims, error) {
 	}
 	return nil, jwt.ErrTokenInvalidClaims
 }
+
+// GenerateRefreshToken generates a refresh token with longer TTL
+// Refresh tokens are used to obtain new access tokens without re-authentication
+func GenerateRefreshToken(secret string, ttl time.Duration, userID uint) (string, error) {
+	// Refresh tokens use the same structure as access tokens but with longer TTL
+	return GenerateJWT(secret, ttl, userID)
+}
+
+// ParseRefreshToken parses and validates a refresh token
+// Returns the claims if valid, error otherwise
+func ParseRefreshToken(tokenStr, secret string) (*Claims, error) {
+	// Refresh tokens use the same structure and validation as access tokens
+	return ParseJWT(tokenStr, secret)
+}

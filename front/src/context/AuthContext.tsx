@@ -8,6 +8,7 @@ import { isTokenExpired } from '@/utils/jwt';
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
@@ -23,12 +24,14 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Initialize auth state from localStorage on mount
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('token');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
 
       if (storedToken) {
         // Check if token is expired
@@ -43,8 +46,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         try {
-          // Set token first so API calls can use it
+          // Set tokens first so API calls can use them
           setToken(storedToken);
+          setRefreshToken(storedRefreshToken);
 
           // Fetch fresh user data from API
           const userData = await authApi.me();
@@ -54,6 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Clear invalid data
           clearAuthData();
           setToken(null);
+          setRefreshToken(null);
           setUser(null);
         }
       }
@@ -68,11 +73,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Don't clear auth state on login failure - let the error propagate
     const response = await authApi.login(credentials);
 
-    // Persist token to localStorage
+    // Persist tokens to localStorage
     localStorage.setItem('token', response.token);
+    localStorage.setItem('refreshToken', response.refreshToken);
 
-    // Set token in state
+    // Set tokens in state
     setToken(response.token);
+    setRefreshToken(response.refreshToken);
 
     // Fetch fresh user data from API (consistent with initialization)
     const userData = await authApi.me();
@@ -88,6 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       // Clear auth state
       setToken(null);
+      setRefreshToken(null);
       setUser(null);
 
       // Clear localStorage using centralized function
@@ -100,6 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       value={{
         user,
         token,
+        refreshToken,
         login,
         logout,
         loading,

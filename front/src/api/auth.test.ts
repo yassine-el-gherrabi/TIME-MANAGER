@@ -28,6 +28,7 @@ describe('authApi', () => {
 
     const mockAuthState: AuthState = {
       token: 'jwt-token-123',
+      refreshToken: 'refresh-token-456',
       user: {
         id: 1,
         email: 'test@example.com',
@@ -184,6 +185,86 @@ describe('authApi', () => {
 
       expect(result.role).toBe('manager');
       expect(result.email).toBe('manager@example.com');
+    });
+  });
+
+  describe('refresh', () => {
+    const mockNewTokens: AuthState = {
+      token: 'new-access-token-789',
+      refreshToken: 'new-refresh-token-012',
+      user: {
+        id: 1,
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'employee',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      },
+    };
+
+    it('calls apiClient.post with refresh token', async () => {
+      vi.mocked(apiClient.post).mockResolvedValue({ data: mockNewTokens });
+
+      await authApi.refresh('old-refresh-token');
+
+      expect(apiClient.post).toHaveBeenCalledWith('/refresh', {
+        refreshToken: 'old-refresh-token',
+      });
+      expect(apiClient.post).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns new tokens on successful refresh', async () => {
+      vi.mocked(apiClient.post).mockResolvedValue({ data: mockNewTokens });
+
+      const result = await authApi.refresh('old-refresh-token');
+
+      expect(result).toEqual(mockNewTokens);
+      expect(result.token).toBe('new-access-token-789');
+      expect(result.refreshToken).toBe('new-refresh-token-012');
+    });
+
+    it('throws transformed ApiError on invalid refresh token', async () => {
+      const invalidTokenError = {
+        response: {
+          status: 401,
+          data: { message: 'refresh token invalide ou expiré' },
+        },
+      };
+      vi.mocked(apiClient.post).mockRejectedValue(invalidTokenError);
+
+      await expect(authApi.refresh('invalid-token')).rejects.toThrow();
+    });
+
+    it('throws transformed ApiError on expired refresh token', async () => {
+      const expiredTokenError = {
+        response: {
+          status: 401,
+          data: { message: 'refresh token invalide ou révoqué' },
+        },
+      };
+      vi.mocked(apiClient.post).mockRejectedValue(expiredTokenError);
+
+      await expect(authApi.refresh('expired-token')).rejects.toThrow();
+    });
+
+    it('throws transformed ApiError on server error', async () => {
+      const serverError = {
+        response: {
+          status: 500,
+          data: { message: 'erreur serveur' },
+        },
+      };
+      vi.mocked(apiClient.post).mockRejectedValue(serverError);
+
+      await expect(authApi.refresh('valid-token')).rejects.toThrow();
+    });
+
+    it('throws transformed ApiError on network failure', async () => {
+      const networkError = new Error('Network Error');
+      vi.mocked(apiClient.post).mockRejectedValue(networkError);
+
+      await expect(authApi.refresh('valid-token')).rejects.toThrow();
     });
   });
 });

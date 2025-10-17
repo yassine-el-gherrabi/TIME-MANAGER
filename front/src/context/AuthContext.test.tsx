@@ -148,6 +148,7 @@ describe('AuthContext', () => {
     it('successfully logs in user', async () => {
       vi.mocked(authApi.login).mockResolvedValue({
         token: 'new-token',
+        refreshToken: 'new-refresh-token',
         user: mockUser,
       });
       vi.mocked(authApi.me).mockResolvedValue(mockUser);
@@ -192,6 +193,7 @@ describe('AuthContext', () => {
     it('handles API error when fetching user after login', async () => {
       vi.mocked(authApi.login).mockResolvedValue({
         token: 'new-token',
+        refreshToken: 'new-refresh-token',
         user: mockUser,
       });
       vi.mocked(authApi.me).mockRejectedValue(new Error('API Error'));

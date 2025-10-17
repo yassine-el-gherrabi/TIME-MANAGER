@@ -40,4 +40,19 @@ export const authApi = {
       throw transformToApiError(error);
     }
   },
+
+  /**
+   * Refresh access token using refresh token
+   * Returns new access token and refresh token (token rotation)
+   */
+  refresh: async (refreshToken: string): Promise<AuthState> => {
+    try {
+      const { data } = await apiClient.post<AuthState>('/refresh', {
+        refreshToken,
+      });
+      return data;
+    } catch (error) {
+      throw transformToApiError(error);
+    }
+  },
 };

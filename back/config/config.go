@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	AppPort   string
-	DBURL     string
-	JWTSecret string
-	JWTTTL    time.Duration
+	AppPort         string
+	DBURL           string
+	JWTSecret       string
+	JWTTTL          time.Duration
+	RefreshTokenTTL time.Duration
 }
 
 func Load() (*Config, error) {
@@ -40,6 +41,14 @@ func Load() (*Config, error) {
 		d = 24 * time.Hour
 	}
 	cfg.JWTTTL = d
+
+	// Refresh token TTL (default: 7 days)
+	refreshTTLStr := getEnv("REFRESH_TOKEN_TTL", "168h") // 7 days in hours
+	refreshD, err := time.ParseDuration(refreshTTLStr)
+	if err != nil {
+		refreshD = 7 * 24 * time.Hour
+	}
+	cfg.RefreshTokenTTL = refreshD
 
 	return cfg, nil
 }

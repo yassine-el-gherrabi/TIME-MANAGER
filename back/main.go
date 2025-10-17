@@ -35,9 +35,8 @@ func main() {
 
 	// Routes publiques - Premier admin peut s'inscrire sans authentification
 	r.POST("/register", handlers.Register)
-	r.POST("/login", handlers.Login(func(uid uint) (string, error) {
-		return utils.GenerateJWT(cfg.JWTSecret, cfg.JWTTTL, uid)
-	}))
+	r.POST("/login", handlers.Login(cfg))
+	r.POST("/refresh", handlers.Refresh(cfg))
 
 	// Routes protégées - nécessitent authentification
 	protected := r.Group("/", middleware.AuthRequired(cfg))

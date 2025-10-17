@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -90,4 +91,68 @@ func (s *AuthService) Login(email, password string) (*models.User, error) {
 	}
 
 	return &user, nil
+}
+
+// StoreRefreshToken stores a refresh token for a user in the database
+func (s *AuthService) StoreRefreshToken(userID uint, token string, expiresAt time.Time) error {
+	result := database.DB.Model(&models.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]interface{}{
+			"refresh_token":      token,
+			"refresh_expires_at": expiresAt,
+		})
+
+	if result.Error != nil {
+		return errors.New("erreur lors du stockage du refresh token")
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("utilisateur non trouvé")
+	}
+
+	return nil
+}
+
+// ValidateRefreshToken validates that a refresh token matches the stored token for a user
+func (s *AuthService) ValidateRefreshToken(userID uint, token string) (bool, error) {
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, errors.New("utilisateur non trouvé")
+		}
+		return false, err
+	}
+
+	// Check if refresh token exists
+	if user.RefreshToken == "" {
+		return false, nil
+	}
+
+	// Check if refresh token matches
+	if user.RefreshToken != token {
+		return false, nil
+	}
+
+	// Check if refresh token is expired
+	if user.RefreshExpiresAt == nil || time.Now().After(*user.RefreshExpiresAt) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// RevokeRefreshToken removes the refresh token for a user (e.g., on logout)
+func (s *AuthService) RevokeRefreshToken(userID uint) error {
+	result := database.DB.Model(&models.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]interface{}{
+			"refresh_token":      "",
+			"refresh_expires_at": nil,
+		})
+
+	if result.Error != nil {
+		return errors.New("erreur lors de la révocation du refresh token")
+	}
+
+	return nil
 }

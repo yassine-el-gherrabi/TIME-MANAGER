@@ -15,6 +15,7 @@ export const apiClient = axios.create({
  */
 export function clearAuthData(): void {
   localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
 }
 
 /**
@@ -42,9 +43,29 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Flag to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 /**
  * Response interceptor
  * - Transforms response data from snake_case to camelCase
+ * - Handles 401 errors by attempting to refresh the access token
  */
 apiClient.interceptors.response.use(
   (response) => {
@@ -54,7 +75,92 @@ apiClient.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // If error is 401 and we haven't retried yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't try to refresh if this was the refresh endpoint itself
+      if (originalRequest.url?.includes('/refresh')) {
+        clearAuthData();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      // Mark this request as retried to prevent infinite loops
+      originalRequest._retry = true;
+
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        isRefreshing = false;
+        clearAuthData();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      try {
+        // Call refresh endpoint
+        const { data } = await axios.post<{
+          token: string;
+          refresh_token: string;
+        }>(
+          `${API_BASE_URL}/refresh`,
+          { refresh_token: refreshToken },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        // Transform response from snake_case
+        const newToken = data.token;
+        const newRefreshToken = data.refresh_token || data.refreshToken;
+
+        // Update tokens in localStorage
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+
+        // Update Authorization header for original request
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+
+        // Process queued requests
+        processQueue(null, newToken);
+
+        isRefreshing = false;
+
+        // Retry original request
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed - clear auth and redirect to login
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        clearAuthData();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
     return Promise.reject(error);
   }
 );
