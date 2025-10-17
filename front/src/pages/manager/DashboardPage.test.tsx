@@ -83,7 +83,9 @@ describe('ManagerDashboardPage', () => {
       renderDashboard();
 
       expect(
-        screen.getByText(/This is your manager dashboard. Features will be added in the next iterations./i)
+        screen.getByText(
+          /This is your manager dashboard. Features will be added in the next iterations./i
+        )
       ).toBeInTheDocument();
     });
 
