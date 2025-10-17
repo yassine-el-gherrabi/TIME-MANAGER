@@ -35,8 +35,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (isTokenExpired(storedToken)) {
           // Token expired - clear auth data and show message
           clearAuthData();
-          toast.error('Session expirée', {
-            description: 'Votre session a expiré. Veuillez vous reconnecter.',
+          toast.error('Session Expired', {
+            description: 'Your session has expired. Please log in again.',
           });
           setLoading(false);
           return;
@@ -68,11 +68,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Don't clear auth state on login failure - let the error propagate
     const response = await authApi.login(credentials);
 
-    // Store user data in memory
-    setUser(response.user);
-
-    // Persist only token to localStorage
+    // Persist token to localStorage
     localStorage.setItem('token', response.token);
+
+    // Set token in state
+    setToken(response.token);
+
+    // Fetch fresh user data from API (consistent with initialization)
+    const userData = await authApi.me();
+    setUser(userData);
   };
 
   const logout = async () => {
