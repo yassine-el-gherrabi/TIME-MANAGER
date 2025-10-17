@@ -41,7 +41,7 @@ describe('App', () => {
   });
 
   it('renders all components in correct structure', () => {
-    const { container } = render(<App />);
+    render(<App />);
     const authProvider = screen.getByTestId('auth-provider');
     const appRoutes = screen.getByTestId('app-routes');
     const toaster = screen.getByTestId('toaster');
