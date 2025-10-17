@@ -24,6 +24,8 @@ export default defineConfig({
         'src/main.tsx',
         'src/vite-env.d.ts',
         'src/components/ui/**', // Shadcn UI components (external)
+        'src/routes/index.tsx', // Main router - tested via integration tests
+        'src/types/**', // Type definitions - no executable logic
       ],
       thresholds: {
         lines: 80,
