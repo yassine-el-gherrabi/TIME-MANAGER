@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Clock, Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleError } from '@/utils/errorHandler';
+import { getDashboardPath } from '@/routes/config';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -19,8 +20,7 @@ export const LoginPage = () => {
   // Redirect if already authenticated (proper React pattern)
   useEffect(() => {
     if (user) {
-      const redirectPath = user.role === 'manager' ? '/manager/dashboard' : '/employee/dashboard';
-      navigate(redirectPath, { replace: true });
+      navigate(getDashboardPath(user.role), { replace: true });
     }
   }, [user, navigate]);
 
@@ -78,7 +78,6 @@ export const LoginPage = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     autoComplete="email"
-                    required
                     disabled={loading}
                   />
                 </div>
@@ -96,7 +95,6 @@ export const LoginPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
                     autoComplete="current-password"
-                    required
                     disabled={loading}
                   />
                 </div>
