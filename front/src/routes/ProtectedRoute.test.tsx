@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 import type { User } from '@/types';
@@ -33,14 +33,14 @@ function renderProtectedRoute(
   children: React.ReactNode = <div>Protected Content</div>
 ) {
   return render(
-    <BrowserRouter>
+    <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/" element={<ProtectedRoute allowedRoles={allowedRoles}>{children}</ProtectedRoute>} />
         <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/employee/dashboard" element={<div>Employee Dashboard</div>} />
         <Route path="/manager/dashboard" element={<div>Manager Dashboard</div>} />
       </Routes>
-    </BrowserRouter>
+    </MemoryRouter>
   );
 }
 
@@ -227,22 +227,7 @@ describe('ProtectedRoute', () => {
 
   describe('complex scenarios', () => {
     it('handles transition from loading to authenticated', () => {
-      const { rerender } = render(
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <div>Protected Content</div>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      );
-
-      // Initially loading
+      // Set initial loading state BEFORE first render
       (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: null,
         token: null,
@@ -252,8 +237,8 @@ describe('ProtectedRoute', () => {
         isAuthenticated: false,
       });
 
-      rerender(
-        <BrowserRouter>
+      const { rerender } = render(
+        <MemoryRouter initialEntries={['/']}>
           <Routes>
             <Route
               path="/"
@@ -263,11 +248,17 @@ describe('ProtectedRoute', () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/login" element={<div>Login Page</div>} />
+            <Route path="/employee/dashboard" element={<div>Employee Dashboard</div>} />
+            <Route path="/manager/dashboard" element={<div>Manager Dashboard</div>} />
           </Routes>
-        </BrowserRouter>
+        </MemoryRouter>
       );
 
-      // Then authenticated
+      // Should show loading spinner initially
+      expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+
+      // Then transition to authenticated
       (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
         user: mockEmployee,
         token: 'test-token',
@@ -278,7 +269,7 @@ describe('ProtectedRoute', () => {
       });
 
       rerender(
-        <BrowserRouter>
+        <MemoryRouter initialEntries={['/']}>
           <Routes>
             <Route
               path="/"
@@ -288,8 +279,11 @@ describe('ProtectedRoute', () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/login" element={<div>Login Page</div>} />
+            <Route path="/employee/dashboard" element={<div>Employee Dashboard</div>} />
+            <Route path="/manager/dashboard" element={<div>Manager Dashboard</div>} />
           </Routes>
-        </BrowserRouter>
+        </MemoryRouter>
       );
 
       expect(screen.getByText('Protected Content')).toBeInTheDocument();
