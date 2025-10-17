@@ -42,7 +42,12 @@ describe('jwt utilities', () => {
 
     it('handles base64url encoding (- and _ characters)', () => {
       // Create payload with characters that need base64url encoding
-      const payload = { uid: 123, exp: 1704110400, iat: 1704106800, data: 'test+data/with=special' };
+      const payload = {
+        uid: 123,
+        exp: 1704110400,
+        iat: 1704106800,
+        data: 'test+data/with=special',
+      };
       const payloadStr = JSON.stringify(payload);
       const payloadBase64url = btoa(payloadStr).replace(/\+/g, '-').replace(/\//g, '_');
       const token = `header.${payloadBase64url}.signature`;

@@ -35,7 +35,10 @@ function renderProtectedRoute(
   return render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
-        <Route path="/" element={<ProtectedRoute allowedRoles={allowedRoles}>{children}</ProtectedRoute>} />
+        <Route
+          path="/"
+          element={<ProtectedRoute allowedRoles={allowedRoles}>{children}</ProtectedRoute>}
+        />
         <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/employee/dashboard" element={<div>Employee Dashboard</div>} />
         <Route path="/manager/dashboard" element={<div>Manager Dashboard</div>} />

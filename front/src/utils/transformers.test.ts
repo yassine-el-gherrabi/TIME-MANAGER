@@ -26,14 +26,8 @@ describe('transformers', () => {
     });
 
     it('handles arrays', () => {
-      const input = [
-        { first_name: 'John' },
-        { first_name: 'Jane' },
-      ];
-      const expected = [
-        { firstName: 'John' },
-        { firstName: 'Jane' },
-      ];
+      const input = [{ first_name: 'John' }, { first_name: 'Jane' }];
+      const expected = [{ firstName: 'John' }, { firstName: 'Jane' }];
       expect(toCamelCase(input)).toEqual(expected);
     });
 
@@ -73,14 +67,8 @@ describe('transformers', () => {
     });
 
     it('handles arrays', () => {
-      const input = [
-        { firstName: 'John' },
-        { firstName: 'Jane' },
-      ];
-      const expected = [
-        { first_name: 'John' },
-        { first_name: 'Jane' },
-      ];
+      const input = [{ firstName: 'John' }, { firstName: 'Jane' }];
+      const expected = [{ first_name: 'John' }, { first_name: 'Jane' }];
       expect(toSnakeCase(input)).toEqual(expected);
     });
 
