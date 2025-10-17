@@ -1,7 +1,7 @@
-// Utility functions to transform between snake_case (backend) and camelCase (frontend)
-
-import type { User, Team, Clock, WorkingTime } from '@/types/models';
-import type { UserResponse, TeamResponse, ClockResponse, WorkingTimeResponse } from '@/types/api';
+/**
+ * Utility functions to transform between snake_case (backend) and camelCase (frontend)
+ * These functions are used by API interceptors to automatically transform data
+ */
 
 /**
  * Recursively converts object keys from snake_case to camelCase
@@ -53,53 +53,4 @@ export function toSnakeCase<T = unknown>(obj: unknown): T {
   }
 
   return obj as T;
-}
-
-// Specific transformers for type safety
-
-export function transformUser(response: UserResponse): User {
-  return {
-    id: response.id,
-    email: response.email,
-    firstName: response.first_name,
-    lastName: response.last_name,
-    phoneNumber: response.phone_number,
-    role: response.role,
-    teamId: response.team_id,
-    createdAt: response.created_at,
-    updatedAt: response.updated_at,
-  };
-}
-
-export function transformTeam(response: TeamResponse): Team {
-  return {
-    id: response.id,
-    name: response.name,
-    description: response.description,
-    managerId: response.manager_id,
-    memberIds: response.member_ids,
-    createdAt: response.created_at,
-    updatedAt: response.updated_at,
-  };
-}
-
-export function transformClock(response: ClockResponse): Clock {
-  return {
-    id: response.id,
-    userId: response.user_id,
-    timestamp: response.timestamp,
-    status: response.status,
-    createdAt: response.created_at,
-  };
-}
-
-export function transformWorkingTime(response: WorkingTimeResponse): WorkingTime {
-  return {
-    id: response.id,
-    userId: response.user_id,
-    startTime: response.start_time,
-    endTime: response.end_time,
-    duration: response.duration,
-    date: response.date,
-  };
 }

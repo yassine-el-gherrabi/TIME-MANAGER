@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { ROUTE_PATHS, getDashboardPath } from './config';
 import type { Role } from '@/types';
 
 interface ProtectedRouteProps {
@@ -21,14 +22,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={ROUTE_PATHS.LOGIN} replace />;
   }
 
   // Check role-based access if roles are specified
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Redirect to appropriate dashboard based on role
-    const redirectPath = user.role === 'manager' ? '/manager/dashboard' : '/employee/dashboard';
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
   return <>{children}</>;

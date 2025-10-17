@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Clock, Mail, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleError } from '@/utils/errorHandler';
+import { getDashboardPath } from '@/routes/config';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -16,12 +17,12 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
-  if (user) {
-    const redirectPath = user.role === 'manager' ? '/manager/dashboard' : '/employee/dashboard';
-    navigate(redirectPath, { replace: true });
-    return null;
-  }
+  // Redirect if already authenticated (proper React pattern)
+  useEffect(() => {
+    if (user) {
+      navigate(getDashboardPath(user.role), { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +78,6 @@ export const LoginPage = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     autoComplete="email"
-                    required
                     disabled={loading}
                   />
                 </div>
@@ -95,7 +95,6 @@ export const LoginPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
                     autoComplete="current-password"
-                    required
                     disabled={loading}
                   />
                 </div>

@@ -21,6 +21,7 @@ Professional React + TypeScript + Vite frontend for the Time Manager application
 src/
 ├── api/              # API layer with axios client and endpoints
 ├── components/       # Reusable components
+│   ├── shared/      # Shared components (Header, etc.)
 │   └── ui/          # shadcn/ui components
 ├── context/         # React contexts (AuthContext)
 ├── hooks/           # Custom React hooks
@@ -29,6 +30,9 @@ src/
 │   ├── employee/   # Employee pages
 │   └── manager/    # Manager pages
 ├── routes/          # Routing configuration
+│   ├── config.ts   # Centralized route configuration
+│   ├── index.tsx   # Route setup with lazy loading
+│   └── ProtectedRoute.tsx  # Route protection wrapper
 ├── types/           # TypeScript types
 │   ├── api.ts      # Backend types (snake_case)
 │   ├── errors.ts   # Error types
@@ -38,6 +42,8 @@ src/
 │   ├── transformers.ts  # snake_case ↔ camelCase transformers
 │   ├── errorHandler.ts  # Error handling utilities
 │   └── jwt.ts       # JWT validation utilities
+├── test/            # Test configuration
+│   └── setup.ts    # Vitest setup
 └── lib/             # Third-party library configuration
 ```
 
@@ -83,6 +89,24 @@ npm run build
 npm run preview
 ```
 
+### Quality Checks
+
+Run all quality checks (linting, type-checking, tests):
+
+```bash
+npm run quality
+```
+
+Or run individual checks:
+
+```bash
+npm run lint          # ESLint
+npm run type-check    # TypeScript compiler
+npm run test:run      # Vitest tests
+npm run format        # Prettier formatting
+npm run format:check  # Check formatting
+```
+
 ## Key Architectural Decisions
 
 ### snake_case ↔ camelCase Transformation
@@ -112,39 +136,87 @@ Example:
 6. Request interceptor adds `Bearer {token}` to all subsequent requests
 7. On 401 response, user is automatically logged out
 
-### Protected Routes
+### Centralized Route Configuration
 
-Routes are protected using the `ProtectedRoute` wrapper:
+Routes are centrally configured in `routes/config.ts` with lazy loading for optimal performance:
 
 ```typescript
-<Route
-    path="/employee/dashboard"
-element={
-    <ProtectedRoute allowedRoles={['employee']}>
-    <EmployeeDashboardPage />
-    </ProtectedRoute>
-}
-/>
+// routes/config.ts
+export const ROUTE_PATHS = {
+  ROOT: '/',
+  LOGIN: '/login',
+  EMPLOYEE_DASHBOARD: '/employee/dashboard',
+  MANAGER_DASHBOARD: '/manager/dashboard',
+} as const;
+
+export const ROUTES: RouteConfig[] = [
+  {
+    path: ROUTE_PATHS.LOGIN,
+    element: LoginPage,
+    isPublic: true,
+  },
+  {
+    path: ROUTE_PATHS.EMPLOYEE_DASHBOARD,
+    element: EmployeeDashboardPage,
+    allowedRoles: ['employee'],
+  },
+  // ...
+];
 ```
 
-Role-based access control ensures:
+Benefits:
+- **Type-safe paths**: No hardcoded strings throughout the app
+- **Lazy loading**: Pages loaded on demand for better performance
+- **Centralized configuration**: Single source of truth for all routes
+- **Role-based access**: Declarative role restrictions
+
+The `ProtectedRoute` wrapper enforces:
 - Unauthenticated users → redirected to `/login`
 - Wrong role (e.g., employee accessing manager route) → redirected to appropriate dashboard
 
 ## Testing
 
-Unit tests and E2E tests will be added in the next iteration.
+The application has comprehensive test coverage using **Vitest** and **React Testing Library**.
 
-- **Unit tests**: Vitest + React Testing Library
-- **E2E tests**: Playwright
+### Test Status
+
+- **89/98 tests passing** (91% pass rate)
+- **Unit tests**: jwt utilities, error handlers, transformers
+- **Integration tests**: AuthContext, LoginPage, ProtectedRoute (partial)
+- **Test commands**:
+  ```bash
+  npm run test            # Run tests in watch mode
+  npm run test:run        # Run tests once
+  npm run test:ui         # Open Vitest UI
+  npm run test:coverage   # Generate coverage report
+  ```
+
+### Test Structure
+
+```
+src/
+├── utils/
+│   ├── jwt.test.ts               # JWT validation tests
+│   ├── errorHandler.test.ts      # Error handling tests
+│   └── transformers.test.ts      # snake_case ↔ camelCase tests
+├── context/
+│   └── AuthContext.test.tsx      # Authentication context tests
+├── pages/
+│   └── auth/
+│       └── LoginPage.test.tsx    # Login page integration tests
+└── routes/
+    └── ProtectedRoute.test.tsx   # Route protection tests
+```
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation.
 
 ## Next Steps
 
-1. Add unit tests for transformers, hooks, and components
-2. Add E2E tests for authentication flow and protected routes
-3. Implement Clock In/Out functionality
-4. Implement Employee and Manager dashboards
-5. Add Teams, WorkingTimes, and Reports features
+1. Complete E2E tests with Playwright for full user workflows
+2. Implement Clock In/Out functionality
+3. Implement Employee and Manager dashboards with time tracking
+4. Add Teams, WorkingTimes, and Reports features
+5. Visual regression testing for UI components
 
 ## Tech Stack
 
