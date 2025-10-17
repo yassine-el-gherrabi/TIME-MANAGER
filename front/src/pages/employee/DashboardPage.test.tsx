@@ -83,7 +83,9 @@ describe('EmployeeDashboardPage', () => {
       renderDashboard();
 
       expect(
-        screen.getByText(/This is your employee dashboard. Features will be added in the next iterations./i)
+        screen.getByText(
+          /This is your employee dashboard. Features will be added in the next iterations./i
+        )
       ).toBeInTheDocument();
     });
 
