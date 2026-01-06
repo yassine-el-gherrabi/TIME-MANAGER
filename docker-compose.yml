@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: timemanager-postgres
+    environment:
+      POSTGRES_USER: timemanager
+      POSTGRES_PASSWORD: timemanager_dev_password
+      POSTGRES_DB: timemanager
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timemanager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - timemanager-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  timemanager-network:
+    driver: bridge
