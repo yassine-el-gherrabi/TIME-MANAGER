@@ -1,0 +1,62 @@
+[package]
+name = "timemanager-backend"
+version = "0.1.0"
+edition = "2021"
+authors = ["Trinity Team <trinity@epitech.eu>"]
+description = "Time Manager SaaS Backend - Rust/Axum API"
+
+[dependencies]
+# Web framework
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
+hyper = "1.0"
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+
+# Database
+diesel = { version = "2.1", features = ["postgres", "uuid", "chrono", "r2d2"] }
+diesel_migrations = "2.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Configuration
+dotenvy = "0.15"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+metrics = "0.21"
+metrics-exporter-prometheus = "0.13"
+
+# Authentication (for Epic 2, defined now)
+jsonwebtoken = "9.2"
+argon2 = { version = "0.5", features = ["std"] }
+
+# Validation
+validator = { version = "0.16", features = ["derive"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Types
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.12"
+fake = "2.9"
+wiremock = "0.6"
+serial_test = "3.0"
+testcontainers = "0.15"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
