@@ -3,7 +3,7 @@
 FROM rust:1.92-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache musl-dev pkgconfig openssl-dev
+RUN apk add --no-cache musl-dev pkgconfig openssl-dev postgresql-dev
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN cargo build --release
 FROM alpine:3.19
 
 # Install runtime dependencies
-RUN apk add --no-cache libgcc openssl ca-certificates
+RUN apk add --no-cache libgcc openssl ca-certificates libpq
 
 WORKDIR /app
 
