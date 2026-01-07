@@ -1,0 +1,261 @@
+version: '3'
+
+# Taskfile for Time Manager Backend CI/CD
+# Install task: https://taskfile.dev
+
+vars:
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/timemanager
+  TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/timemanager_test
+  DOCKER_COMPOSE_FILE: ../docker-compose.yml
+
+env:
+  DATABASE_URL: '{{.DATABASE_URL}}'
+  TEST_DATABASE_URL: '{{.TEST_DATABASE_URL}}'
+  RUST_LOG: info
+  RUST_BACKTRACE: 1
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # Database tasks
+  db:up:
+    desc: Start PostgreSQL database with Docker Compose
+    dir: ..
+    cmds:
+      - docker-compose up -d postgres
+
+  db:down:
+    desc: Stop PostgreSQL database
+    dir: ..
+    cmds:
+      - docker-compose down
+
+  db:reset:
+    desc: Reset database (drop, create, migrate)
+    cmds:
+      - task: db:down
+      - task: db:up
+      - sleep 2
+      - diesel database reset --database-url={{.DATABASE_URL}}
+      - diesel migration run --database-url={{.DATABASE_URL}}
+
+  db:migrate:
+    desc: Run database migrations
+    cmds:
+      - diesel migration run --database-url={{.DATABASE_URL}}
+
+  db:migrate:redo:
+    desc: Redo last migration
+    cmds:
+      - diesel migration redo --database-url={{.DATABASE_URL}}
+
+  db:setup:
+    desc: Setup database for development
+    cmds:
+      - task: db:up
+      - sleep 2
+      - diesel database setup --database-url={{.DATABASE_URL}}
+
+  # Test database tasks
+  test:db:setup:
+    desc: Setup test database
+    cmds:
+      - task: db:up
+      - sleep 2
+      - diesel database setup --database-url={{.TEST_DATABASE_URL}}
+
+  test:db:reset:
+    desc: Reset test database
+    cmds:
+      - diesel database reset --database-url={{.TEST_DATABASE_URL}}
+      - diesel migration run --database-url={{.TEST_DATABASE_URL}}
+
+  # Build tasks
+  build:
+    desc: Build the project
+    cmds:
+      - cargo build
+
+  build:release:
+    desc: Build the project in release mode
+    cmds:
+      - cargo build --release
+
+  # Code quality tasks
+  fmt:
+    desc: Format code with rustfmt
+    cmds:
+      - cargo fmt
+
+  fmt:check:
+    desc: Check code formatting
+    cmds:
+      - cargo fmt -- --check
+
+  clippy:
+    desc: Run Clippy linter
+    cmds:
+      - cargo clippy -- -D warnings
+
+  clippy:fix:
+    desc: Auto-fix Clippy warnings
+    cmds:
+      - cargo clippy --fix --allow-dirty --allow-staged
+
+  # Test tasks
+  test:
+    desc: Run all tests
+    cmds:
+      - cargo test
+
+  test:unit:
+    desc: Run unit tests only
+    cmds:
+      - cargo test --lib
+
+  test:integration:
+    desc: Run integration tests (requires database)
+    deps: [test:db:setup]
+    cmds:
+      - cargo test --test '*' -- --test-threads=1
+
+  test:coverage:
+    desc: Generate test coverage report
+    cmds:
+      - cargo tarpaulin --out Html --output-dir coverage
+
+  # Watch tasks
+  watch:
+    desc: Watch for changes and rebuild
+    cmds:
+      - cargo watch -x build
+
+  watch:test:
+    desc: Watch for changes and run tests
+    cmds:
+      - cargo watch -x test
+
+  # Run tasks
+  run:
+    desc: Run the application
+    deps: [db:up]
+    cmds:
+      - cargo run
+
+  run:dev:
+    desc: Run in development mode with auto-reload
+    deps: [db:up]
+    cmds:
+      - cargo watch -x run
+
+  # Clean tasks
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
+
+  clean:all:
+    desc: Clean everything including database
+    cmds:
+      - task: clean
+      - task: db:down
+      - rm -rf target/
+
+  # CI tasks (what runs in continuous integration)
+  ci:local:
+    desc: Run full CI pipeline locally
+    cmds:
+      - echo "🚀 Starting local CI pipeline..."
+      - task: fmt:check
+      - task: clippy
+      - task: test:db:setup
+      - task: build
+      - task: test:unit
+      - task: test:integration
+      - echo "✅ CI pipeline completed successfully!"
+
+  ci:quick:
+    desc: Quick CI check (no integration tests)
+    cmds:
+      - echo "🚀 Quick CI check..."
+      - task: fmt:check
+      - task: clippy
+      - task: build
+      - task: test:unit
+      - echo "✅ Quick check completed!"
+
+  # Phase validation tasks
+  validate:phase3:
+    desc: Validate Phase 3 (Repositories)
+    cmds:
+      - echo "📋 Validating Phase 3: Repository Layer"
+      - task: build
+      - task: test:unit
+      - cargo test --lib repository
+      - echo "✅ Phase 3 validation complete"
+
+  # Docker tasks
+  docker:build:
+    desc: Build Docker image
+    dir: ..
+    cmds:
+      - docker-compose build backend
+
+  docker:up:
+    desc: Start all services with Docker Compose
+    dir: ..
+    cmds:
+      - docker-compose up -d
+
+  docker:down:
+    desc: Stop all Docker services
+    dir: ..
+    cmds:
+      - docker-compose down
+
+  docker:logs:
+    desc: View backend logs
+    dir: ..
+    cmds:
+      - docker-compose logs -f backend
+
+  # Development workflow tasks
+  dev:setup:
+    desc: Complete development environment setup
+    cmds:
+      - echo "🔧 Setting up development environment..."
+      - task: db:up
+      - sleep 3
+      - task: db:setup
+      - task: build
+      - echo "✅ Development environment ready!"
+
+  dev:reset:
+    desc: Reset development environment
+    cmds:
+      - task: clean:all
+      - task: dev:setup
+
+  # Pre-commit hook
+  pre-commit:
+    desc: Run before committing (formatting, linting, tests)
+    cmds:
+      - echo "🔍 Running pre-commit checks..."
+      - task: fmt
+      - task: clippy
+      - task: test:unit
+      - echo "✅ Ready to commit!"
+
+  # Release tasks
+  release:check:
+    desc: Check if ready for release
+    cmds:
+      - task: fmt:check
+      - task: clippy
+      - task: test:db:setup
+      - task: test
+      - task: build:release
+      - echo "✅ Release checks passed!"

@@ -6,5 +6,6 @@ pub mod extractors;
 pub mod middleware;
 pub mod models;
 pub mod repositories;
+pub mod schema;
 pub mod services;
 pub mod utils;

@@ -1,0 +1,79 @@
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
+
+use crate::error::AppError;
+use crate::models::{LoginAttempt, NewLoginAttempt};
+use crate::schema::login_attempts;
+
+type DbPool = Pool<ConnectionManager<PgConnection>>;
+
+/// Login attempt repository for tracking and rate limiting
+pub struct LoginAttemptRepository {
+    pool: DbPool,
+}
+
+impl LoginAttemptRepository {
+    pub fn new(pool: DbPool) -> Self {
+        Self { pool }
+    }
+
+    /// Record a login attempt
+    pub async fn record(&self, new_attempt: NewLoginAttempt) -> Result<LoginAttempt, AppError> {
+        let mut conn = self.pool.get()?;
+
+        diesel::insert_into(login_attempts::table)
+            .values(&new_attempt)
+            .get_result(&mut conn)
+            .map_err(|e| AppError::DatabaseError(e))
+    }
+
+    /// Count failed login attempts for email within timeframe (minutes)
+    pub async fn count_failed_attempts_for_email(&self, email: &str, within_minutes: i64) -> Result<i64, AppError> {
+        let mut conn = self.pool.get()?;
+        let cutoff_time = chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
+
+        login_attempts::table
+            .filter(login_attempts::email.eq(email))
+            .filter(login_attempts::successful.eq(false))
+            .filter(login_attempts::attempted_at.gt(cutoff_time))
+            .count()
+            .get_result(&mut conn)
+            .map_err(|e| AppError::DatabaseError(e))
+    }
+
+    /// Count failed login attempts for IP within timeframe (minutes)
+    pub async fn count_failed_attempts_for_ip(&self, ip_address: &str, within_minutes: i64) -> Result<i64, AppError> {
+        let mut conn = self.pool.get()?;
+        let cutoff_time = chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
+
+        login_attempts::table
+            .filter(login_attempts::ip_address.eq(ip_address))
+            .filter(login_attempts::successful.eq(false))
+            .filter(login_attempts::attempted_at.gt(cutoff_time))
+            .count()
+            .get_result(&mut conn)
+            .map_err(|e| AppError::DatabaseError(e))
+    }
+
+    /// Get recent login attempts for email
+    pub async fn get_recent_attempts_for_email(&self, email: &str, limit: i64) -> Result<Vec<LoginAttempt>, AppError> {
+        let mut conn = self.pool.get()?;
+
+        login_attempts::table
+            .filter(login_attempts::email.eq(email))
+            .order(login_attempts::attempted_at.desc())
+            .limit(limit)
+            .load::<LoginAttempt>(&mut conn)
+            .map_err(|e| AppError::DatabaseError(e))
+    }
+
+    /// Delete old login attempts (cleanup operation)
+    pub async fn delete_older_than(&self, days: i64) -> Result<usize, AppError> {
+        let mut conn = self.pool.get()?;
+        let cutoff_time = chrono::Utc::now().naive_utc() - chrono::Duration::days(days);
+
+        diesel::delete(login_attempts::table.filter(login_attempts::attempted_at.lt(cutoff_time)))
+            .execute(&mut conn)
+            .map_err(|e| AppError::DatabaseError(e))
+    }
+}

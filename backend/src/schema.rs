@@ -7,6 +7,18 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    login_attempts (id) {
+        id -> Uuid,
+        #[max_length = 255]
+        email -> Varchar,
+        #[max_length = 45]
+        ip_address -> Varchar,
+        attempted_at -> Timestamp,
+        successful -> Bool,
+    }
+}
+
+diesel::table! {
     organizations (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -17,6 +29,55 @@ diesel::table! {
         timezone -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    password_history (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        #[max_length = 255]
+        password_hash -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    password_reset_tokens (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        #[max_length = 255]
+        token_hash -> Varchar,
+        expires_at -> Timestamp,
+        created_at -> Timestamp,
+        used_at -> Nullable<Timestamp>,
+    }
+}
+
+diesel::table! {
+    refresh_tokens (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        #[max_length = 255]
+        token_hash -> Varchar,
+        expires_at -> Timestamp,
+        created_at -> Timestamp,
+        revoked_at -> Nullable<Timestamp>,
+    }
+}
+
+diesel::table! {
+    user_sessions (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        refresh_token_id -> Uuid,
+        #[max_length = 45]
+        ip_address -> Varchar,
+        #[max_length = 512]
+        user_agent -> Nullable<Varchar>,
+        created_at -> Timestamp,
+        last_activity -> Timestamp,
+        expires_at -> Timestamp,
     }
 }
 
@@ -38,12 +99,26 @@ diesel::table! {
         role -> UserRole,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+        password_changed_at -> Nullable<Timestamp>,
+        password_expires_at -> Nullable<Timestamp>,
+        failed_login_attempts -> Int4,
+        locked_until -> Nullable<Timestamp>,
     }
 }
 
+diesel::joinable!(password_history -> users (user_id));
+diesel::joinable!(password_reset_tokens -> users (user_id));
+diesel::joinable!(refresh_tokens -> users (user_id));
+diesel::joinable!(user_sessions -> refresh_tokens (refresh_token_id));
+diesel::joinable!(user_sessions -> users (user_id));
 diesel::joinable!(users -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    login_attempts,
     organizations,
+    password_history,
+    password_reset_tokens,
+    refresh_tokens,
+    user_sessions,
     users,
 );

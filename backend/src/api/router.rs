@@ -15,14 +15,14 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use tower::ServiceExt;
+    use tower::Service;
 
     #[tokio::test]
     async fn test_health_route() {
-        let app = create_router();
+        let mut app = create_router();
 
         let response = app
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri("/health")
                     .body(Body::empty())
