@@ -25,7 +25,7 @@ impl PasswordResetRepository {
         diesel::insert_into(password_reset_tokens::table)
             .values(&new_token)
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Find password reset token by token hash
@@ -68,7 +68,7 @@ impl PasswordResetRepository {
 
         diesel::delete(password_reset_tokens::table.filter(password_reset_tokens::expires_at.lt(now)))
             .execute(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Check if token is valid (not expired, not used)

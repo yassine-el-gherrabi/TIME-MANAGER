@@ -197,6 +197,15 @@ tasks:
       - cargo test --lib repository
       - echo "✅ Phase 3 validation complete"
 
+  validate:phase4:
+    desc: Validate Phase 4 (JWT & Password Utilities)
+    cmds:
+      - echo "📋 Validating Phase 4: JWT & Password Utilities"
+      - task: build
+      - task: clippy
+      - cargo test --lib utils
+      - echo "✅ Phase 4 validation complete"
+
   # Docker tasks
   docker:build:
     desc: Build Docker image

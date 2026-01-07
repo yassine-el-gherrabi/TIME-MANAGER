@@ -24,7 +24,7 @@ impl LoginAttemptRepository {
         diesel::insert_into(login_attempts::table)
             .values(&new_attempt)
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Count failed login attempts for email within timeframe (minutes)
@@ -38,7 +38,7 @@ impl LoginAttemptRepository {
             .filter(login_attempts::attempted_at.gt(cutoff_time))
             .count()
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Count failed login attempts for IP within timeframe (minutes)
@@ -52,7 +52,7 @@ impl LoginAttemptRepository {
             .filter(login_attempts::attempted_at.gt(cutoff_time))
             .count()
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Get recent login attempts for email
@@ -64,7 +64,7 @@ impl LoginAttemptRepository {
             .order(login_attempts::attempted_at.desc())
             .limit(limit)
             .load::<LoginAttempt>(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Delete old login attempts (cleanup operation)
@@ -74,6 +74,6 @@ impl LoginAttemptRepository {
 
         diesel::delete(login_attempts::table.filter(login_attempts::attempted_at.lt(cutoff_time)))
             .execute(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 }

@@ -25,7 +25,7 @@ impl UserSessionRepository {
         diesel::insert_into(user_sessions::table)
             .values(&new_session)
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Get all active sessions for a user
@@ -38,7 +38,7 @@ impl UserSessionRepository {
             .filter(user_sessions::expires_at.gt(now))
             .order(user_sessions::last_activity.desc())
             .load::<UserSession>(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Update session last activity
@@ -89,7 +89,7 @@ impl UserSessionRepository {
 
         diesel::delete(user_sessions::table.filter(user_sessions::expires_at.lt(now)))
             .execute(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Count active sessions for a user
@@ -102,6 +102,6 @@ impl UserSessionRepository {
             .filter(user_sessions::expires_at.gt(now))
             .count()
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 }

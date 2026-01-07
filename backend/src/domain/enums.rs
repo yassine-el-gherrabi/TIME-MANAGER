@@ -10,9 +10,11 @@ use crate::schema::sql_types::UserRole as UserRoleSqlType;
 /// User role enumeration matching the database user_role ENUM
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
 #[diesel(sql_type = UserRoleSqlType)]
+#[derive(Default)]
 pub enum UserRole {
     Admin,
     Manager,
+    #[default]
     Employee,
 }
 
@@ -40,8 +42,3 @@ impl FromSql<UserRoleSqlType, Pg> for UserRole {
     }
 }
 
-impl Default for UserRole {
-    fn default() -> Self {
-        UserRole::Employee
-    }
-}

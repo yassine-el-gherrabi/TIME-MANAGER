@@ -25,7 +25,7 @@ impl PasswordHistoryRepository {
         diesel::insert_into(password_history::table)
             .values(&new_history)
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Get recent password hashes for a user (for preventing reuse)
@@ -38,7 +38,7 @@ impl PasswordHistoryRepository {
             .limit(limit)
             .select(password_history::password_hash)
             .load::<String>(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Check if password was recently used
@@ -66,7 +66,7 @@ impl PasswordHistoryRepository {
                 .filter(password_history::id.ne_all(ids_to_keep))
         )
         .execute(&mut conn)
-        .map_err(|e| AppError::DatabaseError(e))
+        .map_err(AppError::DatabaseError)
     }
 
     /// Get password history count for a user
@@ -77,6 +77,6 @@ impl PasswordHistoryRepository {
             .filter(password_history::user_id.eq(user_id))
             .count()
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 }

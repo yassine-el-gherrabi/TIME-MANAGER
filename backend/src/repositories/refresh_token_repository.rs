@@ -25,7 +25,7 @@ impl RefreshTokenRepository {
         diesel::insert_into(refresh_tokens::table)
             .values(&new_token)
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Find refresh token by token hash
@@ -70,7 +70,7 @@ impl RefreshTokenRepository {
             .filter(refresh_tokens::revoked_at.is_null())
             .filter(refresh_tokens::expires_at.gt(now))
             .load::<RefreshToken>(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Delete expired tokens (cleanup operation)
@@ -80,6 +80,6 @@ impl RefreshTokenRepository {
 
         diesel::delete(refresh_tokens::table.filter(refresh_tokens::expires_at.lt(now)))
             .execute(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 }
