@@ -8,6 +8,7 @@ description = "Time Manager SaaS Backend - Rust/Axum API"
 [dependencies]
 # Web framework
 axum = { version = "0.7", features = ["macros"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip"] }
 hyper = "1.0"

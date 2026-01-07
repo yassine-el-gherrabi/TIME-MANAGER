@@ -215,6 +215,16 @@ tasks:
       - cargo test --lib services
       - echo "✅ Phase 5 validation complete"
 
+  validate:phase6:
+    desc: Validate Phase 6 (Middleware & Extractors)
+    cmds:
+      - echo "📋 Validating Phase 6: Middleware & Extractors Layer"
+      - task: build
+      - task: clippy
+      - cargo test --lib middleware
+      - cargo test --lib extractors
+      - echo "✅ Phase 6 validation complete"
+
   # Docker tasks
   docker:build:
     desc: Build Docker image
