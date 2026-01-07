@@ -1,6 +1,15 @@
 use anyhow::Result;
+use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::PgConnection;
 use dotenvy::dotenv;
 use std::env;
+
+/// Application state shared across handlers
+#[derive(Clone)]
+pub struct AppState {
+    pub config: AppConfig,
+    pub db_pool: Pool<ConnectionManager<PgConnection>>,
+}
 
 #[derive(Debug, Clone)]
 pub struct AppConfig {
