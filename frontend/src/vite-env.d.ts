@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="@testing-library/jest-dom" />
 
 /**
  * Type definitions for Vite environment variables
