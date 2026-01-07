@@ -67,7 +67,11 @@ impl BruteForceService {
 
     /// Check and lock account if too many failed attempts
     pub async fn check_and_lock_account(&self, user_id: Uuid) -> Result<(), AppError> {
-        let failed_attempts = self.user_repo.find_by_id(user_id).await?.failed_login_attempts;
+        let failed_attempts = self
+            .user_repo
+            .find_by_id(user_id)
+            .await?
+            .failed_login_attempts;
 
         if failed_attempts >= MAX_FAILED_ATTEMPTS {
             let locked_until = chrono::Utc::now().naive_utc()

@@ -29,9 +29,9 @@ pub async fn request_reset(
     Json(payload): Json<RequestResetRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
-    payload.validate().map_err(|e| {
-        AppError::ValidationError(format!("Validation failed: {}", e))
-    })?;
+    payload
+        .validate()
+        .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
     // Create password reset service
     let reset_service = PasswordResetService::new(state.db_pool.clone());

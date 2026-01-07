@@ -82,7 +82,11 @@ impl UserRepository {
     }
 
     /// Lock user account until specified time
-    pub async fn lock_account(&self, user_id: Uuid, locked_until: chrono::NaiveDateTime) -> Result<(), AppError> {
+    pub async fn lock_account(
+        &self,
+        user_id: Uuid,
+        locked_until: chrono::NaiveDateTime,
+    ) -> Result<(), AppError> {
         let mut conn = self.pool.get()?;
 
         diesel::update(users::table.find(user_id))
@@ -107,7 +111,11 @@ impl UserRepository {
     }
 
     /// Update password and track history
-    pub async fn update_password(&self, user_id: Uuid, password_hash: &str) -> Result<(), AppError> {
+    pub async fn update_password(
+        &self,
+        user_id: Uuid,
+        password_hash: &str,
+    ) -> Result<(), AppError> {
         let mut conn = self.pool.get()?;
         let now = chrono::Utc::now().naive_utc();
         let expires_at = now + chrono::Duration::days(90); // 90 days password expiry

@@ -29,7 +29,10 @@ impl UserSessionRepository {
     }
 
     /// Get all active sessions for a user
-    pub async fn get_active_sessions_for_user(&self, user_id: Uuid) -> Result<Vec<UserSession>, AppError> {
+    pub async fn get_active_sessions_for_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<UserSession>, AppError> {
         let mut conn = self.pool.get()?;
         let now = chrono::Utc::now().naive_utc();
 
@@ -56,8 +59,7 @@ impl UserSessionRepository {
     pub async fn delete(&self, session_id: Uuid) -> Result<(), AppError> {
         let mut conn = self.pool.get()?;
 
-        diesel::delete(user_sessions::table.find(session_id))
-            .execute(&mut conn)?;
+        diesel::delete(user_sessions::table.find(session_id)).execute(&mut conn)?;
 
         Ok(())
     }
@@ -76,8 +78,10 @@ impl UserSessionRepository {
     pub async fn delete_by_refresh_token(&self, refresh_token_id: Uuid) -> Result<(), AppError> {
         let mut conn = self.pool.get()?;
 
-        diesel::delete(user_sessions::table.filter(user_sessions::refresh_token_id.eq(refresh_token_id)))
-            .execute(&mut conn)?;
+        diesel::delete(
+            user_sessions::table.filter(user_sessions::refresh_token_id.eq(refresh_token_id)),
+        )
+        .execute(&mut conn)?;
 
         Ok(())
     }

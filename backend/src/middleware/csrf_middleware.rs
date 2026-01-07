@@ -34,16 +34,14 @@ pub async fn csrf_middleware(
         .get("Cookie")
         .and_then(|h| h.to_str().ok())
         .and_then(|cookies| {
-            cookies
-                .split(';')
-                .find_map(|cookie| {
-                    let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
-                    if parts.len() == 2 && parts[0] == "csrf_token" {
-                        Some(parts[1])
-                    } else {
-                        None
-                    }
-                })
+            cookies.split(';').find_map(|cookie| {
+                let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                if parts.len() == 2 && parts[0] == "csrf_token" {
+                    Some(parts[1])
+                } else {
+                    None
+                }
+            })
         })
         .ok_or(CsrfMiddlewareError::MissingCookie)?;
 
@@ -67,7 +65,11 @@ pub async fn optional_csrf_middleware(req: Request<Body>, next: Next) -> Respons
     }
 
     // Try to validate if tokens are present
-    if let Some(csrf_token) = req.headers().get("X-CSRF-Token").and_then(|h| h.to_str().ok()) {
+    if let Some(csrf_token) = req
+        .headers()
+        .get("X-CSRF-Token")
+        .and_then(|h| h.to_str().ok())
+    {
         if let Some(cookie_token) = req.headers().get("Cookie").and_then(|h| h.to_str().ok()) {
             if let Some(cookie_value) = cookie_token.split(';').find_map(|cookie| {
                 let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
@@ -109,9 +111,7 @@ impl IntoResponse for CsrfMiddlewareError {
             CsrfMiddlewareError::MissingCookie => {
                 (StatusCode::FORBIDDEN, "Missing CSRF token in cookie")
             }
-            CsrfMiddlewareError::TokenMismatch => {
-                (StatusCode::FORBIDDEN, "CSRF token mismatch")
-            }
+            CsrfMiddlewareError::TokenMismatch => (StatusCode::FORBIDDEN, "CSRF token mismatch"),
         };
 
         let body = Json(json!({

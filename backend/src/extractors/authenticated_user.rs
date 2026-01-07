@@ -35,8 +35,7 @@ where
             .map_err(|_| AuthError::MissingToken)?;
 
         // Get JWT secret from environment
-        let jwt_secret = std::env::var("JWT_SECRET")
-            .map_err(|_| AuthError::InvalidToken)?;
+        let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| AuthError::InvalidToken)?;
 
         // Create JWT service and validate token
         let jwt_service = JwtService::new(&jwt_secret);
@@ -58,14 +57,8 @@ pub enum AuthError {
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            AuthError::MissingToken => (
-                StatusCode::UNAUTHORIZED,
-                "Missing authentication token",
-            ),
-            AuthError::InvalidToken => (
-                StatusCode::UNAUTHORIZED,
-                "Invalid or expired token",
-            ),
+            AuthError::MissingToken => (StatusCode::UNAUTHORIZED, "Missing authentication token"),
+            AuthError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid or expired token"),
         };
 
         let body = Json(json!({

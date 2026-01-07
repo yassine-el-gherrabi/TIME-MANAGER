@@ -30,8 +30,7 @@ pub async fn auth_middleware(
         .ok_or(AuthMiddlewareError::InvalidFormat)?;
 
     // Get JWT secret from environment
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .map_err(|_| AuthMiddlewareError::ConfigError)?;
+    let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| AuthMiddlewareError::ConfigError)?;
 
     // Validate token
     let jwt_service = JwtService::new(&jwt_secret);
@@ -82,15 +81,17 @@ impl IntoResponse for AuthMiddlewareError {
             AuthMiddlewareError::MissingToken => {
                 (StatusCode::UNAUTHORIZED, "Missing authentication token")
             }
-            AuthMiddlewareError::InvalidFormat => {
-                (StatusCode::UNAUTHORIZED, "Invalid authorization header format")
-            }
+            AuthMiddlewareError::InvalidFormat => (
+                StatusCode::UNAUTHORIZED,
+                "Invalid authorization header format",
+            ),
             AuthMiddlewareError::InvalidToken => {
                 (StatusCode::UNAUTHORIZED, "Invalid or expired token")
             }
-            AuthMiddlewareError::ConfigError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Server configuration error")
-            }
+            AuthMiddlewareError::ConfigError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Server configuration error",
+            ),
         };
 
         let body = Json(json!({

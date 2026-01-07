@@ -19,7 +19,7 @@ impl JwtService {
         Self {
             encoding_key: EncodingKey::from_secret(secret.as_bytes()),
             decoding_key: DecodingKey::from_secret(secret.as_bytes()),
-            access_token_expiry: 15 * 60,      // 15 minutes
+            access_token_expiry: 15 * 60,           // 15 minutes
             refresh_token_expiry: 7 * 24 * 60 * 60, // 7 days
         }
     }
@@ -86,13 +86,9 @@ impl JwtService {
 
     /// Extract user ID from token without full validation (for logging/metrics)
     pub fn extract_user_id_unchecked(&self, token: &str) -> Option<Uuid> {
-        decode::<Claims>(
-            token,
-            &self.decoding_key,
-            &Validation::default(),
-        )
-        .ok()
-        .map(|data| data.claims.sub)
+        decode::<Claims>(token, &self.decoding_key, &Validation::default())
+            .ok()
+            .map(|data| data.claims.sub)
     }
 
     /// Check if token is expired

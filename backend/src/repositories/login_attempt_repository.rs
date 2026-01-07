@@ -28,9 +28,14 @@ impl LoginAttemptRepository {
     }
 
     /// Count failed login attempts for email within timeframe (minutes)
-    pub async fn count_failed_attempts_for_email(&self, email: &str, within_minutes: i64) -> Result<i64, AppError> {
+    pub async fn count_failed_attempts_for_email(
+        &self,
+        email: &str,
+        within_minutes: i64,
+    ) -> Result<i64, AppError> {
         let mut conn = self.pool.get()?;
-        let cutoff_time = chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
+        let cutoff_time =
+            chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
 
         login_attempts::table
             .filter(login_attempts::email.eq(email))
@@ -42,9 +47,14 @@ impl LoginAttemptRepository {
     }
 
     /// Count failed login attempts for IP within timeframe (minutes)
-    pub async fn count_failed_attempts_for_ip(&self, ip_address: &str, within_minutes: i64) -> Result<i64, AppError> {
+    pub async fn count_failed_attempts_for_ip(
+        &self,
+        ip_address: &str,
+        within_minutes: i64,
+    ) -> Result<i64, AppError> {
         let mut conn = self.pool.get()?;
-        let cutoff_time = chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
+        let cutoff_time =
+            chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
 
         login_attempts::table
             .filter(login_attempts::ip_address.eq(ip_address))
@@ -56,7 +66,11 @@ impl LoginAttemptRepository {
     }
 
     /// Get recent login attempts for email
-    pub async fn get_recent_attempts_for_email(&self, email: &str, limit: i64) -> Result<Vec<LoginAttempt>, AppError> {
+    pub async fn get_recent_attempts_for_email(
+        &self,
+        email: &str,
+        limit: i64,
+    ) -> Result<Vec<LoginAttempt>, AppError> {
         let mut conn = self.pool.get()?;
 
         login_attempts::table

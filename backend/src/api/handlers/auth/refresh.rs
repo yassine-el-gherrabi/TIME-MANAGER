@@ -28,9 +28,9 @@ pub async fn refresh(
     Json(payload): Json<RefreshRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
-    payload.validate().map_err(|e| {
-        AppError::ValidationError(format!("Validation failed: {}", e))
-    })?;
+    payload
+        .validate()
+        .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
     // Create JWT service and auth service
     let jwt_service = crate::utils::JwtService::new(&state.config.jwt_secret);

@@ -41,4 +41,3 @@ impl FromSql<UserRoleSqlType, Pg> for UserRole {
         }
     }
 }
-

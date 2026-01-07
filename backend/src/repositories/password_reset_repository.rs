@@ -19,7 +19,10 @@ impl PasswordResetRepository {
     }
 
     /// Create a new password reset token
-    pub async fn create(&self, new_token: NewPasswordResetToken) -> Result<PasswordResetToken, AppError> {
+    pub async fn create(
+        &self,
+        new_token: NewPasswordResetToken,
+    ) -> Result<PasswordResetToken, AppError> {
         let mut conn = self.pool.get()?;
 
         diesel::insert_into(password_reset_tokens::table)
@@ -29,14 +32,19 @@ impl PasswordResetRepository {
     }
 
     /// Find password reset token by token hash
-    pub async fn find_by_token_hash(&self, token_hash: &str) -> Result<PasswordResetToken, AppError> {
+    pub async fn find_by_token_hash(
+        &self,
+        token_hash: &str,
+    ) -> Result<PasswordResetToken, AppError> {
         let mut conn = self.pool.get()?;
 
         password_reset_tokens::table
             .filter(password_reset_tokens::token_hash.eq(token_hash))
             .filter(password_reset_tokens::used_at.is_null())
             .first::<PasswordResetToken>(&mut conn)
-            .map_err(|_| AppError::NotFound("Password reset token not found or already used".to_string()))
+            .map_err(|_| {
+                AppError::NotFound("Password reset token not found or already used".to_string())
+            })
     }
 
     /// Mark token as used
@@ -54,9 +62,11 @@ impl PasswordResetRepository {
     pub async fn invalidate_all_for_user(&self, user_id: Uuid) -> Result<(), AppError> {
         let mut conn = self.pool.get()?;
 
-        diesel::update(password_reset_tokens::table.filter(password_reset_tokens::user_id.eq(user_id)))
-            .set(password_reset_tokens::used_at.eq(Some(chrono::Utc::now().naive_utc())))
-            .execute(&mut conn)?;
+        diesel::update(
+            password_reset_tokens::table.filter(password_reset_tokens::user_id.eq(user_id)),
+        )
+        .set(password_reset_tokens::used_at.eq(Some(chrono::Utc::now().naive_utc())))
+        .execute(&mut conn)?;
 
         Ok(())
     }
@@ -66,9 +76,11 @@ impl PasswordResetRepository {
         let mut conn = self.pool.get()?;
         let now = chrono::Utc::now().naive_utc();
 
-        diesel::delete(password_reset_tokens::table.filter(password_reset_tokens::expires_at.lt(now)))
-            .execute(&mut conn)
-            .map_err(AppError::DatabaseError)
+        diesel::delete(
+            password_reset_tokens::table.filter(password_reset_tokens::expires_at.lt(now)),
+        )
+        .execute(&mut conn)
+        .map_err(AppError::DatabaseError)
     }
 
     /// Check if token is valid (not expired, not used)

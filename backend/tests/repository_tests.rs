@@ -19,7 +19,9 @@ fn create_test_pool() -> DbPool {
 #[cfg(test)]
 mod repository_integration_tests {
     use super::*;
-    use timemanager_backend::models::{NewRefreshToken, NewLoginAttempt, NewPasswordHistory, NewPasswordResetToken, NewUserSession};
+    use timemanager_backend::models::{
+        NewLoginAttempt, NewPasswordHistory, NewPasswordResetToken, NewRefreshToken, NewUserSession,
+    };
     use timemanager_backend::repositories::*;
 
     #[tokio::test]
@@ -110,8 +112,8 @@ mod repository_integration_tests {
 #[cfg(test)]
 mod repository_unit_tests {
     use super::*;
-    use timemanager_backend::models::RefreshToken;
     use chrono::NaiveDateTime;
+    use timemanager_backend::models::RefreshToken;
 
     #[test]
     fn test_refresh_token_is_valid() {

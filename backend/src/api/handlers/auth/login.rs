@@ -34,9 +34,9 @@ pub async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
-    payload.validate().map_err(|e| {
-        AppError::ValidationError(format!("Validation failed: {}", e))
-    })?;
+    payload
+        .validate()
+        .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
     // Create services
     let brute_force_service = BruteForceService::new(state.db_pool.clone());
@@ -54,7 +54,10 @@ pub async fn login(
     }
 
     // Check if email is rate limited
-    if brute_force_service.is_email_rate_limited(&payload.email).await? {
+    if brute_force_service
+        .is_email_rate_limited(&payload.email)
+        .await?
+    {
         return Err(AppError::TooManyRequests(
             "Too many failed login attempts for this account. Please try again later.".to_string(),
         ));

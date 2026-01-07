@@ -10,6 +10,8 @@ pub mod session_service;
 // Re-export commonly used types
 pub use auth_service::AuthService;
 pub use brute_force_service::BruteForceService;
-pub use password_expiry_service::{PasswordExpiryPolicy, PasswordExpiryService, PasswordExpiryStatus};
+pub use password_expiry_service::{
+    PasswordExpiryPolicy, PasswordExpiryService, PasswordExpiryStatus,
+};
 pub use password_reset_service::PasswordResetService;
 pub use session_service::SessionService;

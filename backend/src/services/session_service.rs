@@ -42,7 +42,9 @@ impl SessionService {
 
     /// Get all active sessions for a user
     pub async fn get_user_sessions(&self, user_id: Uuid) -> Result<Vec<UserSession>, AppError> {
-        self.session_repo.get_active_sessions_for_user(user_id).await
+        self.session_repo
+            .get_active_sessions_for_user(user_id)
+            .await
     }
 
     /// Update session last activity timestamp
@@ -61,10 +63,7 @@ impl SessionService {
     }
 
     /// Delete session by refresh token ID
-    pub async fn delete_session_by_token(
-        &self,
-        refresh_token_id: Uuid,
-    ) -> Result<(), AppError> {
+    pub async fn delete_session_by_token(&self, refresh_token_id: Uuid) -> Result<(), AppError> {
         self.session_repo
             .delete_by_refresh_token(refresh_token_id)
             .await
@@ -97,15 +96,15 @@ impl SessionService {
 
     /// Revoke oldest session if limit is reached
     pub async fn revoke_oldest_if_limit_reached(&self, user_id: Uuid) -> Result<(), AppError> {
-        let sessions = self.session_repo.get_active_sessions_for_user(user_id).await?;
+        let sessions = self
+            .session_repo
+            .get_active_sessions_for_user(user_id)
+            .await?;
         const MAX_SESSIONS: usize = 5;
 
         if sessions.len() >= MAX_SESSIONS {
             // Find oldest session by created_at
-            if let Some(oldest) = sessions
-                .iter()
-                .min_by_key(|s| s.created_at)
-            {
+            if let Some(oldest) = sessions.iter().min_by_key(|s| s.created_at) {
                 self.session_repo.delete(oldest.id).await?;
             }
         }

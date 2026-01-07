@@ -43,8 +43,7 @@ impl PasswordResetService {
         let token_hash = hash_token(&reset_token);
 
         // Set expiry (1 hour from now)
-        let expires_at =
-            chrono::Utc::now().naive_utc() + chrono::Duration::hours(1);
+        let expires_at = chrono::Utc::now().naive_utc() + chrono::Duration::hours(1);
 
         // Create reset token record
         let new_token = NewPasswordResetToken {
@@ -95,7 +94,8 @@ impl PasswordResetService {
 
         // Check password history (prevent reuse of last 5 passwords)
         let password_hash = self.password_service.hash_password(new_password)?;
-        let was_used = self.password_history_repo
+        let was_used = self
+            .password_history_repo
             .was_recently_used(stored_token.user_id, &password_hash, 5)
             .await?;
 
@@ -115,14 +115,10 @@ impl PasswordResetService {
             user_id: stored_token.user_id,
             password_hash: password_hash.clone(),
         };
-        self.password_history_repo
-            .add(new_history)
-            .await?;
+        self.password_history_repo.add(new_history).await?;
 
         // Mark token as used
-        self.reset_token_repo
-            .mark_as_used(stored_token.id)
-            .await?;
+        self.reset_token_repo.mark_as_used(stored_token.id).await?;
 
         // Unlock account if it was locked
         self.user_repo.unlock_account(stored_token.user_id).await?;
@@ -157,7 +153,8 @@ impl PasswordResetService {
 
         // Check password history (prevent reuse of last 5 passwords)
         let new_password_hash = self.password_service.hash_password(new_password)?;
-        let was_used = self.password_history_repo
+        let was_used = self
+            .password_history_repo
             .was_recently_used(user_id, &new_password_hash, 5)
             .await?;
 
@@ -177,9 +174,7 @@ impl PasswordResetService {
             user_id,
             password_hash: new_password_hash,
         };
-        self.password_history_repo
-            .add(new_history)
-            .await?;
+        self.password_history_repo.add(new_history).await?;
 
         Ok(())
     }

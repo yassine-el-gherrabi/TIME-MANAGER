@@ -61,7 +61,10 @@ impl RefreshTokenRepository {
     }
 
     /// Get all active tokens for a user
-    pub async fn get_active_tokens_for_user(&self, user_id: Uuid) -> Result<Vec<RefreshToken>, AppError> {
+    pub async fn get_active_tokens_for_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<RefreshToken>, AppError> {
         let mut conn = self.pool.get()?;
         let now = chrono::Utc::now().naive_utc();
 

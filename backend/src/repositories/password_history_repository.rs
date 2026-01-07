@@ -29,7 +29,11 @@ impl PasswordHistoryRepository {
     }
 
     /// Get recent password hashes for a user (for preventing reuse)
-    pub async fn get_recent_hashes(&self, user_id: Uuid, limit: i64) -> Result<Vec<String>, AppError> {
+    pub async fn get_recent_hashes(
+        &self,
+        user_id: Uuid,
+        limit: i64,
+    ) -> Result<Vec<String>, AppError> {
         let mut conn = self.pool.get()?;
 
         password_history::table
@@ -42,13 +46,22 @@ impl PasswordHistoryRepository {
     }
 
     /// Check if password was recently used
-    pub async fn was_recently_used(&self, user_id: Uuid, password_hash: &str, check_last_n: i64) -> Result<bool, AppError> {
+    pub async fn was_recently_used(
+        &self,
+        user_id: Uuid,
+        password_hash: &str,
+        check_last_n: i64,
+    ) -> Result<bool, AppError> {
         let recent_hashes = self.get_recent_hashes(user_id, check_last_n).await?;
         Ok(recent_hashes.contains(&password_hash.to_string()))
     }
 
     /// Delete old password history entries (cleanup operation)
-    pub async fn delete_older_than(&self, user_id: Uuid, keep_last_n: i64) -> Result<usize, AppError> {
+    pub async fn delete_older_than(
+        &self,
+        user_id: Uuid,
+        keep_last_n: i64,
+    ) -> Result<usize, AppError> {
         let mut conn = self.pool.get()?;
 
         // Get IDs of entries to keep
@@ -63,7 +76,7 @@ impl PasswordHistoryRepository {
         diesel::delete(
             password_history::table
                 .filter(password_history::user_id.eq(user_id))
-                .filter(password_history::id.ne_all(ids_to_keep))
+                .filter(password_history::id.ne_all(ids_to_keep)),
         )
         .execute(&mut conn)
         .map_err(AppError::DatabaseError)
