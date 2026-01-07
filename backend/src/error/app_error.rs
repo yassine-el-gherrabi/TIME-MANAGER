@@ -29,6 +29,12 @@ pub enum AppError {
     #[error("Forbidden: {0}")]
     Forbidden(String),
 
+    #[error("Conflict: {0}")]
+    Conflict(String),
+
+    #[error("Too many requests: {0}")]
+    TooManyRequests(String),
+
     #[error("Internal server error")]
     InternalError,
 }
@@ -84,6 +90,18 @@ impl IntoResponse for AppError {
                 StatusCode::FORBIDDEN,
                 "Forbidden",
                 "Access denied",
+                Some(msg),
+            ),
+            AppError::Conflict(msg) => (
+                StatusCode::CONFLICT,
+                "Conflict",
+                "Resource conflict",
+                Some(msg),
+            ),
+            AppError::TooManyRequests(msg) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "TooManyRequests",
+                "Too many requests",
                 Some(msg),
             ),
             AppError::InternalError => (

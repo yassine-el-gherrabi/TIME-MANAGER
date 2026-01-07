@@ -35,6 +35,9 @@ metrics-exporter-prometheus = "0.13"
 # Authentication (for Epic 2, defined now)
 jsonwebtoken = "9.2"
 argon2 = { version = "0.5", features = ["std"] }
+sha2 = "0.10"
+hex = "0.4"
+rand = "0.8"
 
 # Validation
 validator = { version = "0.16", features = ["derive"] }

@@ -206,6 +206,15 @@ tasks:
       - cargo test --lib utils
       - echo "✅ Phase 4 validation complete"
 
+  validate:phase5:
+    desc: Validate Phase 5 (Service Layer)
+    cmds:
+      - echo "📋 Validating Phase 5: Service Layer"
+      - task: build
+      - task: clippy
+      - cargo test --lib services
+      - echo "✅ Phase 5 validation complete"
+
   # Docker tasks
   docker:build:
     desc: Build Docker image
