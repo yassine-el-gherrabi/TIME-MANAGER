@@ -54,18 +54,97 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use tower::Service;
+    use diesel::r2d2::{ConnectionManager, Pool};
+    use diesel::PgConnection;
+    use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+    use std::sync::Arc;
+    use testcontainers::{clients::Cli, Container};
+    use testcontainers_modules::postgres::Postgres;
+    use tower::ServiceExt;
 
-    // TODO: Fix this test - needs proper AppState mock with database pool
+    use crate::config::app::{AppConfig, AppState};
+    use crate::config::email::EmailConfig;
+    use crate::config::hibp::HibpConfig;
+    use crate::services::{EmailService, HibpService};
+
+    const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
+
+    /// Creates a PostgreSQL container for integration testing
+    fn setup_postgres_container(docker: &Cli) -> Container<Postgres> {
+        docker.run(Postgres::default())
+    }
+
+    /// Gets the database URL from a running container
+    fn get_container_db_url(container: &Container<Postgres>) -> String {
+        let port = container.get_host_port_ipv4(5432);
+        format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port)
+    }
+
+    /// Creates a test AppConfig with disabled services
+    fn create_test_config(database_url: &str) -> AppConfig {
+        AppConfig {
+            app_host: "127.0.0.1".to_string(),
+            app_port: 8080,
+            database_url: database_url.to_string(),
+            rust_log: "info".to_string(),
+            jwt_secret: "test-secret-key-for-integration-tests-minimum-32-chars".to_string(),
+            jwt_access_token_expiry_seconds: 900,
+            jwt_refresh_token_expiry_seconds: 604800,
+            cors_allowed_origins: vec!["http://localhost:3000".to_string()],
+            metrics_enabled: false,
+            email: EmailConfig {
+                smtp_host: "localhost".to_string(),
+                smtp_port: 1025,
+                smtp_username: None,
+                smtp_password: None,
+                from_email: "test@example.com".to_string(),
+                from_name: "Test".to_string(),
+                frontend_url: "http://localhost:5173".to_string(),
+                enabled: false,
+            },
+            hibp: HibpConfig::disabled(),
+        }
+    }
+
+    /// Creates a test AppState with real database connection
+    fn create_test_state(database_url: &str) -> AppState {
+        let config = create_test_config(database_url);
+
+        let manager = ConnectionManager::<PgConnection>::new(&config.database_url);
+        let db_pool = Pool::builder()
+            .max_size(5)
+            .build(manager)
+            .expect("Failed to create test pool");
+
+        // Run migrations
+        let mut conn = db_pool.get().expect("Failed to get connection");
+        conn.run_pending_migrations(MIGRATIONS)
+            .expect("Failed to run migrations");
+
+        let email_service = EmailService::new(config.email.clone())
+            .expect("Failed to create email service");
+        let hibp_service = HibpService::new(config.hibp.clone());
+
+        AppState {
+            config,
+            db_pool,
+            email_service: Arc::new(email_service),
+            hibp_service: Arc::new(hibp_service),
+        }
+    }
+
     #[tokio::test]
-    #[ignore = "Requires AppState mock with database pool"]
-    async fn test_health_route() {
-        // This test needs a proper AppState with db_pool to work
-        // For now, router integration is tested via E2E tests
-        let _app: Router = todo!("Create mock AppState");
+    #[ignore = "Requires Docker - run with: cargo test -- --ignored"]
+    async fn test_health_route_with_testcontainers() {
+        let docker = Cli::default();
+        let container = setup_postgres_container(&docker);
+        let db_url = get_container_db_url(&container);
 
-        let response = _app
-            .call(
+        let state = create_test_state(&db_url);
+        let app = create_router(state);
+
+        let response = app
+            .oneshot(
                 Request::builder()
                     .uri("/health")
                     .body(Body::empty())
@@ -75,5 +154,57 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires Docker - run with: cargo test -- --ignored"]
+    async fn test_login_route_validation() {
+        let docker = Cli::default();
+        let container = setup_postgres_container(&docker);
+        let db_url = get_container_db_url(&container);
+
+        let state = create_test_state(&db_url);
+        let app = create_router(state);
+
+        // Test with invalid JSON
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/v1/auth/login")
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(r#"{"invalid": "data"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // Should return 400 Bad Request for missing required fields
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires Docker - run with: cargo test -- --ignored"]
+    async fn test_protected_route_without_auth() {
+        let docker = Cli::default();
+        let container = setup_postgres_container(&docker);
+        let db_url = get_container_db_url(&container);
+
+        let state = create_test_state(&db_url);
+        let app = create_router(state);
+
+        // Try to access /me without auth
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/auth/me")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // Should return 401 Unauthorized
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 }
