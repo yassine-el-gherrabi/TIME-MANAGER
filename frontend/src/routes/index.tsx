@@ -2,12 +2,14 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../components/auth';
 import { MainLayout } from '../components/layout';
 import { DashboardPage } from '../pages/DashboardPage';
+import { ClockPage } from '../pages/ClockPage';
+import { PendingApprovalsPage } from '../pages/PendingApprovalsPage';
 import { LoginPage } from '../pages/LoginPage';
 import { PasswordResetRequestPage } from '../pages/PasswordResetRequestPage';
 import { PasswordResetPage } from '../pages/PasswordResetPage';
 import { AcceptInvitePage } from '../pages/AcceptInvitePage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
-import { UsersPage, CreateUserPage, EditUserPage } from '../pages/admin';
+import { UsersPage, TeamsPage, SchedulesPage } from '../pages/admin';
 import { ChangePasswordPage, SessionsPage } from '../pages/settings';
 import { UserRole } from '../types/auth';
 
@@ -18,6 +20,26 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <MainLayout>
           <DashboardPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/clock',
+    element: (
+      <ProtectedRoute>
+        <MainLayout>
+          <ClockPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/clock/pending',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Manager}>
+        <MainLayout>
+          <PendingApprovalsPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -49,21 +71,21 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/admin/users/new',
+    path: '/admin/teams',
     element: (
       <ProtectedRoute requiredRole={UserRole.Admin}>
         <MainLayout>
-          <CreateUserPage />
+          <TeamsPage />
         </MainLayout>
       </ProtectedRoute>
     ),
   },
   {
-    path: '/admin/users/:id/edit',
+    path: '/admin/schedules',
     element: (
       <ProtectedRoute requiredRole={UserRole.Admin}>
         <MainLayout>
-          <EditUserPage />
+          <SchedulesPage />
         </MainLayout>
       </ProtectedRoute>
     ),

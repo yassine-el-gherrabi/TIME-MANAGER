@@ -1,7 +1,19 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import type { UserRole } from '../../types/auth';
+import { UserRole } from '../../types/auth';
+
+/**
+ * Role hierarchy for permission checking.
+ * Higher number = more permissions.
+ * SuperAdmin > Admin > Manager > Employee
+ */
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+  [UserRole.Employee]: 0,
+  [UserRole.Manager]: 1,
+  [UserRole.Admin]: 2,
+  [UserRole.SuperAdmin]: 3,
+};
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -34,10 +46,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectTo} state={{ from: location.pathname }} replace />;
   }
 
-  // Check role requirements if specified
+  // Check role requirements if specified (using hierarchical comparison)
   if (requiredRole) {
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    const hasRequiredRole = roles.includes(user.role);
+    // User has access if their role level >= any of the required role levels
+    const userRoleLevel = ROLE_HIERARCHY[user.role] ?? 0;
+    const hasRequiredRole = roles.some(
+      (role) => userRoleLevel >= (ROLE_HIERARCHY[role] ?? 0)
+    );
 
     if (!hasRequiredRole) {
       return <Navigate to="/unauthorized" state={{ from: location.pathname }} replace />;

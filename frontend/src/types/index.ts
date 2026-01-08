@@ -39,5 +39,63 @@ export type {
   DeleteUserResponse,
 } from './user';
 
+// Clock types
+export type {
+  ClockEntryStatus,
+  ClockEntry,
+  ClockEntryResponse,
+  ClockStatus,
+  ClockInRequest,
+  ClockOutRequest,
+  RejectEntryRequest,
+  ClockHistoryParams,
+  PaginatedClockHistoryResponse,
+  PendingEntriesParams,
+  PaginatedPendingResponse,
+} from './clock';
+
+// Team types
+export type {
+  Team,
+  TeamResponse,
+  TeamMemberInfo,
+  TeamWithMembers,
+  CreateTeamRequest,
+  UpdateTeamRequest,
+  AddMemberRequest,
+  TeamMember,
+  ListTeamsParams,
+  PaginatedTeamsResponse,
+} from './team';
+
+// Schedule types
+export type {
+  WorkSchedule,
+  WorkScheduleDay,
+  WorkScheduleWithDays,
+  DayConfig,
+  CreateScheduleRequest,
+  UpdateScheduleRequest,
+  AddDayRequest,
+  UpdateDayRequest,
+  AssignScheduleRequest,
+} from './schedule';
+export { DAY_LABELS } from './schedule';
+
+// KPI types
+export type {
+  UserKPIs,
+  MemberKPISummary,
+  TeamKPIs,
+  OrgKPIs,
+  PresentUser,
+  PresenceOverview,
+  ChartDataPoint,
+  ChartData,
+  KPIQueryParams,
+  ChartQueryParams,
+  DateRange,
+} from './kpi';
+
 // Re-export enums
 export { UserRole } from './auth';

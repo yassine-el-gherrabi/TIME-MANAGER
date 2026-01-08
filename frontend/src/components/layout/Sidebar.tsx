@@ -7,9 +7,12 @@ import {
   MonitorSmartphone,
   LogOut,
   Clock,
+  ClipboardCheck,
+  Timer,
 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
+import { ClockStatusIndicator } from '../clock/ClockStatusIndicator';
 import { useAuthStore } from '../../stores/authStore';
 import { UserRole } from '../../types/auth';
 
@@ -23,7 +26,7 @@ export const Sidebar: FC = () => {
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-background">
+    <aside className="sticky top-0 flex h-screen w-64 flex-col border-r bg-background">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 border-b px-6">
         <Clock className="h-6 w-6 text-primary" />
@@ -35,12 +38,35 @@ export const Sidebar: FC = () => {
         <NavLink to="/" icon={<LayoutDashboard className="h-4 w-4" />} end>
           Dashboard
         </NavLink>
+        <NavLink to="/clock" icon={<Timer className="h-4 w-4" />} end>
+          <span className="flex items-center gap-2">
+            Time Clock
+            <ClockStatusIndicator />
+          </span>
+        </NavLink>
+
+        {/* Manager+ Section */}
+        {(user?.role === UserRole.Manager || user?.role === UserRole.Admin || user?.role === UserRole.SuperAdmin) && (
+          <div className="pt-4">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Management
+            </p>
+            <NavLink to="/clock/pending" icon={<ClipboardCheck className="h-4 w-4" />}>
+              Pending Approvals
+            </NavLink>
+          </div>
+        )}
 
         {/* Admin Only */}
-        {user?.role === UserRole.Admin && (
-          <NavLink to="/admin/users" icon={<Users className="h-4 w-4" />}>
-            Users
-          </NavLink>
+        {(user?.role === UserRole.Admin || user?.role === UserRole.SuperAdmin) && (
+          <div className="pt-4">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Admin
+            </p>
+            <NavLink to="/admin/users" icon={<Users className="h-4 w-4" />}>
+              Users
+            </NavLink>
+          </div>
         )}
 
         {/* Settings Section */}

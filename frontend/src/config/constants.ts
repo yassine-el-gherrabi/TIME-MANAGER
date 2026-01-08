@@ -46,6 +46,61 @@ export const USER_ENDPOINTS = {
   UPDATE: (id: string) => `/users/${id}`,
   DELETE: (id: string) => `/users/${id}`,
   RESEND_INVITE: (id: string) => `/users/${id}/resend-invite`,
+  ASSIGN_SCHEDULE: (id: string) => `/users/${id}/schedule`,
+} as const;
+
+/**
+ * Clock endpoints
+ */
+export const CLOCK_ENDPOINTS = {
+  CLOCK_IN: '/clocks/in',
+  CLOCK_OUT: '/clocks/out',
+  STATUS: '/clocks/status',
+  HISTORY: '/clocks/history',
+  PENDING: '/clocks/pending',
+  APPROVE: (id: string) => `/clocks/${id}/approve`,
+  REJECT: (id: string) => `/clocks/${id}/reject`,
+} as const;
+
+/**
+ * Team endpoints
+ */
+export const TEAM_ENDPOINTS = {
+  LIST: '/teams',
+  CREATE: '/teams',
+  MY_TEAMS: '/teams/my',
+  GET: (id: string) => `/teams/${id}`,
+  UPDATE: (id: string) => `/teams/${id}`,
+  DELETE: (id: string) => `/teams/${id}`,
+  ADD_MEMBER: (id: string) => `/teams/${id}/members`,
+  REMOVE_MEMBER: (teamId: string, userId: string) => `/teams/${teamId}/members/${userId}`,
+} as const;
+
+/**
+ * Schedule endpoints
+ */
+export const SCHEDULE_ENDPOINTS = {
+  LIST: '/schedules',
+  CREATE: '/schedules',
+  MY_SCHEDULE: '/schedules/me',
+  GET: (id: string) => `/schedules/${id}`,
+  UPDATE: (id: string) => `/schedules/${id}`,
+  DELETE: (id: string) => `/schedules/${id}`,
+  ADD_DAY: (id: string) => `/schedules/${id}/days`,
+  UPDATE_DAY: (dayId: string) => `/schedules/days/${dayId}`,
+  REMOVE_DAY: (dayId: string) => `/schedules/days/${dayId}`,
+} as const;
+
+/**
+ * KPI endpoints
+ */
+export const KPI_ENDPOINTS = {
+  MY_KPIS: '/kpis/me',
+  USER_KPIS: (id: string) => `/kpis/users/${id}`,
+  TEAM_KPIS: (id: string) => `/kpis/teams/${id}`,
+  ORG_KPIS: '/kpis/organization',
+  PRESENCE: '/kpis/presence',
+  CHARTS: '/kpis/charts',
 } as const;
 
 /**
