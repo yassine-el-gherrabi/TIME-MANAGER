@@ -31,7 +31,6 @@ describe('useAuth Hooks', () => {
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
       expect(result.current.isLoading).toBe(false);
-      expect(typeof result.current.register).toBe('function');
       expect(typeof result.current.login).toBe('function');
       expect(typeof result.current.logout).toBe('function');
       expect(typeof result.current.logoutAll).toBe('function');

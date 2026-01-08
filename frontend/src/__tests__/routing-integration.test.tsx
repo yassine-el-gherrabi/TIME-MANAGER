@@ -32,17 +32,6 @@ describe('Routing Integration Tests', () => {
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
   });
 
-  it('should render register page', () => {
-    const testRouter = createMemoryRouter(router.routes, {
-      initialEntries: ['/register'],
-    });
-
-    render(<RouterProvider router={testRouter} />);
-
-    expect(screen.getByRole('heading', { name: /register/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
-  });
-
   it('should render password reset request page', () => {
     const testRouter = createMemoryRouter(router.routes, {
       initialEntries: ['/password-reset-request'],
@@ -50,7 +39,9 @@ describe('Routing Integration Tests', () => {
 
     render(<RouterProvider router={testRouter} />);
 
-    expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument();
+    // Multiple headings may exist (AuthLayout title + CardTitle), check at least one exists
+    const headings = screen.getAllByRole('heading', { name: /reset password/i });
+    expect(headings.length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
   });
 

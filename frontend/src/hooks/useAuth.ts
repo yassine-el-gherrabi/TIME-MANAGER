@@ -8,7 +8,6 @@
 import { useAuthStore } from '../stores/authStore';
 import type {
   User,
-  RegisterRequest,
   LoginRequest,
 } from '../types/auth';
 
@@ -22,7 +21,6 @@ export interface UseAuthReturn {
   isLoading: boolean;
 
   // Actions
-  register: (data: RegisterRequest) => Promise<void>;
   login: (data: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
@@ -55,7 +53,6 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isAuthenticated,
     isLoading,
-    register,
     login,
     logout,
     logoutAll,
@@ -69,7 +66,6 @@ export const useAuth = (): UseAuthReturn => {
     isLoading,
 
     // Actions
-    register,
     login,
     logout,
     logoutAll,

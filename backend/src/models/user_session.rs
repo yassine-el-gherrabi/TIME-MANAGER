@@ -11,7 +11,6 @@ pub struct UserSession {
     pub id: Uuid,
     pub user_id: Uuid,
     pub refresh_token_id: Uuid,
-    pub ip_address: String,
     pub user_agent: Option<String>,
     pub created_at: NaiveDateTime,
     pub last_activity: NaiveDateTime,
@@ -23,7 +22,6 @@ pub struct UserSession {
 pub struct NewUserSession {
     pub user_id: Uuid,
     pub refresh_token_id: Uuid,
-    pub ip_address: String,
     pub user_agent: Option<String>,
     pub expires_at: NaiveDateTime,
 }

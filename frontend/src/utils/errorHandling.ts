@@ -22,6 +22,10 @@ export const mapErrorToMessage = (error: unknown): string => {
         return ERROR_MESSAGES.VALIDATION_ERROR;
 
       case 401:
+        // For login errors, use the backend message if available
+        if (apiError.message && apiError.message !== 'Unauthorized') {
+          return apiError.message;
+        }
         return ERROR_MESSAGES.UNAUTHORIZED;
 
       case 403:

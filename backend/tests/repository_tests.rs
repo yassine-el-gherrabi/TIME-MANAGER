@@ -17,15 +17,63 @@ fn create_test_pool() -> DbPool {
 }
 
 #[cfg(test)]
+mod testcontainers_integration {
+    use super::*;
+    use testcontainers::{clients::Cli, Container};
+    use testcontainers_modules::postgres::Postgres;
+
+    /// Creates a PostgreSQL container for integration testing.
+    /// Note: Requires Docker to be running.
+    fn setup_postgres_container(docker: &Cli) -> Container<Postgres> {
+        docker.run(Postgres::default())
+    }
+
+    /// Gets the database URL from a running container
+    fn get_container_db_url(container: &Container<Postgres>) -> String {
+        let port = container.get_host_port_ipv4(5432);
+        format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port)
+    }
+
+    #[test]
+    #[ignore = "Requires Docker - run with: cargo test -- --ignored"]
+    fn test_postgres_container_starts() {
+        let docker = Cli::default();
+        let container = setup_postgres_container(&docker);
+        let db_url = get_container_db_url(&container);
+
+        // Verify we can connect
+        let manager = ConnectionManager::<PgConnection>::new(&db_url);
+        let pool = Pool::builder()
+            .max_size(1)
+            .build(manager)
+            .expect("Failed to create pool");
+
+        let mut conn = pool.get().expect("Failed to get connection");
+
+        // Run a simple query to verify connection works
+        let result: i32 = diesel::sql_query("SELECT 1 as value")
+            .get_result::<QueryResult>(&mut conn)
+            .expect("Query failed")
+            .value;
+
+        assert_eq!(result, 1);
+    }
+
+    #[derive(QueryableByName)]
+    struct QueryResult {
+        #[diesel(sql_type = diesel::sql_types::Integer)]
+        value: i32,
+    }
+}
+
+#[cfg(test)]
 mod repository_integration_tests {
     use super::*;
-    use timemanager_backend::models::{
-        NewLoginAttempt, NewPasswordHistory, NewPasswordResetToken, NewRefreshToken, NewUserSession,
-    };
+    use timemanager_backend::models::{NewLoginAttempt, NewPasswordHistory, NewRefreshToken};
     use timemanager_backend::repositories::*;
 
     #[tokio::test]
-    #[ignore] // Requires database setup
+    #[ignore = "Requires database setup"]
     async fn test_refresh_token_create_and_find() {
         let pool = create_test_pool();
         let _repo = RefreshTokenRepository::new(pool.clone());
@@ -38,6 +86,7 @@ mod repository_integration_tests {
             user_id: test_user_id,
             token_hash: test_token_hash.to_string(),
             expires_at,
+            user_agent: Some("Test Agent".to_string()),
         };
 
         // This would require a test user to exist
@@ -46,7 +95,7 @@ mod repository_integration_tests {
     }
 
     #[tokio::test]
-    #[ignore] // Requires database setup
+    #[ignore = "Requires database setup"]
     async fn test_login_attempt_record() {
         let pool = create_test_pool();
         let _repo = LoginAttemptRepository::new(pool.clone());
@@ -63,7 +112,7 @@ mod repository_integration_tests {
     }
 
     #[tokio::test]
-    #[ignore] // Requires database setup
+    #[ignore = "Requires database setup"]
     async fn test_password_history_add() {
         let pool = create_test_pool();
         let _repo = PasswordHistoryRepository::new(pool.clone());
@@ -96,6 +145,7 @@ mod repository_integration_tests {
             user_id: Uuid::new_v4(),
             token_hash: "test_hash".to_string(),
             expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::days(7),
+            user_agent: Some("Test Agent".to_string()),
         };
 
         // Test that NewPasswordHistory has correct fields
@@ -127,6 +177,8 @@ mod repository_unit_tests {
             expires_at: now + chrono::Duration::days(7),
             created_at: now,
             revoked_at: None,
+            last_used_at: now,
+            user_agent: Some("Test Agent".to_string()),
         };
         assert!(valid_token.is_valid());
 
@@ -138,6 +190,8 @@ mod repository_unit_tests {
             expires_at: now - chrono::Duration::days(1),
             created_at: now - chrono::Duration::days(8),
             revoked_at: None,
+            last_used_at: now - chrono::Duration::days(8),
+            user_agent: None,
         };
         assert!(!expired_token.is_valid());
 
@@ -149,6 +203,8 @@ mod repository_unit_tests {
             expires_at: now + chrono::Duration::days(7),
             created_at: now,
             revoked_at: Some(now),
+            last_used_at: now,
+            user_agent: Some("Test Agent".to_string()),
         };
         assert!(!revoked_token.is_valid());
     }

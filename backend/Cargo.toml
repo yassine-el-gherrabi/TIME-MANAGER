@@ -51,6 +51,9 @@ anyhow = "1.0"
 uuid = { version = "1.6", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+# Email
+lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls", "builder"] }
+
 [dev-dependencies]
 tokio-test = "0.4"
 mockall = "0.12"
@@ -58,6 +61,7 @@ fake = "2.9"
 wiremock = "0.6"
 serial_test = "3.0"
 testcontainers = "0.15"
+testcontainers-modules = { version = "0.3", features = ["postgres"] }
 
 [profile.release]
 opt-level = 3

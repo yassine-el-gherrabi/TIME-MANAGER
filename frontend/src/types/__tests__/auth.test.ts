@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { UserRole } from '../auth';
-import type { User, TokenPair, LoginRequest, RegisterRequest } from '../auth';
+import type { User, TokenPair, LoginRequest } from '../auth';
 
 describe('Auth Types', () => {
   describe('UserRole enum', () => {
@@ -49,20 +49,6 @@ describe('Auth Types', () => {
 
       expect(loginRequest.email).toBe('test@example.com');
       expect(loginRequest.password).toBe('securepassword123');
-    });
-
-    it('should accept valid RegisterRequest object', () => {
-      const registerRequest: RegisterRequest = {
-        email: 'new@example.com',
-        password: 'securepassword123',
-        first_name: 'Jane',
-        last_name: 'Smith',
-        organization_id: '123e4567-e89b-12d3-a456-426614174001',
-        role: UserRole.Manager,
-      };
-
-      expect(registerRequest.email).toBe('new@example.com');
-      expect(registerRequest.role).toBe(UserRole.Manager);
     });
   });
 });

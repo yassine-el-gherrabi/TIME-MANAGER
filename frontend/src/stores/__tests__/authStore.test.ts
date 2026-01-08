@@ -5,18 +5,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAuthStore, initializeAuth } from '../authStore';
 import { authApi } from '../../api/auth';
-import { tokenManager } from '../../api/client';
+import { tokenManager, setRefreshToken } from '../../api/client';
 import { UserRole } from '../../types/auth';
 import type { User } from '../../types/auth';
 
 // Mock the API
 vi.mock('../../api/auth', () => ({
   authApi: {
-    register: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     logoutAll: vi.fn(),
     me: vi.fn(),
+    refresh: vi.fn(),
   },
 }));
 
@@ -47,50 +47,6 @@ describe('AuthStore', () => {
     });
   });
 
-  describe('Register', () => {
-    it('should register user successfully', async () => {
-      const registerData = {
-        email: 'new@example.com',
-        password: 'password123',
-        first_name: 'Jane',
-        last_name: 'Smith',
-        organization_id: '123e4567-e89b-12d3-a456-426614174001',
-      };
-
-      vi.mocked(authApi.register).mockResolvedValue({
-        user: mockUser,
-        tokens: {
-          access_token: 'access_token',
-          refresh_token: 'refresh_token',
-        },
-      });
-
-      await useAuthStore.getState().register(registerData);
-
-      const state = useAuthStore.getState();
-      expect(state.user).toEqual(mockUser);
-      expect(state.isAuthenticated).toBe(true);
-      expect(state.isLoading).toBe(false);
-    });
-
-    it('should handle registration error', async () => {
-      const registerData = {
-        email: 'new@example.com',
-        password: 'password123',
-        first_name: 'Jane',
-        last_name: 'Smith',
-        organization_id: '123e4567-e89b-12d3-a456-426614174001',
-      };
-
-      vi.mocked(authApi.register).mockRejectedValue(new Error('Registration failed'));
-
-      await expect(useAuthStore.getState().register(registerData)).rejects.toThrow('Registration failed');
-
-      const state = useAuthStore.getState();
-      expect(state.isLoading).toBe(false);
-    });
-  });
-
   describe('Login', () => {
     it('should login user successfully', async () => {
       const loginData = {
@@ -98,13 +54,16 @@ describe('AuthStore', () => {
         password: 'password123',
       };
 
+      // Login returns only tokens (RGPD compliant)
       vi.mocked(authApi.login).mockResolvedValue({
-        user: mockUser,
         tokens: {
           access_token: 'access_token',
           refresh_token: 'refresh_token',
         },
       });
+
+      // User is fetched via /me after login
+      vi.mocked(authApi.me).mockResolvedValue(mockUser);
 
       await useAuthStore.getState().login(loginData);
 
@@ -112,6 +71,7 @@ describe('AuthStore', () => {
       expect(state.user).toEqual(mockUser);
       expect(state.isAuthenticated).toBe(true);
       expect(state.isLoading).toBe(false);
+      expect(authApi.me).toHaveBeenCalled();
     });
 
     it('should handle login error', async () => {
@@ -212,20 +172,26 @@ describe('AuthStore', () => {
       expect(authApi.me).not.toHaveBeenCalled();
     });
 
-    it('should refresh user if access token exists', async () => {
-      tokenManager.setAccessToken('test_token');
+    it('should refresh user if refresh token exists', async () => {
+      setRefreshToken('test_refresh_token');
+      vi.mocked(authApi.refresh).mockResolvedValue({
+        access_token: 'new_access_token',
+        refresh_token: 'new_refresh_token',
+        expires_in: 900,
+      });
       vi.mocked(authApi.me).mockResolvedValue(mockUser);
 
       await initializeAuth();
 
+      expect(authApi.refresh).toHaveBeenCalled();
       expect(authApi.me).toHaveBeenCalled();
       const state = useAuthStore.getState();
       expect(state.user).toEqual(mockUser);
     });
 
     it('should clear auth if refresh fails during initialization', async () => {
-      tokenManager.setAccessToken('invalid_token');
-      vi.mocked(authApi.me).mockRejectedValue(new Error('Invalid token'));
+      setRefreshToken('invalid_refresh_token');
+      vi.mocked(authApi.refresh).mockRejectedValue(new Error('Invalid token'));
 
       await initializeAuth();
 

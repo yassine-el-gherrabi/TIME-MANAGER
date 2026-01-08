@@ -23,7 +23,6 @@ export const API_URL = `${API_BASE_URL}${API_VERSION}`;
  * Authentication endpoints
  */
 export const AUTH_ENDPOINTS = {
-  REGISTER: '/auth/register',
   LOGIN: '/auth/login',
   LOGOUT: '/auth/logout',
   LOGOUT_ALL: '/auth/logout-all',
@@ -32,6 +31,21 @@ export const AUTH_ENDPOINTS = {
   REQUEST_RESET: '/auth/password/request-reset',
   RESET_PASSWORD: '/auth/password/reset',
   SESSIONS: '/auth/sessions',
+  REVOKE_SESSION: (id: string) => `/auth/sessions/${id}`,
+  ACCEPT_INVITE: '/auth/accept-invite',
+  CHANGE_PASSWORD: '/auth/change-password',
+} as const;
+
+/**
+ * User management endpoints (Admin)
+ */
+export const USER_ENDPOINTS = {
+  LIST: '/users',
+  CREATE: '/users',
+  GET: (id: string) => `/users/${id}`,
+  UPDATE: (id: string) => `/users/${id}`,
+  DELETE: (id: string) => `/users/${id}`,
+  RESEND_INVITE: (id: string) => `/users/${id}/resend-invite`,
 } as const;
 
 /**
@@ -61,14 +75,15 @@ export const REQUEST_TIMEOUT = {
 } as const;
 
 /**
- * Password validation rules
+ * Password validation rules (must match backend validation)
  */
 export const PASSWORD_RULES = {
   MIN_LENGTH: 8,
   REQUIRE_UPPERCASE: true,
   REQUIRE_LOWERCASE: true,
   REQUIRE_NUMBER: true,
-  REQUIRE_SPECIAL: false,
+  REQUIRE_SPECIAL: true,
+  SPECIAL_CHARS: '!@#$%^&*()_+-=[]{}|;:,.<>?',
 } as const;
 
 /**
@@ -107,7 +122,8 @@ export const ERROR_MESSAGES = {
 export const SUCCESS_MESSAGES = {
   LOGIN: 'Successfully logged in',
   LOGOUT: 'Successfully logged out',
-  REGISTER: 'Account created successfully',
   PASSWORD_RESET_REQUEST: 'Password reset email sent',
   PASSWORD_RESET: 'Password reset successfully',
+  INVITE_ACCEPTED: 'Account activated successfully',
+  PASSWORD_CHANGED: 'Password changed successfully',
 } as const;

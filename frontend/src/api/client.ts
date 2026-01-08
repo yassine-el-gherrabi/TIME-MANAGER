@@ -91,11 +91,11 @@ export const setTokens = (tokens: TokenPair): void => {
 
 /**
  * Clear all tokens
+ * Note: User data is managed by Zustand store (memory only, RGPD compliant)
  */
 export const clearTokens = (): void => {
   tokenManager.clearAccessToken();
   removeRefreshToken();
-  localStorage.removeItem(STORAGE_KEYS.USER);
 };
 
 /**
@@ -134,8 +134,13 @@ const createApiClient = (): AxiosInstance => {
     async (error: AxiosError<ApiError>) => {
       const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-      // Handle 401 Unauthorized - attempt token refresh
-      if (error.response?.status === 401 && !originalRequest._retry) {
+      // Check if this is an auth endpoint that should NOT trigger token refresh
+      // Login and refresh endpoints return 401 for invalid credentials, not expired tokens
+      const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
+                             originalRequest.url?.includes('/auth/refresh');
+
+      // Handle 401 Unauthorized - attempt token refresh (but not for auth endpoints)
+      if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
         originalRequest._retry = true;
 
         try {
@@ -167,10 +172,14 @@ const createApiClient = (): AxiosInstance => {
       }
 
       // Transform error to ApiError
+      // Backend returns: { error: "ErrorType", message: "Generic message", details: "Specific message" }
+      // Prefer details (specific), then message, then error type as fallback
+      const details = error.response?.data?.details;
+      const detailsMessage = typeof details === 'string' ? details : (Array.isArray(details) ? details[0] : undefined);
       const apiError = new ApiErrorClass(
-        error.response?.data?.error || error.message || 'An error occurred',
+        detailsMessage || error.response?.data?.message || error.response?.data?.error || error.message || 'An error occurred',
         error.response?.status,
-        error.response?.data?.details
+        detailsMessage ? [detailsMessage] : undefined
       );
 
       return Promise.reject(apiError);

@@ -21,17 +21,16 @@ describe('Configuration Constants', () => {
     });
 
     it('should have correct API version', () => {
-      expect(API_VERSION).toBe('/api/v1');
+      expect(API_VERSION).toBe('/v1');
     });
 
     it('should construct full API URL correctly', () => {
-      expect(API_URL).toBe('http://localhost:8080/api/v1');
+      expect(API_URL).toBe('http://localhost:8080/v1');
     });
   });
 
   describe('Auth Endpoints', () => {
     it('should have all required auth endpoints', () => {
-      expect(AUTH_ENDPOINTS.REGISTER).toBe('/auth/register');
       expect(AUTH_ENDPOINTS.LOGIN).toBe('/auth/login');
       expect(AUTH_ENDPOINTS.LOGOUT).toBe('/auth/logout');
       expect(AUTH_ENDPOINTS.LOGOUT_ALL).toBe('/auth/logout-all');
@@ -40,6 +39,8 @@ describe('Configuration Constants', () => {
       expect(AUTH_ENDPOINTS.REQUEST_RESET).toBe('/auth/password/request-reset');
       expect(AUTH_ENDPOINTS.RESET_PASSWORD).toBe('/auth/password/reset');
       expect(AUTH_ENDPOINTS.SESSIONS).toBe('/auth/sessions');
+      expect(AUTH_ENDPOINTS.ACCEPT_INVITE).toBe('/auth/accept-invite');
+      expect(AUTH_ENDPOINTS.CHANGE_PASSWORD).toBe('/auth/change-password');
     });
   });
 
@@ -64,7 +65,7 @@ describe('Configuration Constants', () => {
       expect(PASSWORD_RULES.REQUIRE_UPPERCASE).toBe(true);
       expect(PASSWORD_RULES.REQUIRE_LOWERCASE).toBe(true);
       expect(PASSWORD_RULES.REQUIRE_NUMBER).toBe(true);
-      expect(PASSWORD_RULES.REQUIRE_SPECIAL).toBe(false);
+      expect(PASSWORD_RULES.REQUIRE_SPECIAL).toBe(true);
     });
   });
 

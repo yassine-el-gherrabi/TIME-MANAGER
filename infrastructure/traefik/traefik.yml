@@ -9,6 +9,11 @@ api:
 entryPoints:
   web:
     address: ":80"
+    # Forward real client IP headers from proxies
+    forwardedHeaders:
+      # Trust all IPs for forwarded headers (for development)
+      # In production, use trustedIPs with specific proxy IPs instead
+      insecure: true
 
 # Providers
 providers:

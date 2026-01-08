@@ -15,76 +15,26 @@ describe('Auth Integration Tests', () => {
     localStorage.clear();
   });
 
-  it('should complete registration and login flow', async () => {
-    const user = userEvent.setup();
-
-    // Mock successful registration
-    vi.mocked(authApi.register).mockResolvedValueOnce({
-      user: {
-        id: '123',
-        email: 'test@example.com',
-        first_name: 'Test',
-        last_name: 'User',
-        role: UserRole.Employee,
-        organization_id: '456',
-        created_at: '2024-01-01',
-      },
-      tokens: {
-        access_token: 'test-access-token',
-        refresh_token: 'test-refresh-token',
-      },
-    });
-
-    // Start at register page
-    const testRouter = createMemoryRouter(router.routes, {
-      initialEntries: ['/register'],
-    });
-
-    render(<RouterProvider router={testRouter} />);
-
-    // Fill registration form
-    await user.type(screen.getByLabelText(/first name/i), 'Test');
-    await user.type(screen.getByLabelText(/last name/i), 'User');
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'password123');
-
-    // Submit form
-    await user.click(screen.getByRole('button', { name: /register/i }));
-
-    // Should navigate to dashboard after successful registration
-    await waitFor(() => {
-      expect(screen.getByText(/welcome to time manager/i)).toBeInTheDocument();
-    });
-
-    expect(authApi.register).toHaveBeenCalledWith(
-      expect.objectContaining({
-        first_name: 'Test',
-        last_name: 'User',
-        email: 'test@example.com',
-        password: 'password123',
-      })
-    );
-  });
-
-
   it('should complete login flow', async () => {
     const user = userEvent.setup();
 
-    // Mock successful login
+    // Mock successful login (tokens only - RGPD compliant)
     vi.mocked(authApi.login).mockResolvedValueOnce({
-      user: {
-        id: '123',
-        email: 'test@example.com',
-        first_name: 'Test',
-        last_name: 'User',
-        role: UserRole.Employee,
-        organization_id: '456',
-        created_at: '2024-01-01',
-      },
       tokens: {
         access_token: 'test-access-token',
         refresh_token: 'test-refresh-token',
       },
+    });
+
+    // Mock /me endpoint call (user fetched after login)
+    vi.mocked(authApi.me).mockResolvedValueOnce({
+      id: '123',
+      email: 'test@example.com',
+      first_name: 'Test',
+      last_name: 'User',
+      role: UserRole.Employee,
+      organization_id: '456',
+      created_at: '2024-01-01',
     });
 
     // Start at login page
@@ -110,6 +60,7 @@ describe('Auth Integration Tests', () => {
       email: 'test@example.com',
       password: 'password123',
     });
+    expect(authApi.me).toHaveBeenCalled();
   });
 
 

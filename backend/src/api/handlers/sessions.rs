@@ -11,7 +11,6 @@ use crate::services::SessionService;
 #[derive(Debug, Serialize)]
 pub struct SessionInfo {
     pub id: Uuid,
-    pub ip_address: Option<String>,
     pub user_agent: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub last_activity: chrono::NaiveDateTime,
@@ -43,7 +42,6 @@ pub async fn get_active_sessions(
         .into_iter()
         .map(|s| SessionInfo {
             id: s.id,
-            ip_address: Some(s.ip_address),
             user_agent: s.user_agent,
             created_at: s.created_at,
             last_activity: s.last_activity,
@@ -71,14 +69,12 @@ mod tests {
         let now = chrono::Utc::now().naive_utc();
         let session = SessionInfo {
             id: Uuid::new_v4(),
-            ip_address: Some("127.0.0.1".to_string()),
             user_agent: Some("Mozilla/5.0".to_string()),
             created_at: now,
             last_activity: now,
             expires_at: now,
         };
 
-        assert_eq!(session.ip_address, Some("127.0.0.1".to_string()));
         assert_eq!(session.user_agent, Some("Mozilla/5.0".to_string()));
     }
 
