@@ -1,3 +1,4 @@
+use anyhow::Context;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -36,23 +37,23 @@ async fn main() -> anyhow::Result<()> {
     );
 
     // Create database connection pool
-    let db_pool = create_pool(&config.database_url);
+    let db_pool = create_pool(&config.database_url)?;
     tracing::info!("Database connection pool created");
 
     // Run embedded migrations
     tracing::info!("Running database migrations...");
     let mut conn = db_pool
         .get()
-        .expect("Failed to get database connection for migrations");
+        .context("Failed to get database connection for migrations")?;
 
     conn.run_pending_migrations(MIGRATIONS)
-        .expect("Failed to run database migrations");
+        .map_err(|e| anyhow::anyhow!("Failed to run database migrations: {}", e))?;
 
     tracing::info!("Database migrations completed successfully");
 
     // Create email service
     let email_service =
-        EmailService::new(config.email.clone()).expect("Failed to create email service");
+        EmailService::new(config.email.clone()).context("Failed to create email service")?;
     tracing::info!(
         "Email service initialized (enabled: {})",
         email_service.is_enabled()

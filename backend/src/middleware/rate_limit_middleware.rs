@@ -27,8 +27,11 @@ impl RateLimiter {
         }
     }
 
-    pub fn check_rate_limit(&self, key: &str) -> bool {
-        let mut requests = self.requests.lock().unwrap();
+    pub fn check_rate_limit(&self, key: &str) -> Result<bool, RateLimitError> {
+        let mut requests = self
+            .requests
+            .lock()
+            .map_err(|_| RateLimitError::LockPoisoned)?;
         let now = Instant::now();
         let window_start = now - Duration::from_secs(WINDOW_DURATION_SECS);
 
@@ -40,16 +43,19 @@ impl RateLimiter {
 
         // Check if limit exceeded
         if request_log.len() >= MAX_REQUESTS_PER_WINDOW {
-            return false;
+            return Ok(false);
         }
 
         // Add new request
         request_log.push(now);
-        true
+        Ok(true)
     }
 
-    pub fn cleanup_old_entries(&self) {
-        let mut requests = self.requests.lock().unwrap();
+    pub fn cleanup_old_entries(&self) -> Result<(), RateLimitError> {
+        let mut requests = self
+            .requests
+            .lock()
+            .map_err(|_| RateLimitError::LockPoisoned)?;
         let now = Instant::now();
         let window_start = now - Duration::from_secs(WINDOW_DURATION_SECS * 2);
 
@@ -57,6 +63,7 @@ impl RateLimiter {
             request_log.retain(|&timestamp| timestamp > window_start);
             !request_log.is_empty()
         });
+        Ok(())
     }
 }
 
@@ -85,7 +92,7 @@ pub async fn rate_limit_middleware(
         .clone();
 
     // Check rate limit
-    if !rate_limiter.check_rate_limit(&ip) {
+    if !rate_limiter.check_rate_limit(&ip)? {
         return Err(RateLimitError::LimitExceeded);
     }
 
@@ -122,6 +129,7 @@ pub enum RateLimitError {
     LimitExceeded,
     NoIpAddress,
     NoRateLimiter,
+    LockPoisoned,
 }
 
 impl IntoResponse for RateLimitError {
@@ -141,6 +149,10 @@ impl IntoResponse for RateLimitError {
             RateLimitError::NoRateLimiter => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Rate limiter not configured".to_string(),
+            ),
+            RateLimitError::LockPoisoned => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal rate limiter error".to_string(),
             ),
         };
 
@@ -163,7 +175,7 @@ mod tests {
         let key = "test_ip";
 
         for _ in 0..MAX_REQUESTS_PER_WINDOW {
-            assert!(limiter.check_rate_limit(key));
+            assert!(limiter.check_rate_limit(key).unwrap());
         }
     }
 
@@ -174,11 +186,11 @@ mod tests {
 
         // Use up the limit
         for _ in 0..MAX_REQUESTS_PER_WINDOW {
-            assert!(limiter.check_rate_limit(key));
+            assert!(limiter.check_rate_limit(key).unwrap());
         }
 
         // Next request should be blocked
-        assert!(!limiter.check_rate_limit(key));
+        assert!(!limiter.check_rate_limit(key).unwrap());
     }
 
     #[test]
@@ -186,8 +198,8 @@ mod tests {
         let limiter = RateLimiter::new();
 
         // Different keys should have independent limits
-        assert!(limiter.check_rate_limit("ip1"));
-        assert!(limiter.check_rate_limit("ip2"));
+        assert!(limiter.check_rate_limit("ip1").unwrap());
+        assert!(limiter.check_rate_limit("ip2").unwrap());
     }
 
     #[test]
@@ -195,8 +207,8 @@ mod tests {
         let limiter = RateLimiter::new();
         let key = "test_ip";
 
-        limiter.check_rate_limit(key);
-        limiter.cleanup_old_entries();
+        limiter.check_rate_limit(key).unwrap();
+        limiter.cleanup_old_entries().unwrap();
 
         // Should still have entries (not old enough to clean)
         let requests = limiter.requests.lock().unwrap();
@@ -214,6 +226,10 @@ mod tests {
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
         let error = RateLimitError::NoRateLimiter;
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let error = RateLimitError::LockPoisoned;
         let response = error.into_response();
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }

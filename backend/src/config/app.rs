@@ -1,6 +1,6 @@
 use crate::config::email::EmailConfig;
 use crate::services::EmailService;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use dotenvy::dotenv;
@@ -45,7 +45,7 @@ impl AppConfig {
         let rust_log = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
 
         let jwt_secret =
-            env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set");
+            env::var("JWT_SECRET").context("JWT_SECRET environment variable must be set")?;
 
         let jwt_access_token_expiry_seconds = env::var("JWT_ACCESS_TOKEN_EXPIRY_SECONDS")
             .unwrap_or_else(|_| "900".to_string())
