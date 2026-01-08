@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::error::AppError;
+use crate::models::{NewUser, Pagination, UserFilter, UserUpdate};
 use crate::schema::users;
 
 type DbPool = Pool<ConnectionManager<PgConnection>>;
@@ -145,6 +146,150 @@ impl UserRepository {
         } else {
             Ok(false)
         }
+    }
+
+    /// Create a new user
+    pub async fn create(&self, new_user: NewUser) -> Result<User, AppError> {
+        let mut conn = self.pool.get()?;
+
+        diesel::insert_into(users::table)
+            .values(&new_user)
+            .get_result(&mut conn)
+            .map_err(|e| match e {
+                diesel::result::Error::DatabaseError(
+                    diesel::result::DatabaseErrorKind::UniqueViolation,
+                    _,
+                ) => AppError::Conflict("A user with this email already exists".to_string()),
+                _ => AppError::DatabaseError(e),
+            })
+    }
+
+    /// List users with filters and pagination
+    pub async fn list(
+        &self,
+        organization_id: Uuid,
+        filter: &UserFilter,
+        pagination: &Pagination,
+    ) -> Result<(Vec<User>, i64), AppError> {
+        let mut conn = self.pool.get()?;
+
+        // Prepare search pattern if needed
+        let search_pattern = filter
+            .search
+            .as_ref()
+            .map(|s| format!("%{}%", s.to_lowercase()));
+
+        // Get total count first
+        let total: i64 = {
+            let mut count_query = users::table
+                .filter(users::organization_id.eq(organization_id))
+                .into_boxed();
+
+            if let Some(role) = filter.role {
+                count_query = count_query.filter(users::role.eq(role));
+            }
+
+            if let Some(ref pattern) = search_pattern {
+                count_query = count_query.filter(
+                    users::email
+                        .ilike(pattern)
+                        .or(users::first_name.ilike(pattern))
+                        .or(users::last_name.ilike(pattern)),
+                );
+            }
+
+            count_query.count().get_result(&mut conn)?
+        };
+
+        // Build data query
+        let mut query = users::table
+            .filter(users::organization_id.eq(organization_id))
+            .into_boxed();
+
+        if let Some(role) = filter.role {
+            query = query.filter(users::role.eq(role));
+        }
+
+        if let Some(ref pattern) = search_pattern {
+            query = query.filter(
+                users::email
+                    .ilike(pattern)
+                    .or(users::first_name.ilike(pattern))
+                    .or(users::last_name.ilike(pattern)),
+            );
+        }
+
+        // Apply pagination
+        let offset = (pagination.page - 1) * pagination.per_page;
+        let users = query
+            .order(users::created_at.desc())
+            .limit(pagination.per_page)
+            .offset(offset)
+            .load::<User>(&mut conn)?;
+
+        Ok((users, total))
+    }
+
+    /// Update a user
+    pub async fn update(&self, user_id: Uuid, update: UserUpdate) -> Result<User, AppError> {
+        let mut conn = self.pool.get()?;
+
+        diesel::update(users::table.find(user_id))
+            .set((
+                &update,
+                users::updated_at.eq(chrono::Utc::now().naive_utc()),
+            ))
+            .get_result(&mut conn)
+            .map_err(|e| match e {
+                diesel::result::Error::NotFound => AppError::NotFound("User not found".to_string()),
+                diesel::result::Error::DatabaseError(
+                    diesel::result::DatabaseErrorKind::UniqueViolation,
+                    _,
+                ) => AppError::Conflict("A user with this email already exists".to_string()),
+                _ => AppError::DatabaseError(e),
+            })
+    }
+
+    /// Delete a user (hard delete)
+    pub async fn delete(&self, user_id: Uuid) -> Result<(), AppError> {
+        let mut conn = self.pool.get()?;
+
+        let deleted = diesel::delete(users::table.find(user_id)).execute(&mut conn)?;
+
+        if deleted == 0 {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+
+        Ok(())
+    }
+
+    /// Check if email exists
+    pub async fn email_exists(&self, email: &str) -> Result<bool, AppError> {
+        let mut conn = self.pool.get()?;
+
+        let count = users::table
+            .filter(users::email.eq(email))
+            .count()
+            .get_result::<i64>(&mut conn)?;
+
+        Ok(count > 0)
+    }
+
+    /// Check if email exists for another user
+    pub async fn email_exists_for_other(
+        &self,
+        email: &str,
+        user_id: Uuid,
+    ) -> Result<bool, AppError> {
+        let mut conn = self.pool.get()?;
+
+        let count = users::table
+            .filter(users::email.eq(email))
+            .filter(users::id.ne(user_id))
+            .count()
+            .get_result::<i64>(&mut conn)?;
+
+        Ok(count > 0)
     }
 }
 

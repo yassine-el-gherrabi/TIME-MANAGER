@@ -5,3 +5,4 @@ pub mod auth;
 pub mod health;
 pub mod password;
 pub mod sessions;
+pub mod users;

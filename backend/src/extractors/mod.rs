@@ -6,4 +6,4 @@ pub mod role_guard;
 
 // Re-export commonly used types
 pub use authenticated_user::{AuthError, AuthenticatedUser};
-pub use role_guard::{Admin, Employee, Manager, RequiredRole, RoleError, RoleGuard};
+pub use role_guard::{Admin, Employee, Manager, RequiredRole, RoleError, RoleGuard, SuperAdmin};

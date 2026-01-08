@@ -22,7 +22,20 @@ pub trait RequiredRole {
     fn role_name() -> &'static str;
 }
 
-/// Admin role marker
+/// Super Admin role marker (highest privilege)
+pub struct SuperAdmin;
+
+impl RequiredRole for SuperAdmin {
+    fn required_role() -> UserRole {
+        UserRole::SuperAdmin
+    }
+
+    fn role_name() -> &'static str {
+        "SuperAdmin"
+    }
+}
+
+/// Admin role marker (includes SuperAdmin)
 pub struct Admin;
 
 impl RequiredRole for Admin {
@@ -75,11 +88,15 @@ where
             .await
             .map_err(|_| RoleError::Unauthorized)?;
 
-        // Check role hierarchy: Admin > Manager > Employee
+        // Check role hierarchy: SuperAdmin > Admin > Manager > Employee
         let has_permission = match T::required_role() {
             UserRole::Employee => true, // All authenticated users are at least employees
-            UserRole::Manager => matches!(user.0.role, UserRole::Manager | UserRole::Admin),
-            UserRole::Admin => matches!(user.0.role, UserRole::Admin),
+            UserRole::Manager => matches!(
+                user.0.role,
+                UserRole::Manager | UserRole::Admin | UserRole::SuperAdmin
+            ),
+            UserRole::Admin => matches!(user.0.role, UserRole::Admin | UserRole::SuperAdmin),
+            UserRole::SuperAdmin => matches!(user.0.role, UserRole::SuperAdmin),
         };
 
         if !has_permission {
@@ -137,6 +154,9 @@ mod tests {
 
     #[test]
     fn test_required_roles() {
+        assert_eq!(SuperAdmin::required_role(), UserRole::SuperAdmin);
+        assert_eq!(SuperAdmin::role_name(), "SuperAdmin");
+
         assert_eq!(Admin::required_role(), UserRole::Admin);
         assert_eq!(Admin::role_name(), "Admin");
 

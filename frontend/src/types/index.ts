@@ -7,8 +7,6 @@
 // Authentication types
 export type {
   TokenPair,
-  RegisterRequest,
-  RegisterResponse,
   LoginRequest,
   LoginResponse,
   RefreshRequest,
@@ -27,6 +25,19 @@ export type {
   AuthState,
   ApiError,
 } from './auth';
+
+// User management types
+export type {
+  InviteStatus,
+  UserResponse,
+  CreateUserRequest,
+  CreateUserResponse,
+  UpdateUserRequest,
+  ListUsersParams,
+  PaginatedUsersResponse,
+  ResendInviteResponse,
+  DeleteUserResponse,
+} from './user';
 
 // Re-export enums
 export { UserRole } from './auth';
