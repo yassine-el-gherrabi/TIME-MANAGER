@@ -5,6 +5,7 @@ use diesel::{AsExpression, FromSqlRow};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
+use crate::schema::sql_types::ClockEntryStatus as ClockEntryStatusSqlType;
 use crate::schema::sql_types::UserRole as UserRoleSqlType;
 
 /// User role enumeration matching the database user_role ENUM
@@ -18,6 +19,31 @@ pub enum UserRole {
     Manager,
     #[default]
     Employee,
+}
+
+impl UserRole {
+    /// Returns the numeric level of the role for comparison
+    /// Higher value means more privileges
+    fn level(&self) -> u8 {
+        match self {
+            UserRole::Employee => 0,
+            UserRole::Manager => 1,
+            UserRole::Admin => 2,
+            UserRole::SuperAdmin => 3,
+        }
+    }
+}
+
+impl PartialOrd for UserRole {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for UserRole {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.level().cmp(&other.level())
+    }
 }
 
 impl ToSql<UserRoleSqlType, Pg> for UserRole {
@@ -42,6 +68,42 @@ impl FromSql<UserRoleSqlType, Pg> for UserRole {
             "manager" => Ok(UserRole::Manager),
             "employee" => Ok(UserRole::Employee),
             _ => Err(format!("Unrecognized user role: {}", role_str).into()),
+        }
+    }
+}
+
+/// Clock entry status enumeration matching the database clock_entry_status ENUM
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = ClockEntryStatusSqlType)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum ClockEntryStatus {
+    #[default]
+    Pending,
+    Approved,
+    Rejected,
+}
+
+impl ToSql<ClockEntryStatusSqlType, Pg> for ClockEntryStatus {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let status_str = match self {
+            ClockEntryStatus::Pending => "pending",
+            ClockEntryStatus::Approved => "approved",
+            ClockEntryStatus::Rejected => "rejected",
+        };
+        out.write_all(status_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<ClockEntryStatusSqlType, Pg> for ClockEntryStatus {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let status_str = std::str::from_utf8(bytes.as_bytes())?;
+        match status_str {
+            "pending" => Ok(ClockEntryStatus::Pending),
+            "approved" => Ok(ClockEntryStatus::Approved),
+            "rejected" => Ok(ClockEntryStatus::Rejected),
+            _ => Err(format!("Unrecognized clock entry status: {}", status_str).into()),
         }
     }
 }
