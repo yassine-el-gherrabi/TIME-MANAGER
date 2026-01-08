@@ -1,15 +1,48 @@
+use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
+use axum::http::{HeaderName, HeaderValue, Method};
 use axum::routing::{delete, get, post, put};
 use axum::Router;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
 use super::handlers::auth;
+use super::handlers::clocks;
 use super::handlers::health::health_check;
+use super::handlers::kpis;
 use super::handlers::password;
+use super::handlers::schedules;
+use super::handlers::teams;
 use super::handlers::users;
 use crate::config::AppState;
 
 /// Creates the main application router with all endpoints
 pub fn create_router(state: AppState) -> Router {
+    // Build CORS layer from config
+    let allowed_origins: Vec<HeaderValue> = state
+        .config
+        .cors_allowed_origins
+        .iter()
+        .filter_map(|origin| origin.parse::<HeaderValue>().ok())
+        .collect();
+
+    let cors = CorsLayer::new()
+        .allow_origin(AllowOrigin::list(allowed_origins))
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::PATCH,
+            Method::OPTIONS,
+        ])
+        .allow_headers([
+            CONTENT_TYPE,
+            AUTHORIZATION,
+            ACCEPT,
+            HeaderName::from_static("x-csrf-token"),
+        ])
+        .allow_credentials(true);
+
     // Auth routes - public endpoints
     let auth_routes = Router::new()
         .route("/login", post(auth::login))
@@ -37,7 +70,56 @@ pub fn create_router(state: AppState) -> Router {
                 .put(users::update_user)
                 .delete(users::delete_user),
         )
-        .route("/:id/resend-invite", post(users::resend_invite));
+        .route("/:id/resend-invite", post(users::resend_invite))
+        .route("/:id/schedule", put(schedules::assign_schedule));
+
+    // Clock in/out routes
+    let clock_routes = Router::new()
+        .route("/in", post(clocks::clock_in))
+        .route("/out", post(clocks::clock_out))
+        .route("/status", get(clocks::get_status))
+        .route("/history", get(clocks::get_history))
+        .route("/pending", get(clocks::list_pending))
+        .route("/:id/approve", post(clocks::approve_entry))
+        .route("/:id/reject", post(clocks::reject_entry));
+
+    // Team management routes
+    let team_routes = Router::new()
+        .route("/", get(teams::list_teams).post(teams::create_team))
+        .route("/my", get(teams::get_my_teams))
+        .route(
+            "/:id",
+            get(teams::get_team)
+                .put(teams::update_team)
+                .delete(teams::delete_team),
+        )
+        .route("/:id/members", post(teams::add_member))
+        .route("/:team_id/members/:user_id", delete(teams::remove_member));
+
+    // Work schedule routes
+    let schedule_routes = Router::new()
+        .route("/", get(schedules::list_schedules).post(schedules::create_schedule))
+        .route("/me", get(schedules::get_my_schedule))
+        .route(
+            "/:id",
+            get(schedules::get_schedule)
+                .put(schedules::update_schedule)
+                .delete(schedules::delete_schedule),
+        )
+        .route("/:id/days", post(schedules::add_day))
+        .route(
+            "/days/:day_id",
+            put(schedules::update_day).delete(schedules::remove_day),
+        );
+
+    // KPI routes
+    let kpi_routes = Router::new()
+        .route("/me", get(kpis::get_my_kpis))
+        .route("/users/:id", get(kpis::get_user_kpis))
+        .route("/teams/:id", get(kpis::get_team_kpis))
+        .route("/organization", get(kpis::get_org_kpis))
+        .route("/presence", get(kpis::get_presence))
+        .route("/charts", get(kpis::get_charts));
 
     // Main router
     Router::new()
@@ -45,7 +127,12 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/auth", auth_routes)
         .nest("/v1/auth/password", password_routes)
         .nest("/v1/users", user_routes)
+        .nest("/v1/clocks", clock_routes)
+        .nest("/v1/teams", team_routes)
+        .nest("/v1/schedules", schedule_routes)
+        .nest("/v1/kpis", kpi_routes)
         .layer(TraceLayer::new_for_http())
+        .layer(cors)
         .with_state(state)
 }
 

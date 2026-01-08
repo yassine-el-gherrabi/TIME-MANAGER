@@ -13,8 +13,8 @@ use crate::extractors::authenticated_user::AuthenticatedUser;
 /// Role-based access control guard
 ///
 /// Ensures authenticated user has required role
-/// Usage: `async fn handler(RoleGuard(claims): RoleGuard<Admin>)`
-pub struct RoleGuard<T: RequiredRole>(pub AuthenticatedUser, std::marker::PhantomData<T>);
+/// Usage: `async fn handler(RoleGuard(user, _): RoleGuard<Admin>)`
+pub struct RoleGuard<T: RequiredRole>(pub AuthenticatedUser, pub std::marker::PhantomData<T>);
 
 /// Trait for defining required roles
 pub trait RequiredRole {

@@ -296,6 +296,7 @@ impl UserRepository {
 // User model - this will be moved to models module later if not present
 #[derive(Debug, Clone, Queryable, Selectable, Serialize, Deserialize)]
 #[diesel(table_name = users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -310,4 +311,5 @@ pub struct User {
     pub password_expires_at: Option<chrono::NaiveDateTime>,
     pub failed_login_attempts: i32,
     pub locked_until: Option<chrono::NaiveDateTime>,
+    pub work_schedule_id: Option<Uuid>,
 }

@@ -140,7 +140,7 @@ pub async fn login(
     // Build refresh token cookie (HttpOnly, Secure, SameSite=Strict)
     // Max-Age: 7 days (604800 seconds)
     let refresh_cookie = format!(
-        "refresh_token={}; HttpOnly; SameSite=Strict; Path=/v1/auth; Max-Age=604800",
+        "refresh_token={}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800",
         token_pair.refresh_token
     );
 

@@ -30,8 +30,8 @@ pub async fn resend_invite(
     AuthenticatedUser(claims): AuthenticatedUser,
     Path(user_id): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Check if user is admin
-    if claims.role != UserRole::Admin {
+    // Check if user is admin+ (Admin or SuperAdmin)
+    if claims.role < UserRole::Admin {
         return Err(AppError::Forbidden(
             "Only administrators can resend invitations".to_string(),
         ));

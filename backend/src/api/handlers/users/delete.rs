@@ -8,9 +8,8 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::config::AppState;
-use crate::domain::enums::UserRole;
 use crate::error::AppError;
-use crate::extractors::AuthenticatedUser;
+use crate::extractors::{Admin, RoleGuard};
 use crate::repositories::UserRepository;
 
 /// Delete user response
@@ -21,19 +20,14 @@ pub struct DeleteUserResponse {
 
 /// DELETE /api/v1/users/:id
 ///
-/// Delete a user (Admin only)
+/// Delete a user (Admin+)
 /// Note: This is a hard delete. Consider implementing soft delete if needed.
 pub async fn delete_user(
     State(state): State<AppState>,
-    AuthenticatedUser(claims): AuthenticatedUser,
+    RoleGuard(user, _): RoleGuard<Admin>,
     Path(user_id): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Check if user is admin
-    if claims.role != UserRole::Admin {
-        return Err(AppError::Forbidden(
-            "Only administrators can delete users".to_string(),
-        ));
-    }
+    let claims = user.0;
 
     // Prevent self-deletion
     if claims.sub == user_id {

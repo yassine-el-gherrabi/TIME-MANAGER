@@ -9,7 +9,7 @@ use serde::Deserialize;
 use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
-use crate::extractors::AuthenticatedUser;
+use crate::extractors::{Admin, RoleGuard};
 use crate::models::{PaginatedUsers, Pagination, UserFilter, UserResponse};
 use crate::repositories::UserRepository;
 
@@ -24,24 +24,20 @@ pub struct ListUsersQuery {
 
 /// GET /api/v1/users
 ///
-/// List all users in the organization (Admin only)
+/// List all users in the organization (Admin+)
 pub async fn list_users(
     State(state): State<AppState>,
-    AuthenticatedUser(claims): AuthenticatedUser,
+    RoleGuard(user, _): RoleGuard<Admin>,
     Query(query): Query<ListUsersQuery>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Check if user is admin
-    if claims.role != UserRole::Admin {
-        return Err(AppError::Forbidden(
-            "Only administrators can list users".to_string(),
-        ));
-    }
+    let claims = user.0;
 
     // Parse role filter
     let role_filter = query
         .role
         .as_ref()
         .and_then(|r| match r.to_lowercase().as_str() {
+            "super_admin" | "superadmin" => Some(UserRole::SuperAdmin),
             "admin" => Some(UserRole::Admin),
             "manager" => Some(UserRole::Manager),
             "employee" => Some(UserRole::Employee),

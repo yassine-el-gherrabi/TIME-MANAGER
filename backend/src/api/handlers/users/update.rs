@@ -68,7 +68,8 @@ pub async fn update_user(
     let existing_user = user_repo.find_by_id(user_id).await?;
 
     // Determine what updates are allowed based on role
-    let is_admin = claims.role == UserRole::Admin;
+    // Admin+ (Admin or SuperAdmin) can update any user in their organization
+    let is_admin = claims.role >= UserRole::Admin;
     let is_self = claims.sub == user_id;
 
     if !is_self && !is_admin {

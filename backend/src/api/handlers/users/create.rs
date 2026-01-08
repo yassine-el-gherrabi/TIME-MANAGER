@@ -5,7 +5,7 @@ use validator::Validate;
 use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
-use crate::extractors::AuthenticatedUser;
+use crate::extractors::{Admin, RoleGuard};
 use crate::models::{NewUser, UserResponse};
 use crate::repositories::UserRepository;
 use crate::services::InviteService;
@@ -36,19 +36,14 @@ pub struct CreateUserResponse {
 
 /// POST /api/v1/users
 ///
-/// Create a new user (Admin only)
+/// Create a new user (Admin+)
 /// This creates a user with a placeholder password and generates an invite token
 pub async fn create_user(
     State(state): State<AppState>,
-    AuthenticatedUser(claims): AuthenticatedUser,
+    RoleGuard(user, _): RoleGuard<Admin>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    // Check if user is admin
-    if claims.role != UserRole::Admin {
-        return Err(AppError::Forbidden(
-            "Only administrators can create users".to_string(),
-        ));
-    }
+    let claims = user.0;
 
     // Validate payload
     payload

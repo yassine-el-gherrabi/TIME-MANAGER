@@ -29,9 +29,9 @@ pub async fn get_user(
 
     // Check authorization
     // - User can view their own data
-    // - Admin can view any user in their organization
+    // - Admin+ can view any user in their organization
     if user.id != claims.sub {
-        if claims.role != UserRole::Admin {
+        if claims.role < UserRole::Admin {
             return Err(AppError::Forbidden(
                 "You can only view your own user data".to_string(),
             ));

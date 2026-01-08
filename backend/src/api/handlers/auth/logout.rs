@@ -57,7 +57,7 @@ pub async fn logout(
     };
 
     // Clear cookies by setting Max-Age=0
-    let clear_refresh_cookie = "refresh_token=; HttpOnly; SameSite=Strict; Path=/v1/auth; Max-Age=0";
+    let clear_refresh_cookie = "refresh_token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0";
     let clear_csrf_cookie = "csrf_token=; SameSite=Strict; Path=/; Max-Age=0";
 
     let mut response_headers = HeaderMap::new();
