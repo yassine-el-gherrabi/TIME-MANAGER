@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '../api/auth';
-import { clearTokens, getRefreshToken } from '../api/client';
+import { clearTokens, hasRefreshToken } from '../api/client';
 import { STORAGE_KEYS } from '../config/constants';
 import type {
   User,
@@ -186,25 +186,24 @@ export const useAuthStore = create<AuthStore>()(
 
 /**
  * Initialize auth store on app startup
- * Checks for existing refresh token in localStorage and restores session
+ * Checks for existing refresh token (via CSRF cookie proxy) and restores session
  * Access tokens are stored in memory only (lost on reload), so we use
- * the refresh token to obtain a new access token on page load.
+ * the HttpOnly refresh token cookie to obtain a new access token on page load.
  */
 export const initializeAuth = async (): Promise<boolean> => {
   const store = useAuthStore.getState();
-  const refreshToken = getRefreshToken();
 
-  // No refresh token = not authenticated
-  if (!refreshToken) {
+  // No refresh token (checked via CSRF token presence) = not authenticated
+  if (!hasRefreshToken()) {
     return false;
   }
 
   store.setLoading(true);
 
   try {
-    // Use refresh token to get new access token
+    // Use HttpOnly refresh token cookie to get new access token
     // authApi.refresh() internally calls setTokens() after successful refresh
-    await authApi.refresh({ refresh_token: refreshToken });
+    await authApi.refresh();
 
     // Fetch user data via /me endpoint
     const user = await authApi.me();

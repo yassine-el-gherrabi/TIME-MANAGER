@@ -16,7 +16,7 @@ export enum UserRole {
 }
 
 /**
- * Token pair containing access and refresh tokens
+ * Token pair containing access and refresh tokens (legacy, for backwards compat)
  */
 export interface TokenPair {
   access_token: string;
@@ -32,24 +32,25 @@ export interface LoginRequest {
 }
 
 /**
- * User login response (tokens only, user fetched via /me endpoint)
+ * User login response (access token only, refresh token sent as HttpOnly cookie)
  */
 export interface LoginResponse {
-  tokens: TokenPair;
+  access_token: string;
 }
 
 /**
- * Token refresh request payload
+ * Token refresh request payload (deprecated - refresh token now in HttpOnly cookie)
+ * @deprecated Refresh token is now sent as HttpOnly cookie
  */
 export interface RefreshRequest {
-  refresh_token: string;
+  refresh_token?: string;
 }
 
 /**
- * Token refresh response
+ * Token refresh response (access token only, refresh token sent as HttpOnly cookie)
  */
 export interface RefreshResponse {
-  tokens: TokenPair;
+  access_token: string;
 }
 
 /**
@@ -154,11 +155,12 @@ export interface JwtClaims {
 
 /**
  * Authentication state
+ * Note: refreshToken is no longer tracked in JS (HttpOnly cookie)
  */
 export interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
+  refreshToken: string | null; // Deprecated - kept for backwards compat but always null
   isAuthenticated: boolean;
   isLoading: boolean;
 }

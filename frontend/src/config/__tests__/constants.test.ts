@@ -46,7 +46,7 @@ describe('Configuration Constants', () => {
 
   describe('Storage Keys', () => {
     it('should have correct storage key names', () => {
-      expect(STORAGE_KEYS.REFRESH_TOKEN).toBe('timemanager_refresh_token');
+      // Note: REFRESH_TOKEN was removed - refresh tokens now use HttpOnly cookies
       expect(STORAGE_KEYS.USER).toBe('timemanager_user');
     });
   });

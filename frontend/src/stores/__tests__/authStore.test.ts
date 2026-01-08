@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAuthStore, initializeAuth } from '../authStore';
 import { authApi } from '../../api/auth';
-import { tokenManager, setRefreshToken } from '../../api/client';
+import { tokenManager } from '../../api/client';
 import { UserRole } from '../../types/auth';
 import type { User } from '../../types/auth';
 
@@ -54,12 +54,9 @@ describe('AuthStore', () => {
         password: 'password123',
       };
 
-      // Login returns only tokens (RGPD compliant)
+      // Login returns only access_token (refresh token is HttpOnly cookie)
       vi.mocked(authApi.login).mockResolvedValue({
-        tokens: {
-          access_token: 'access_token',
-          refresh_token: 'refresh_token',
-        },
+        access_token: 'access_token',
       });
 
       // User is fetched via /me after login
@@ -166,38 +163,52 @@ describe('AuthStore', () => {
   });
 
   describe('Initialize Auth', () => {
-    it('should not refresh user if no access token', async () => {
-      await initializeAuth();
+    it('should not refresh user if no CSRF token (no refresh token)', async () => {
+      // No CSRF cookie = no refresh token = not authenticated
+      document.cookie = 'csrf_token=; Max-Age=0; path=/';
 
-      expect(authApi.me).not.toHaveBeenCalled();
+      const result = await initializeAuth();
+
+      expect(result).toBe(false);
+      expect(authApi.refresh).not.toHaveBeenCalled();
     });
 
-    it('should refresh user if refresh token exists', async () => {
-      setRefreshToken('test_refresh_token');
+    it('should refresh user if CSRF token exists (proxy for refresh token)', async () => {
+      // Set CSRF cookie to indicate refresh token presence
+      document.cookie = 'csrf_token=test_csrf_token; path=/';
+
       vi.mocked(authApi.refresh).mockResolvedValue({
         access_token: 'new_access_token',
-        refresh_token: 'new_refresh_token',
-        expires_in: 900,
       });
       vi.mocked(authApi.me).mockResolvedValue(mockUser);
 
-      await initializeAuth();
+      const result = await initializeAuth();
 
+      expect(result).toBe(true);
       expect(authApi.refresh).toHaveBeenCalled();
       expect(authApi.me).toHaveBeenCalled();
       const state = useAuthStore.getState();
       expect(state.user).toEqual(mockUser);
+
+      // Clean up
+      document.cookie = 'csrf_token=; Max-Age=0; path=/';
     });
 
     it('should clear auth if refresh fails during initialization', async () => {
-      setRefreshToken('invalid_refresh_token');
+      // Set CSRF cookie to indicate refresh token presence
+      document.cookie = 'csrf_token=test_csrf_token; path=/';
+
       vi.mocked(authApi.refresh).mockRejectedValue(new Error('Invalid token'));
 
-      await initializeAuth();
+      const result = await initializeAuth();
 
+      expect(result).toBe(false);
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
       expect(state.isAuthenticated).toBe(false);
+
+      // Clean up
+      document.cookie = 'csrf_token=; Max-Age=0; path=/';
     });
   });
 });

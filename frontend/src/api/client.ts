@@ -6,8 +6,8 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { API_URL, STORAGE_KEYS, TOKEN_CONFIG } from '../config/constants';
-import type { ApiError, TokenPair } from '../types/auth';
+import { API_URL, TOKEN_CONFIG } from '../config/constants';
+import type { ApiError } from '../types/auth';
 
 /**
  * Custom error class for API errors
@@ -61,41 +61,39 @@ class TokenManager {
 const tokenManager = new TokenManager();
 
 /**
- * Get refresh token from localStorage
+ * Get CSRF token from cookie
+ * Used for double submit cookie CSRF protection
  */
-export const getRefreshToken = (): string | null => {
-  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+const getCsrfToken = (): string | null => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split('; csrf_token=');
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
 };
 
 /**
- * Set refresh token in localStorage
+ * Set access token in memory (refresh token is now HttpOnly cookie)
  */
-export const setRefreshToken = (token: string): void => {
-  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
-};
-
-/**
- * Remove refresh token from localStorage
- */
-export const removeRefreshToken = (): void => {
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-};
-
-/**
- * Set token pair (access in memory, refresh in localStorage)
- */
-export const setTokens = (tokens: TokenPair): void => {
+export const setTokens = (tokens: { access_token: string }): void => {
   tokenManager.setAccessToken(tokens.access_token);
-  setRefreshToken(tokens.refresh_token);
 };
 
 /**
- * Clear all tokens
- * Note: User data is managed by Zustand store (memory only, RGPD compliant)
+ * Clear access token from memory
+ * Note: HttpOnly refresh_token and csrf_token cookies are cleared by server on logout
  */
 export const clearTokens = (): void => {
   tokenManager.clearAccessToken();
-  removeRefreshToken();
+};
+
+/**
+ * Check if user has a refresh token (by checking CSRF token presence as proxy)
+ * Since refresh_token is HttpOnly, we can't read it directly
+ */
+export const hasRefreshToken = (): boolean => {
+  return getCsrfToken() !== null;
 };
 
 /**
@@ -108,17 +106,29 @@ const createApiClient = (): AxiosInstance => {
     headers: {
       'Content-Type': 'application/json',
     },
+    withCredentials: true, // Required for HttpOnly cookies
   });
 
   /**
-   * Request interceptor - add access token to headers
+   * Request interceptor - add access token and CSRF token to headers
    */
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+      // Add access token for authenticated requests
       const token = tokenManager.getAccessToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Add CSRF token for mutation requests (POST, PUT, DELETE, PATCH)
+      const method = config.method?.toUpperCase();
+      if (method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+        const csrfToken = getCsrfToken();
+        if (csrfToken && config.headers) {
+          config.headers['X-CSRF-Token'] = csrfToken;
+        }
+      }
+
       return config;
     },
     (error) => {
@@ -144,23 +154,24 @@ const createApiClient = (): AxiosInstance => {
         originalRequest._retry = true;
 
         try {
-          const refreshToken = getRefreshToken();
-          if (!refreshToken) {
+          // Check if we have a refresh token (via CSRF token proxy)
+          if (!hasRefreshToken()) {
             throw new Error('No refresh token available');
           }
 
-          // Attempt to refresh token
-          const response = await axios.post<{ tokens: TokenPair }>(
+          // Attempt to refresh token (refresh_token sent automatically as HttpOnly cookie)
+          const response = await axios.post<{ access_token: string }>(
             `${API_URL}/auth/refresh`,
-            { refresh_token: refreshToken }
+            {},
+            { withCredentials: true }
           );
 
-          const { tokens } = response.data;
-          setTokens(tokens);
+          const { access_token } = response.data;
+          setTokens({ access_token });
 
           // Retry original request with new token
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${tokens.access_token}`;
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
           }
           return client(originalRequest);
         } catch (refreshError) {

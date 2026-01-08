@@ -1,9 +1,13 @@
 use axum::{
     extract::State,
-    http::{header::USER_AGENT, HeaderMap, StatusCode},
+    http::{
+        header::{SET_COOKIE, USER_AGENT},
+        HeaderMap, HeaderValue, StatusCode,
+    },
     response::IntoResponse,
     Json,
 };
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -51,17 +55,17 @@ fn extract_client_ip(headers: &HeaderMap) -> String {
     "unknown".to_string()
 }
 
-/// Token pair in login response
-#[derive(Debug, Serialize)]
-pub struct TokenPair {
-    pub access_token: String,
-    pub refresh_token: String,
-}
-
-/// Login response with tokens only (user fetched via /me endpoint)
+/// Login response with access token only (refresh token sent as HttpOnly cookie)
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
-    pub tokens: TokenPair,
+    pub access_token: String,
+}
+
+/// Generate a cryptographically secure CSRF token
+fn generate_csrf_token() -> String {
+    let mut bytes = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    hex::encode(bytes)
 }
 
 /// POST /api/v1/auth/login
@@ -130,15 +134,40 @@ pub async fn login(
         }
     };
 
-    // Build response with tokens only (user data fetched via /me endpoint)
+    // Generate CSRF token for double submit cookie protection
+    let csrf_token = generate_csrf_token();
+
+    // Build refresh token cookie (HttpOnly, Secure, SameSite=Strict)
+    // Max-Age: 7 days (604800 seconds)
+    let refresh_cookie = format!(
+        "refresh_token={}; HttpOnly; SameSite=Strict; Path=/v1/auth; Max-Age=604800",
+        token_pair.refresh_token
+    );
+
+    // Build CSRF token cookie (NOT HttpOnly so JS can read it)
+    // Max-Age: 7 days (604800 seconds)
+    let csrf_cookie = format!(
+        "csrf_token={}; SameSite=Strict; Path=/; Max-Age=604800",
+        csrf_token
+    );
+
+    // Build response with access token only
     let response = LoginResponse {
-        tokens: TokenPair {
-            access_token: token_pair.access_token,
-            refresh_token: token_pair.refresh_token,
-        },
+        access_token: token_pair.access_token,
     };
 
-    Ok((StatusCode::OK, Json(response)))
+    // Create response with cookies
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        SET_COOKIE,
+        HeaderValue::from_str(&refresh_cookie).map_err(|_| AppError::InternalError)?,
+    );
+    headers.append(
+        SET_COOKIE,
+        HeaderValue::from_str(&csrf_cookie).map_err(|_| AppError::InternalError)?,
+    );
+
+    Ok((StatusCode::OK, headers, Json(response)))
 }
 
 #[cfg(test)]

@@ -10,7 +10,6 @@ import { AUTH_ENDPOINTS } from '../config/constants';
 import type {
   LoginRequest,
   LoginResponse,
-  RefreshRequest,
   RefreshResponse,
   LogoutResponse,
   LogoutAllResponse,
@@ -37,7 +36,7 @@ export const authApi = {
    * Login with email and password
    *
    * @param data - Login credentials
-   * @returns User information and token pair
+   * @returns Access token (refresh token sent as HttpOnly cookie)
    */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiRequest<LoginResponse>({
@@ -46,34 +45,32 @@ export const authApi = {
       data,
     });
 
-    // Store tokens after successful login
-    setTokens(response.tokens);
+    // Store access token (refresh token is handled by HttpOnly cookie)
+    setTokens({ access_token: response.access_token });
 
     return response;
   },
 
   /**
-   * Refresh access token using refresh token
+   * Refresh access token using HttpOnly refresh token cookie
    *
-   * @param data - Refresh token request payload
-   * @returns New token pair
+   * @returns New access token (refresh token sent/received as HttpOnly cookie)
    */
-  refresh: async (data: RefreshRequest): Promise<RefreshResponse> => {
+  refresh: async (): Promise<RefreshResponse> => {
     const response = await apiRequest<RefreshResponse>({
       method: 'POST',
       url: AUTH_ENDPOINTS.REFRESH,
-      data,
     });
 
-    // Store new tokens
-    setTokens(response.tokens);
+    // Store new access token (refresh token is handled by HttpOnly cookie)
+    setTokens({ access_token: response.access_token });
 
     return response;
   },
 
   /**
    * Logout from current device
-   * Revokes the current refresh token
+   * Revokes the refresh token from HttpOnly cookie
    *
    * @returns Logout confirmation message
    */
@@ -83,7 +80,7 @@ export const authApi = {
       url: AUTH_ENDPOINTS.LOGOUT,
     });
 
-    // Clear tokens from storage
+    // Clear access token from memory (cookies cleared by server response)
     clearTokens();
 
     return response;
@@ -177,11 +174,9 @@ export const authApi = {
     });
 
     // Store access token after successful invite acceptance
+    // Refresh token is set as HttpOnly cookie by the server
     if (response.access_token) {
-      setTokens({
-        access_token: response.access_token,
-        refresh_token: '', // Will be set on next refresh
-      });
+      setTokens({ access_token: response.access_token });
     }
 
     return response;

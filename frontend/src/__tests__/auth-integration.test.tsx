@@ -18,12 +18,9 @@ describe('Auth Integration Tests', () => {
   it('should complete login flow', async () => {
     const user = userEvent.setup();
 
-    // Mock successful login (tokens only - RGPD compliant)
+    // Mock successful login (access_token only - refresh token is HttpOnly cookie)
     vi.mocked(authApi.login).mockResolvedValueOnce({
-      tokens: {
-        access_token: 'test-access-token',
-        refresh_token: 'test-refresh-token',
-      },
+      access_token: 'test-access-token',
     });
 
     // Mock /me endpoint call (user fetched after login)

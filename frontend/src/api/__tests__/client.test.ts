@@ -4,42 +4,18 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  getRefreshToken,
-  setRefreshToken,
-  removeRefreshToken,
   setTokens,
   clearTokens,
+  hasRefreshToken,
   tokenManager,
   ApiErrorClass,
 } from '../client';
-import { STORAGE_KEYS } from '../../config/constants';
 
 describe('API Client', () => {
   beforeEach(() => {
-    // Clear localStorage before each test
-    localStorage.clear();
+    // Clear cookies before each test
+    document.cookie = 'csrf_token=; Max-Age=0; path=/';
     tokenManager.clearAccessToken();
-  });
-
-  describe('Token Management - LocalStorage', () => {
-    it('should set refresh token in localStorage', () => {
-      const token = 'test_refresh_token';
-      setRefreshToken(token);
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe(token);
-    });
-
-    it('should get refresh token from localStorage', () => {
-      const token = 'test_refresh_token';
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
-      expect(getRefreshToken()).toBe(token);
-    });
-
-    it('should remove refresh token from localStorage', () => {
-      const token = 'test_refresh_token';
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
-      removeRefreshToken();
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
-    });
   });
 
   describe('Token Management - Memory', () => {
@@ -81,28 +57,34 @@ describe('API Client', () => {
     });
   });
 
-  describe('Token Pair Operations', () => {
-    it('should set both access and refresh tokens', () => {
+  describe('Token Operations', () => {
+    it('should set access token via setTokens', () => {
       const tokens = {
         access_token: 'test_access',
-        refresh_token: 'test_refresh',
       };
       setTokens(tokens);
 
       expect(tokenManager.getAccessToken()).toBe('test_access');
-      expect(getRefreshToken()).toBe('test_refresh');
     });
 
-    it('should clear all tokens', () => {
-      const tokens = {
-        access_token: 'test_access',
-        refresh_token: 'test_refresh',
-      };
-      setTokens(tokens);
+    it('should clear access token via clearTokens', () => {
+      setTokens({ access_token: 'test_access' });
       clearTokens();
 
       expect(tokenManager.getAccessToken()).toBeNull();
-      expect(getRefreshToken()).toBeNull();
+    });
+  });
+
+  describe('CSRF Token Detection', () => {
+    it('should detect presence of CSRF token cookie', () => {
+      // Set CSRF token cookie
+      document.cookie = 'csrf_token=test_csrf_token; path=/';
+      expect(hasRefreshToken()).toBe(true);
+    });
+
+    it('should return false when no CSRF token cookie', () => {
+      document.cookie = 'csrf_token=; Max-Age=0; path=/';
+      expect(hasRefreshToken()).toBe(false);
     });
   });
 

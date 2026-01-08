@@ -49,11 +49,10 @@ export const USER_ENDPOINTS = {
 } as const;
 
 /**
- * Local storage keys for token management
- * Note: Access tokens should be stored in memory only, not localStorage
+ * Local storage keys
+ * Note: Access tokens stored in memory only, refresh tokens in HttpOnly cookies
  */
 export const STORAGE_KEYS = {
-  REFRESH_TOKEN: 'timemanager_refresh_token',
   USER: 'timemanager_user',
 } as const;
 
