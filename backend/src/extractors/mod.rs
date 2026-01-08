@@ -3,7 +3,9 @@
 
 pub mod authenticated_user;
 pub mod role_guard;
+pub mod validated_json;
 
 // Re-export commonly used types
 pub use authenticated_user::{AuthError, AuthenticatedUser};
 pub use role_guard::{Admin, Employee, Manager, RequiredRole, RoleError, RoleGuard, SuperAdmin};
+pub use validated_json::ValidatedJson;
