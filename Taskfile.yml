@@ -1,0 +1,235 @@
+version: '3'
+
+vars:
+  BLUE: '\033[0;34m'
+  GREEN: '\033[0;32m'
+  RESET: '\033[0m'
+
+tasks:
+  default:
+    desc: "Afficher l'aide"
+    cmds:
+      - task --list
+
+  # ============ MODE DEVELOPMENT ============
+  dev:
+    desc: "Lancer en mode développement (hot reload + monitoring + Traefik)"
+    cmds:
+      - echo "{{.BLUE}}🚀 Démarrage en mode DEV...{{.RESET}}"
+      - |
+        export $(grep -v '^#' .env.dev | xargs) && \
+        ENV=dev \
+        DOCKERFILE_BACKEND=Dockerfile.dev \
+        DOCKERFILE_FRONTEND=Dockerfile.dev \
+        BACKEND_VOLUME_MODE=rw \
+        FRONTEND_VOLUME_MODE=rw \
+        FRONTEND_PORT=3000 \
+        docker compose --env-file .env.dev up -d
+      - echo "{{.GREEN}}✅ DEV démarré!{{.RESET}}"
+      - echo "Application - http://localhost:8000 (via Traefik)"
+      - echo "Traefik Dashboard - http://localhost:8081"
+      - echo "Mailpit - http://localhost:8025"
+      - echo "Grafana - http://localhost:3001"
+      - echo "Prometheus - http://localhost:9090"
+
+  dev:build:
+    desc: "Rebuild et lancer en mode dev"
+    cmds:
+      - echo "{{.BLUE}}🔨 Build + démarrage DEV...{{.RESET}}"
+      - |
+        export $(grep -v '^#' .env.dev | xargs) && \
+        ENV=dev \
+        DOCKERFILE_BACKEND=Dockerfile.dev \
+        DOCKERFILE_FRONTEND=Dockerfile.dev \
+        BACKEND_VOLUME_MODE=rw \
+        FRONTEND_VOLUME_MODE=rw \
+        FRONTEND_PORT=3000 \
+        docker compose --env-file .env.dev up -d --build
+
+  dev:logs:
+    desc: "Suivre les logs en mode dev"
+    cmds:
+      - docker compose logs -f backend frontend
+
+  # ============ MODE PRODUCTION ============
+  prod:
+    desc: "Lancer en mode production (builds optimisés + monitoring + Traefik)"
+    cmds:
+      - echo "{{.BLUE}}🚀 Démarrage en mode PROD...{{.RESET}}"
+      - |
+        export $(grep -v '^#' .env.prod | xargs) && \
+        ENV=prod \
+        DOCKERFILE_BACKEND=Dockerfile \
+        DOCKERFILE_FRONTEND=Dockerfile \
+        BACKEND_VOLUME_MODE=ro \
+        FRONTEND_VOLUME_MODE=ro \
+        FRONTEND_PORT=80 \
+        docker compose --env-file .env.prod up -d
+      - echo "{{.GREEN}}✅ PROD démarré!{{.RESET}}"
+      - echo "Application - http://localhost:8000 (via Traefik)"
+      - echo "Traefik Dashboard - http://localhost:8081"
+      - echo "Grafana - http://localhost:3001"
+      - echo "Prometheus - http://localhost:9090"
+
+  prod:build:
+    desc: "Rebuild et lancer en mode prod"
+    cmds:
+      - echo "{{.BLUE}}🔨 Build + démarrage PROD...{{.RESET}}"
+      - |
+        export $(grep -v '^#' .env.prod | xargs) && \
+        ENV=prod \
+        DOCKERFILE_BACKEND=Dockerfile \
+        DOCKERFILE_FRONTEND=Dockerfile \
+        BACKEND_VOLUME_MODE=ro \
+        FRONTEND_VOLUME_MODE=ro \
+        FRONTEND_PORT=80 \
+        docker compose --env-file .env.prod up -d --build
+
+  prod:logs:
+    desc: "Suivre les logs en mode prod"
+    cmds:
+      - docker compose logs -f backend frontend
+
+  # ============ GESTION ============
+  stop:
+    desc: "Arrêter tous les services"
+    cmds:
+      - echo "{{.BLUE}}⏸️  Arrêt des services...{{.RESET}}"
+      - docker compose down
+      - echo "{{.GREEN}}✅ Services arrêtés{{.RESET}}"
+
+  clean:
+    desc: "Nettoyer complètement (containers + volumes)"
+    cmds:
+      - echo "{{.BLUE}}🧹 Nettoyage complet...{{.RESET}}"
+      - docker compose down -v
+      - echo "{{.GREEN}}✅ Nettoyage terminé{{.RESET}}"
+
+  restart:dev:
+    desc: "Redémarrer en mode dev"
+    deps: [stop]
+    cmds:
+      - task: dev
+
+  restart:prod:
+    desc: "Redémarrer en mode prod"
+    deps: [stop]
+    cmds:
+      - task: prod
+
+  # ============ LOGS ============
+  logs:
+    desc: "Voir tous les logs"
+    cmds:
+      - docker compose logs -f
+
+  logs:backend:
+    desc: "Logs backend uniquement"
+    cmds:
+      - docker compose logs -f backend
+
+  logs:frontend:
+    desc: "Logs frontend uniquement"
+    cmds:
+      - docker compose logs -f frontend
+
+  logs:postgres:
+    desc: "Logs PostgreSQL"
+    cmds:
+      - docker compose logs -f postgres
+
+  logs:traefik:
+    desc: "Logs Traefik"
+    cmds:
+      - docker compose logs -f traefik
+
+  # ============ DATABASE ============
+  migrate:
+    desc: "Exécuter les migrations Diesel"
+    cmds:
+      - echo "{{.BLUE}}🗄️  Exécution des migrations...{{.RESET}}"
+      - docker compose exec backend diesel migration run
+
+  migrate:redo:
+    desc: "Rollback puis re-run dernière migration"
+    cmds:
+      - docker compose exec backend diesel migration redo
+
+  psql:
+    desc: "Se connecter à PostgreSQL"
+    cmds:
+      - docker compose exec postgres psql -U timemanager -d timemanager
+
+  db:reset:
+    desc: "Reset complet de la base"
+    cmds:
+      - echo "{{.BLUE}}⚠️  Reset de la base de données...{{.RESET}}"
+      - docker compose exec postgres psql -U timemanager -d timemanager -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+      - task: migrate
+
+  # ============ TESTS ============
+  test:
+    desc: "Lancer tous les tests"
+    cmds:
+      - echo "{{.BLUE}}🧪 Tests Backend...{{.RESET}}"
+      - task: test:backend
+      - echo "{{.BLUE}}🧪 Tests Frontend...{{.RESET}}"
+      - task: test:frontend
+
+  test:backend:
+    desc: "Tests backend uniquement"
+    dir: backend
+    cmds:
+      - cargo test
+
+  test:frontend:
+    desc: "Tests frontend uniquement"
+    dir: frontend
+    cmds:
+      - npm run ci
+
+  # ============ MONITORING ============
+  monitoring:
+    desc: "Ouvrir tous les dashboards de monitoring"
+    cmds:
+      - echo "{{.GREEN}}📊 Dashboards de monitoring - {{.RESET}}"
+      - echo "Traefik Dashboard - http://localhost:8081"
+      - echo "Grafana - http://localhost:3001 (admin/admin)"
+      - echo "Prometheus - http://localhost:9090"
+      - echo "Mailpit - http://localhost:8025"
+
+  grafana:
+    desc: "Ouvrir Grafana dans le navigateur"
+    cmds:
+      - echo "{{.GREEN}}📊 Grafana - http://localhost:3001{{.RESET}}"
+      - echo "Username - admin"
+      - echo "Password - admin"
+      - open http://localhost:3001 2>/dev/null || xdg-open http://localhost:3001 2>/dev/null || echo "Ouvrez http://localhost:3001"
+
+  traefik:
+    desc: "Ouvrir le dashboard Traefik"
+    cmds:
+      - echo "{{.GREEN}}🔀 Traefik Dashboard - http://localhost:8081{{.RESET}}"
+      - open http://localhost:8081 2>/dev/null || xdg-open http://localhost:8081 2>/dev/null || echo "Ouvrez http://localhost:8081"
+
+  # ============ UTILS ============
+  ps:
+    desc: "Lister les containers actifs"
+    cmds:
+      - docker compose ps
+
+  shell:backend:
+    desc: "Shell dans le container backend"
+    cmds:
+      - docker compose exec backend sh
+
+  shell:frontend:
+    desc: "Shell dans le container frontend"
+    cmds:
+      - docker compose exec frontend sh
+
+  prune:
+    desc: "Nettoyer Docker complètement (⚠️  ATTENTION)"
+    cmds:
+      - echo "{{.BLUE}}⚠️  Suppression de TOUT Docker...{{.RESET}}"
+      - docker system prune -a --volumes -f

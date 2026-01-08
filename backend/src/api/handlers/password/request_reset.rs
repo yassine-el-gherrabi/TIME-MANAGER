@@ -36,14 +36,18 @@ pub async fn request_reset(
     // Create password reset service
     let reset_service = PasswordResetService::new(state.db_pool.clone());
 
-    // Request password reset
-    let reset_token = reset_service.request_reset(&payload.email).await?;
+    // Request password reset - service returns None if user doesn't exist
+    let _reset_token = reset_service.request_reset(&payload.email).await?;
 
-    // In production, send email with reset token
-    // For now, return token in response (development only)
+    // In a real application, the token would be sent via email if it exists
+    // NEVER expose the token in HTTP response to prevent:
+    // - Token leakage in logs, browser history, and proxy caches
+    // - User enumeration attacks
+
+    // Always return the same response regardless of whether user exists
     let response = RequestResetResponse {
-        message: "Password reset email sent (if account exists)".to_string(),
-        reset_token: Some(reset_token), // Remove in production
+        message: "If that email exists, a password reset link has been sent.".to_string(),
+        reset_token: None, // NEVER expose tokens in HTTP responses
     };
 
     Ok((StatusCode::OK, Json(response)))

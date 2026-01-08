@@ -1,6 +1,14 @@
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::net::SocketAddr;
-use timemanager_backend::{api::router::create_router, config::app::AppConfig};
+use timemanager_backend::{
+    api::router::create_router,
+    config::app::{AppConfig, AppState},
+    config::database::create_pool,
+};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+// Embed migrations at compile time
+const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -25,8 +33,29 @@ async fn main() -> anyhow::Result<()> {
         config.app_port
     );
 
-    // Create application router
-    let app = create_router();
+    // Create database connection pool
+    let db_pool = create_pool(&config.database_url);
+    tracing::info!("Database connection pool created");
+
+    // Run embedded migrations
+    tracing::info!("Running database migrations...");
+    let mut conn = db_pool
+        .get()
+        .expect("Failed to get database connection for migrations");
+
+    conn.run_pending_migrations(MIGRATIONS)
+        .expect("Failed to run database migrations");
+
+    tracing::info!("Database migrations completed successfully");
+
+    // Create application state
+    let state = AppState {
+        config: config.clone(),
+        db_pool,
+    };
+
+    // Create application router with state
+    let app = create_router(state);
 
     // Create socket address
     let addr = SocketAddr::from(([0, 0, 0, 0], config.app_port));

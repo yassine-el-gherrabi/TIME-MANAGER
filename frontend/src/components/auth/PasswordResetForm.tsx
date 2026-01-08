@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+import { mapErrorToMessage } from '../../utils/errorHandling';
 
 export const PasswordResetForm: React.FC = () => {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ export const PasswordResetForm: React.FC = () => {
       await authApi.resetPassword({ reset_token: token, new_password: password });
       navigate('/login', { state: { message: 'Password reset successful. Please log in.' } });
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Failed to reset password');
+      setApiError(mapErrorToMessage(err));
     } finally {
       setIsLoading(false);
     }

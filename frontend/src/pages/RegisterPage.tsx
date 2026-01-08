@@ -1,5 +1,9 @@
-import { RegisterForm } from '../components/auth';
+import { RegisterForm, AuthLayout } from '../components/auth';
 
 export function RegisterPage() {
-  return <RegisterForm />;
+  return (
+    <AuthLayout title="Create Account">
+      <RegisterForm />
+    </AuthLayout>
+  );
 }

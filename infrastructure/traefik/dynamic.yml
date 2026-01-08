@@ -48,8 +48,8 @@ http:
           - DELETE
           - OPTIONS
         accessControlAllowOriginList:
-          - "http://localhost:3000"
           - "http://localhost:8000"
+          - "https://your-domain.com"
         accessControlAllowHeaders:
           - "Authorization"
           - "Content-Type"

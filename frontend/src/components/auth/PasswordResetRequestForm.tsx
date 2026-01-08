@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+import { mapErrorToMessage } from '../../utils/errorHandling';
 
 export const PasswordResetRequestForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ export const PasswordResetRequestForm: React.FC = () => {
       await authApi.requestPasswordReset({ email });
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset email');
+      setError(mapErrorToMessage(err));
     } finally {
       setIsLoading(false);
     }

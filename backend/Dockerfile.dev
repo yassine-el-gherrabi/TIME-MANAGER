@@ -1,0 +1,31 @@
+# ============================================
+# Dockerfile.dev - Development with hot reload
+# ============================================
+FROM rust:1.92-slim-bookworm
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install cargo-watch for hot reload
+RUN cargo install cargo-watch
+
+WORKDIR /app
+
+# Copy manifests first (cache dependencies)
+COPY Cargo.toml Cargo.lock ./
+
+# Pre-build dependencies
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build && \
+    rm -rf src
+
+EXPOSE 8080
+
+# Hot reload command
+CMD ["cargo", "watch", "-x", "run"]

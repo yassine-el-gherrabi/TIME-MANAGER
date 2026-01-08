@@ -1,0 +1,58 @@
+name: Docker Lint
+
+on:
+  push:
+    branches: [master, develop, feature/*]
+    paths:
+      - '**/Dockerfile*'
+      - '**/docker-compose*.yml'
+      - '.github/workflows/docker-lint.yml'
+  pull_request:
+    branches: [master, develop]
+    paths:
+      - '**/Dockerfile*'
+      - '**/docker-compose*.yml'
+
+jobs:
+  hadolint:
+    name: Hadolint Dockerfile Linter
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint on backend Dockerfile.dev
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile.dev
+          failure-threshold: warning
+
+      - name: Run Hadolint on backend Dockerfile.prod
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile.prod
+          failure-threshold: warning
+
+      - name: Run Hadolint on frontend Dockerfile.dev
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: frontend/Dockerfile.dev
+          failure-threshold: warning
+
+      - name: Run Hadolint on frontend Dockerfile.prod
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: frontend/Dockerfile.prod
+          failure-threshold: warning
+
+  docker-compose-validate:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet

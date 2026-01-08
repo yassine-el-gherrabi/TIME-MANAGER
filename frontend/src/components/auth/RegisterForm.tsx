@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+import { mapErrorToMessage } from '../../utils/errorHandling';
 import { UserRole, type RegisterRequest } from '../../types/auth';
 
 export interface RegisterFormProps {
@@ -50,7 +51,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, redirectT
       onSuccess?.();
       navigate(redirectTo);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Registration failed');
+      setApiError(mapErrorToMessage(error));
     }
   };
 

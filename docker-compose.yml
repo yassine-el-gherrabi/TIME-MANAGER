@@ -1,11 +1,11 @@
 services:
-  # PostgreSQL Database
+  # ========== DATABASE (commun dev/prod) ==========
   postgres:
     image: postgres:16-alpine
     container_name: timemanager-postgres
     environment:
       POSTGRES_USER: timemanager
-      POSTGRES_PASSWORD: timemanager_dev_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: timemanager
     ports:
       - "5432:5432"
@@ -19,19 +19,23 @@ services:
     networks:
       - timemanager-network
 
-  # Backend API (Rust/Axum)
+  # ========== BACKEND (unifié dev/prod) ==========
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: ${DOCKERFILE_BACKEND:-Dockerfile.dev}
     container_name: timemanager-backend
     environment:
-      APP_HOST: 0.0.0.0
-      APP_PORT: 8080
-      DATABASE_URL: postgres://timemanager:timemanager_dev_password@postgres:5432/timemanager
-      RUST_LOG: debug
-      JWT_SECRET: dev-secret-key-not-for-production
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost
+      APP_HOST: ${APP_HOST}
+      APP_PORT: ${APP_PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      RUST_LOG: ${RUST_LOG}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+    volumes:
+      - ./backend:/app:${BACKEND_VOLUME_MODE:-rw}
+      - cargo_cache:/usr/local/cargo/registry
+      - cargo_target:/app/target
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,23 +47,28 @@ services:
     networks:
       - timemanager-network
 
-  # Frontend (React/Vite)
+  # ========== FRONTEND (unifié dev/prod) ==========
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: ${DOCKERFILE_FRONTEND:-Dockerfile.dev}
     container_name: timemanager-frontend
     environment:
-      VITE_API_URL: http://localhost:8000/api/v1
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    volumes:
+      - ./frontend:/app:${FRONTEND_VOLUME_MODE:-rw}
+      - /app/node_modules
+    depends_on:
+      - backend
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
       - "traefik.http.routers.frontend.middlewares=security-headers@file"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.services.frontend.loadbalancer.server.port=${FRONTEND_PORT:-3000}"
     networks:
       - timemanager-network
 
-  # Traefik Reverse Proxy
+  # ========== TRAEFIK (toujours actif) ==========
   traefik:
     image: traefik:v2.11
     container_name: timemanager-traefik
@@ -70,10 +79,13 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./infrastructure/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
       - "./infrastructure/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro"
+    environment:
+      - TRAEFIK_API_DASHBOARD=${TRAEFIK_DASHBOARD:-true}
+      - TRAEFIK_LOG_LEVEL=${TRAEFIK_LOG_LEVEL:-DEBUG}
     networks:
       - timemanager-network
 
-  # Mailpit (Email Testing)
+  # ========== MAILPIT (toujours actif) ==========
   mailpit:
     image: axllent/mailpit:latest
     container_name: timemanager-mailpit
@@ -86,15 +98,13 @@ services:
     networks:
       - timemanager-network
 
-  # Prometheus (Metrics Storage)
+  # ========== PROMETHEUS (toujours actif) ==========
   prometheus:
     image: prom/prometheus:latest
     container_name: timemanager-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
     ports:
       - "9090:9090"
     volumes:
@@ -104,7 +114,7 @@ services:
       - timemanager-network
     restart: unless-stopped
 
-  # Loki (Log Aggregation)
+  # ========== LOKI (toujours actif) ==========
   loki:
     image: grafana/loki:latest
     container_name: timemanager-loki
@@ -118,7 +128,7 @@ services:
       - timemanager-network
     restart: unless-stopped
 
-  # Grafana (Visualization)
+  # ========== GRAFANA (toujours actif) ==========
   grafana:
     image: grafana/grafana:latest
     container_name: timemanager-grafana
@@ -141,13 +151,11 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
   prometheus_data:
-    driver: local
   loki_data:
-    driver: local
   grafana_data:
-    driver: local
+  cargo_cache:
+  cargo_target:
 
 networks:
   timemanager-network:

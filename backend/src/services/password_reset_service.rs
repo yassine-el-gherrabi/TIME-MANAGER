@@ -32,31 +32,42 @@ impl PasswordResetService {
     }
 
     /// Request password reset - generates token and returns it (would be emailed in real app)
-    pub async fn request_reset(&self, email: &str) -> Result<String, AppError> {
-        // Find user by email
-        let user = self.user_repo.find_by_email(email).await?;
-
-        // Generate reset token (32 random bytes as hex)
-        let reset_token = generate_reset_token();
-
-        // Hash the token for storage
-        let token_hash = hash_token(&reset_token);
-
-        // Set expiry (1 hour from now)
-        let expires_at = chrono::Utc::now().naive_utc() + chrono::Duration::hours(1);
-
-        // Create reset token record
-        let new_token = NewPasswordResetToken {
-            user_id: user.id,
-            token_hash: token_hash.clone(),
-            expires_at,
+    /// Returns Option<String> to allow silent failure when user doesn't exist (prevents user enumeration)
+    pub async fn request_reset(&self, email: &str) -> Result<Option<String>, AppError> {
+        // Find user by email - handle not found case to prevent user enumeration
+        let user = match self.user_repo.find_by_email(email).await {
+            Ok(u) => Some(u),
+            Err(AppError::NotFound(_)) => None,
+            Err(e) => return Err(e),
         };
 
-        self.reset_token_repo.create(new_token).await?;
+        // Generate token ONLY if user exists, but always return same response
+        if let Some(user) = user {
+            // Generate reset token (32 random bytes as hex)
+            let reset_token = generate_reset_token();
 
-        // In a real application, send email with reset_token here
-        // For now, return the token (in production, this would be emailed)
-        Ok(reset_token)
+            // Hash the token for storage
+            let token_hash = hash_token(&reset_token);
+
+            // Set expiry (1 hour from now)
+            let expires_at = chrono::Utc::now().naive_utc() + chrono::Duration::hours(1);
+
+            // Create reset token record
+            let new_token = NewPasswordResetToken {
+                user_id: user.id,
+                token_hash: token_hash.clone(),
+                expires_at,
+            };
+
+            self.reset_token_repo.create(new_token).await?;
+
+            // In a real application, send email with reset_token here
+            // For now, return the token (in production, this would be emailed)
+            Ok(Some(reset_token))
+        } else {
+            // User doesn't exist - return None but don't reveal this to caller
+            Ok(None)
+        }
     }
 
     /// Reset password using reset token

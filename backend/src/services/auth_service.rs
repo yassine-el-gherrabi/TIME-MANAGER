@@ -43,9 +43,11 @@ impl AuthService {
         // Validate password strength
         self.password_service.validate_password_strength(password)?;
 
-        // Check if user already exists
+        // Check if user already exists - return generic error to prevent user enumeration
         if self.user_repo.find_by_email(email).await.is_ok() {
-            return Err(AppError::Conflict("Email already registered".to_string()));
+            return Err(AppError::ValidationError(
+                "Registration failed. Please check your information.".to_string(),
+            ));
         }
 
         // Hash password
@@ -65,8 +67,18 @@ impl AuthService {
 
     /// Login user with email and password
     pub async fn login(&self, email: &str, password: &str) -> Result<TokenPair, AppError> {
-        // Find user by email
-        let user = self.user_repo.find_by_email(email).await?;
+        // Find user by email - handle not found case to prevent user enumeration
+        let user = match self.user_repo.find_by_email(email).await {
+            Ok(u) => u,
+            Err(AppError::NotFound(_)) => {
+                // Perform dummy password verification to prevent timing attacks
+                // This ensures authentication always takes similar time regardless of user existence
+                let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$aGVsbG93b3JsZA$CksGSbFneCWPxbHEUWZUKAFoJL0pfeFnJXnkPv2FsVo";
+                let _ = self.password_service.verify_password(password, dummy_hash);
+                return Err(AppError::Unauthorized("Invalid email or password".to_string()));
+            }
+            Err(e) => return Err(e),
+        };
 
         // Check if account is locked
         if self.user_repo.is_locked(user.id).await? {
@@ -83,7 +95,7 @@ impl AuthService {
         if !is_valid {
             // Increment failed attempts
             self.user_repo.increment_failed_attempts(user.id).await?;
-            return Err(AppError::Unauthorized("Invalid credentials".to_string()));
+            return Err(AppError::Unauthorized("Invalid email or password".to_string()));
         }
 
         // Reset failed attempts on successful login

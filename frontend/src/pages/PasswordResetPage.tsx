@@ -1,5 +1,9 @@
-import { PasswordResetForm } from '../components/auth';
+import { PasswordResetForm, AuthLayout } from '../components/auth';
 
 export function PasswordResetPage() {
-  return <PasswordResetForm />;
+  return (
+    <AuthLayout title="Set New Password">
+      <PasswordResetForm />
+    </AuthLayout>
+  );
 }

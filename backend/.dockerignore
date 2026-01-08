@@ -1,21 +1,40 @@
-# Rust build artifacts
-target/
+# Git
+.git
+.gitignore
+.gitattributes
 
-# IDE
-.vscode/
-.idea/
-
-# Environment
-.env
-.env.*
+# CI/CD
+.github
 
 # Documentation
 *.md
+README.md
+LICENSE
 docs/
 
-# Git
-.git/
-.gitignore
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
 
-# Misc
+# Rust
+target/
+**/*.rs.bk
+
+# Logs
 *.log
+
+# Environment
+.env*
+!.env.example
+
+# Testing
+tests/
+benches/
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*

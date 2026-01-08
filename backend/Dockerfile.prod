@@ -1,0 +1,66 @@
+# ============================================
+# Stage 1: Dependencies - Cache layer for dependencies
+# ============================================
+FROM rust:1.92-slim-bookworm AS dependencies
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Build dependencies only (cached layer)
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
+
+# ============================================
+# Stage 2: Builder - Compile application
+# ============================================
+FROM dependencies AS builder
+
+# Copy source code
+COPY . .
+
+# Build application with optimizations
+RUN cargo build --release --locked && \
+    strip target/release/timemanager-backend
+
+# ============================================
+# Stage 3: Runtime - Minimal image (distroless-like)
+# ============================================
+FROM debian:bookworm-slim
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder --chown=appuser:appuser /app/target/release/timemanager-backend /app/timemanager-backend
+
+# Switch to non-root user
+USER appuser
+
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["/app/timemanager-backend", "--health-check"] || exit 1
+
+# Run binary
+CMD ["/app/timemanager-backend"]

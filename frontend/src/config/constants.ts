@@ -12,7 +12,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 /**
  * API version prefix
  */
-export const API_VERSION = '/api/v1';
+export const API_VERSION = '/v1';
 
 /**
  * Full API URL with version

@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+import { mapErrorToMessage } from '../../utils/errorHandling';
 import type { LoginRequest } from '../../types/auth';
 
 export interface LoginFormProps {
@@ -50,7 +51,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
       onSuccess?.();
       navigate(redirectTo);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Login failed');
+      setApiError(mapErrorToMessage(error));
     }
   };
 
