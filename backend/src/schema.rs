@@ -7,6 +7,18 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    invite_tokens (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        #[max_length = 64]
+        token_hash -> Varchar,
+        expires_at -> Timestamptz,
+        used_at -> Nullable<Timestamptz>,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     login_attempts (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -63,6 +75,9 @@ diesel::table! {
         expires_at -> Timestamp,
         created_at -> Timestamp,
         revoked_at -> Nullable<Timestamp>,
+        last_used_at -> Timestamp,
+        #[max_length = 512]
+        user_agent -> Nullable<Varchar>,
     }
 }
 
@@ -71,8 +86,6 @@ diesel::table! {
         id -> Uuid,
         user_id -> Uuid,
         refresh_token_id -> Uuid,
-        #[max_length = 45]
-        ip_address -> Varchar,
         #[max_length = 512]
         user_agent -> Nullable<Varchar>,
         created_at -> Timestamp,
@@ -106,6 +119,7 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(invite_tokens -> users (user_id));
 diesel::joinable!(password_history -> users (user_id));
 diesel::joinable!(password_reset_tokens -> users (user_id));
 diesel::joinable!(refresh_tokens -> users (user_id));
@@ -114,6 +128,7 @@ diesel::joinable!(user_sessions -> users (user_id));
 diesel::joinable!(users -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    invite_tokens,
     login_attempts,
     organizations,
     password_history,

@@ -3,32 +3,32 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::refresh_tokens;
+use crate::schema::invite_tokens;
 
+/// Invite token for user invitation workflow
 #[derive(Debug, Clone, Queryable, Selectable, Serialize, Deserialize)]
-#[diesel(table_name = refresh_tokens)]
-pub struct RefreshToken {
+#[diesel(table_name = invite_tokens)]
+pub struct InviteToken {
     pub id: Uuid,
     pub user_id: Uuid,
     pub token_hash: String,
     pub expires_at: NaiveDateTime,
+    pub used_at: Option<NaiveDateTime>,
     pub created_at: NaiveDateTime,
-    pub revoked_at: Option<NaiveDateTime>,
-    pub last_used_at: NaiveDateTime,
-    pub user_agent: Option<String>,
 }
 
+/// New invite token for insertion
 #[derive(Debug, Insertable)]
-#[diesel(table_name = refresh_tokens)]
-pub struct NewRefreshToken {
+#[diesel(table_name = invite_tokens)]
+pub struct NewInviteToken {
     pub user_id: Uuid,
     pub token_hash: String,
     pub expires_at: NaiveDateTime,
-    pub user_agent: Option<String>,
 }
 
-impl RefreshToken {
+impl InviteToken {
+    /// Check if the token is valid (not used and not expired)
     pub fn is_valid(&self) -> bool {
-        self.revoked_at.is_none() && self.expires_at > chrono::Utc::now().naive_utc()
+        self.used_at.is_none() && self.expires_at > chrono::Utc::now().naive_utc()
     }
 }

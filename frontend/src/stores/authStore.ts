@@ -8,12 +8,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '../api/auth';
-import { clearTokens, tokenManager } from '../api/client';
+import { clearTokens, getRefreshToken } from '../api/client';
 import { STORAGE_KEYS } from '../config/constants';
 import type {
   User,
-  RegisterRequest,
   LoginRequest,
+  AcceptInviteRequest,
   AuthState,
 } from '../types/auth';
 
@@ -22,8 +22,8 @@ import type {
  */
 interface AuthStore extends AuthState {
   // Actions
-  register: (data: RegisterRequest) => Promise<void>;
   login: (data: LoginRequest) => Promise<void>;
+  acceptInvite: (data: AcceptInviteRequest) => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -33,9 +33,10 @@ interface AuthStore extends AuthState {
 }
 
 /**
- * Zustand auth store with persistence
+ * Zustand auth store
  *
- * Persists user data to localStorage, but keeps access tokens in memory only
+ * User data kept in memory only (RGPD compliant - no PII in localStorage)
+ * Tokens managed separately by TokenManager
  */
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -48,15 +49,20 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
 
       /**
-       * Register a new user account
+       * Login with email and password
+       * Tokens are stored by authApi.login(), then user is fetched via /me
        */
-      register: async (data: RegisterRequest) => {
+      login: async (data: LoginRequest) => {
         set({ isLoading: true });
         try {
-          const response = await authApi.register(data);
+          // Get tokens (stored automatically by authApi.login)
+          await authApi.login(data);
+
+          // Fetch user data via /me endpoint (RGPD compliant - no PII in login response)
+          const user = await authApi.me();
 
           set({
-            user: response.user,
+            user,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -67,15 +73,17 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       /**
-       * Login with email and password
+       * Accept invite and set password (auto-login)
        */
-      login: async (data: LoginRequest) => {
+      acceptInvite: async (data: AcceptInviteRequest) => {
         set({ isLoading: true });
         try {
-          const response = await authApi.login(data);
+          await authApi.acceptInvite(data);
 
+          // After accepting invite, fetch user data
+          const user = await authApi.me();
           set({
-            user: response.user,
+            user,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -87,29 +95,35 @@ export const useAuthStore = create<AuthStore>()(
 
       /**
        * Logout from current device
+       * Always clears local auth state, even if API call fails
        */
       logout: async () => {
         set({ isLoading: true });
         try {
           await authApi.logout();
-          get().clearAuth();
         } catch (error) {
-          set({ isLoading: false });
-          throw error;
+          // Log but don't throw - user should still be logged out locally
+          console.error('Logout API call failed:', error);
+        } finally {
+          // Always clear local auth state
+          get().clearAuth();
         }
       },
 
       /**
        * Logout from all devices
+       * Always clears local auth state, even if API call fails
        */
       logoutAll: async () => {
         set({ isLoading: true });
         try {
           await authApi.logoutAll();
-          get().clearAuth();
         } catch (error) {
-          set({ isLoading: false });
-          throw error;
+          // Log but don't throw - user should still be logged out locally
+          console.error('Logout all API call failed:', error);
+        } finally {
+          // Always clear local auth state
+          get().clearAuth();
         }
       },
 
@@ -163,28 +177,43 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: STORAGE_KEYS.USER,
-      // Only persist user data, not tokens
-      partialize: (state) => ({
-        user: state.user,
-      }),
+      // RGPD: Do not persist user PII to localStorage
+      // User data is fetched via /me on each session
+      partialize: () => ({}),
     }
   )
 );
 
 /**
  * Initialize auth store on app startup
- * Checks for existing tokens and refreshes user if available
+ * Checks for existing refresh token in localStorage and restores session
+ * Access tokens are stored in memory only (lost on reload), so we use
+ * the refresh token to obtain a new access token on page load.
  */
-export const initializeAuth = async () => {
+export const initializeAuth = async (): Promise<boolean> => {
   const store = useAuthStore.getState();
-  const accessToken = tokenManager.getAccessToken();
+  const refreshToken = getRefreshToken();
 
-  if (accessToken) {
-    try {
-      await store.refreshUser();
-    } catch (error) {
-      // Token invalid or expired, clear auth
-      store.clearAuth();
-    }
+  // No refresh token = not authenticated
+  if (!refreshToken) {
+    return false;
+  }
+
+  store.setLoading(true);
+
+  try {
+    // Use refresh token to get new access token
+    // authApi.refresh() internally calls setTokens() after successful refresh
+    await authApi.refresh({ refresh_token: refreshToken });
+
+    // Fetch user data via /me endpoint
+    const user = await authApi.me();
+    store.setUser(user);
+    store.setLoading(false);
+    return true;
+  } catch (error) {
+    // Refresh token invalid or expired, clear auth
+    store.clearAuth();
+    return false;
   }
 };

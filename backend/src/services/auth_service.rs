@@ -12,7 +12,7 @@ use crate::utils::{JwtService, PasswordService};
 
 type DbPool = Pool<ConnectionManager<PgConnection>>;
 
-/// Authentication service for user registration, login, and token management
+/// Authentication service for user login and token management
 pub struct AuthService {
     user_repo: UserRepository,
     token_repo: RefreshTokenRepository,
@@ -30,43 +30,13 @@ impl AuthService {
         }
     }
 
-    /// Register a new user
-    pub async fn register(
+    /// Login user with email and password
+    pub async fn login(
         &self,
         email: &str,
         password: &str,
-        _first_name: &str,
-        _last_name: &str,
-        _organization_id: Uuid,
-        _role: UserRole,
+        user_agent: Option<String>,
     ) -> Result<TokenPair, AppError> {
-        // Validate password strength
-        self.password_service.validate_password_strength(password)?;
-
-        // Check if user already exists - return generic error to prevent user enumeration
-        if self.user_repo.find_by_email(email).await.is_ok() {
-            return Err(AppError::ValidationError(
-                "Registration failed. Please check your information.".to_string(),
-            ));
-        }
-
-        // Hash password
-        let _password_hash = self.password_service.hash_password(password)?;
-
-        // Create user (this would use a NewUser model in real implementation)
-        // For now, we'll assume the user is created and return their ID
-        // In a real implementation, you'd have a create method in UserRepository
-
-        // Generate tokens (using placeholder user_id for now)
-        // In real implementation, this would use the created user's ID
-        let user = self.user_repo.find_by_email(email).await?;
-
-        self.generate_token_pair(user.id, user.organization_id, user.role)
-            .await
-    }
-
-    /// Login user with email and password
-    pub async fn login(&self, email: &str, password: &str) -> Result<TokenPair, AppError> {
         // Find user by email - handle not found case to prevent user enumeration
         let user = match self.user_repo.find_by_email(email).await {
             Ok(u) => u,
@@ -75,7 +45,9 @@ impl AuthService {
                 // This ensures authentication always takes similar time regardless of user existence
                 let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$aGVsbG93b3JsZA$CksGSbFneCWPxbHEUWZUKAFoJL0pfeFnJXnkPv2FsVo";
                 let _ = self.password_service.verify_password(password, dummy_hash);
-                return Err(AppError::Unauthorized("Invalid email or password".to_string()));
+                return Err(AppError::Unauthorized(
+                    "Invalid email or password".to_string(),
+                ));
             }
             Err(e) => return Err(e),
         };
@@ -95,7 +67,9 @@ impl AuthService {
         if !is_valid {
             // Increment failed attempts
             self.user_repo.increment_failed_attempts(user.id).await?;
-            return Err(AppError::Unauthorized("Invalid email or password".to_string()));
+            return Err(AppError::Unauthorized(
+                "Invalid email or password".to_string(),
+            ));
         }
 
         // Reset failed attempts on successful login
@@ -108,13 +82,26 @@ impl AuthService {
             ));
         }
 
-        // Generate token pair
-        self.generate_token_pair(user.id, user.organization_id, user.role)
+        // Revoke any existing sessions from the same device (user_agent)
+        // This ensures only one session per device
+        if let Some(ref ua) = user_agent {
+            let _ = self
+                .token_repo
+                .revoke_by_user_agent_for_user(user.id, ua)
+                .await;
+        }
+
+        // Generate token pair with session info
+        self.generate_token_pair(user.id, user.organization_id, user.role, user_agent)
             .await
     }
 
     /// Refresh access token using refresh token
-    pub async fn refresh(&self, refresh_token: &str) -> Result<TokenPair, AppError> {
+    pub async fn refresh(
+        &self,
+        refresh_token: &str,
+        user_agent: Option<String>,
+    ) -> Result<TokenPair, AppError> {
         // Validate refresh token
         let claims = self.jwt_service.validate_token(refresh_token)?;
 
@@ -134,9 +121,9 @@ impl AuthService {
             return Err(AppError::Unauthorized("Refresh token expired".to_string()));
         }
 
-        // Generate new token pair
+        // Generate new token pair with session info
         let new_token_pair = self
-            .generate_token_pair(claims.sub, claims.org_id, claims.role)
+            .generate_token_pair(claims.sub, claims.org_id, claims.role, user_agent)
             .await?;
 
         // Revoke old refresh token
@@ -162,12 +149,38 @@ impl AuthService {
         self.user_repo.find_by_id(user_id).await
     }
 
+    /// Get user by email (for login response)
+    pub async fn get_user_by_email(&self, email: &str) -> Result<User, AppError> {
+        self.user_repo.find_by_email(email).await
+    }
+
+    /// Get all active sessions for a user
+    pub async fn get_active_sessions(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<crate::models::RefreshToken>, AppError> {
+        self.token_repo.get_active_tokens_for_user(user_id).await
+    }
+
+    /// Revoke a specific session by token ID
+    pub async fn revoke_session(&self, user_id: Uuid, session_id: Uuid) -> Result<(), AppError> {
+        // First verify the session belongs to this user
+        let sessions = self.token_repo.get_active_tokens_for_user(user_id).await?;
+        let session = sessions
+            .iter()
+            .find(|s| s.id == session_id)
+            .ok_or_else(|| AppError::NotFound("Session not found".to_string()))?;
+
+        self.token_repo.revoke(session.id).await
+    }
+
     /// Generate access and refresh token pair
     async fn generate_token_pair(
         &self,
         user_id: Uuid,
         org_id: Uuid,
         role: UserRole,
+        user_agent: Option<String>,
     ) -> Result<TokenPair, AppError> {
         // Generate access token
         let access_token = self
@@ -179,7 +192,7 @@ impl AuthService {
             .jwt_service
             .generate_refresh_token(user_id, org_id, role)?;
 
-        // Store refresh token in database
+        // Store refresh token in database with session info
         let token_hash = hash_token(&refresh_token);
         let expires_at = chrono::Utc::now().naive_utc()
             + chrono::Duration::seconds(self.jwt_service.refresh_token_expiry_seconds());
@@ -188,6 +201,7 @@ impl AuthService {
             user_id,
             token_hash,
             expires_at,
+            user_agent,
         };
 
         self.token_repo.create(new_refresh_token).await?;

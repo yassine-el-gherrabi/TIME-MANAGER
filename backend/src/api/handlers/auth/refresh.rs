@@ -1,4 +1,9 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{header::USER_AGENT, HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -13,11 +18,17 @@ pub struct RefreshRequest {
     pub refresh_token: String,
 }
 
-/// Refresh token response
+/// Token pair in refresh response
 #[derive(Debug, Serialize)]
-pub struct RefreshResponse {
+pub struct TokenPair {
     pub access_token: String,
     pub refresh_token: String,
+}
+
+/// Refresh token response (consistent with login response format)
+#[derive(Debug, Serialize)]
+pub struct RefreshResponse {
+    pub tokens: TokenPair,
 }
 
 /// POST /api/v1/auth/refresh
@@ -25,6 +36,7 @@ pub struct RefreshResponse {
 /// Refresh access token using refresh token
 pub async fn refresh(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<RefreshRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
@@ -36,13 +48,23 @@ pub async fn refresh(
     let jwt_service = crate::utils::JwtService::new(&state.config.jwt_secret);
     let auth_service = AuthService::new(state.db_pool.clone(), jwt_service);
 
-    // Refresh tokens
-    let token_pair = auth_service.refresh(&payload.refresh_token).await?;
+    // Extract User-Agent from headers for session tracking
+    let user_agent = headers
+        .get(USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
 
-    // Build response
+    // Refresh tokens with session info
+    let token_pair = auth_service
+        .refresh(&payload.refresh_token, user_agent)
+        .await?;
+
+    // Build response (wrapped in tokens for consistency with login)
     let response = RefreshResponse {
-        access_token: token_pair.access_token,
-        refresh_token: token_pair.refresh_token,
+        tokens: TokenPair {
+            access_token: token_pair.access_token,
+            refresh_token: token_pair.refresh_token,
+        },
     };
 
     Ok((StatusCode::OK, Json(response)))

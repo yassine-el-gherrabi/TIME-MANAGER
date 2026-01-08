@@ -9,6 +9,7 @@
  * User role enumeration
  */
 export enum UserRole {
+  SuperAdmin = 'SuperAdmin',
   Admin = 'Admin',
   Manager = 'Manager',
   Employee = 'Employee'
@@ -23,26 +24,6 @@ export interface TokenPair {
 }
 
 /**
- * User registration request payload
- */
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  first_name: string;
-  last_name: string;
-  organization_id: string;
-  role?: UserRole;
-}
-
-/**
- * User registration response
- */
-export interface RegisterResponse {
-  user: User;
-  tokens: TokenPair;
-}
-
-/**
  * User login request payload
  */
 export interface LoginRequest {
@@ -51,10 +32,9 @@ export interface LoginRequest {
 }
 
 /**
- * User login response
+ * User login response (tokens only, user fetched via /me endpoint)
  */
 export interface LoginResponse {
-  user: User;
   tokens: TokenPair;
 }
 
@@ -147,7 +127,6 @@ export interface ResetPasswordResponse {
  */
 export interface SessionInfo {
   id: string;
-  ip_address: string | null;
   user_agent: string | null;
   created_at: string;
   last_activity: string;
@@ -182,6 +161,61 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+}
+
+/**
+ * Accept invite request payload
+ */
+export interface AcceptInviteRequest {
+  token: string;
+  password: string;
+}
+
+/**
+ * Accept invite response
+ */
+export interface AcceptInviteResponse {
+  message: string;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+/**
+ * Verify invite request payload
+ */
+export interface VerifyInviteRequest {
+  token: string;
+}
+
+/**
+ * Verify invite response
+ */
+export interface VerifyInviteResponse {
+  valid: boolean;
+  message: string;
+}
+
+/**
+ * Change password request payload
+ */
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
+/**
+ * Change password response
+ */
+export interface ChangePasswordResponse {
+  message: string;
+}
+
+/**
+ * Revoke session response
+ */
+export interface RevokeSessionResponse {
+  message: string;
 }
 
 /**

@@ -1,14 +1,18 @@
+use crate::config::email::EmailConfig;
+use crate::services::EmailService;
 use anyhow::Result;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use dotenvy::dotenv;
 use std::env;
+use std::sync::Arc;
 
 /// Application state shared across handlers
 #[derive(Clone)]
 pub struct AppState {
     pub config: AppConfig,
     pub db_pool: Pool<ConnectionManager<PgConnection>>,
+    pub email_service: Arc<EmailService>,
 }
 
 #[derive(Debug, Clone)]
@@ -22,6 +26,7 @@ pub struct AppConfig {
     pub jwt_refresh_token_expiry_seconds: u64,
     pub cors_allowed_origins: Vec<String>,
     pub metrics_enabled: bool,
+    pub email: EmailConfig,
 }
 
 impl AppConfig {
@@ -39,10 +44,8 @@ impl AppConfig {
 
         let rust_log = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
 
-        let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
-            tracing::warn!("JWT_SECRET not set, using default (INSECURE for production)");
-            "default-secret-key".to_string()
-        });
+        let jwt_secret =
+            env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set");
 
         let jwt_access_token_expiry_seconds = env::var("JWT_ACCESS_TOKEN_EXPIRY_SECONDS")
             .unwrap_or_else(|_| "900".to_string())
@@ -62,6 +65,8 @@ impl AppConfig {
             .unwrap_or_else(|_| "true".to_string())
             .parse::<bool>()?;
 
+        let email = EmailConfig::from_env()?;
+
         Ok(Self {
             app_host,
             app_port,
@@ -72,6 +77,7 @@ impl AppConfig {
             jwt_refresh_token_expiry_seconds,
             cors_allowed_origins,
             metrics_enabled,
+            email,
         })
     }
 }
@@ -84,11 +90,13 @@ mod tests {
     fn test_config_defaults() {
         // Set minimal required env vars
         env::set_var("DATABASE_URL", "postgres://test:test@localhost/test");
+        env::set_var("JWT_SECRET", "test-secret-key-for-unit-tests");
 
         let config = AppConfig::from_env().unwrap();
 
         assert_eq!(config.app_host, "0.0.0.0");
         assert_eq!(config.app_port, 8080);
         assert!(config.metrics_enabled);
+        assert_eq!(config.jwt_secret, "test-secret-key-for-unit-tests");
     }
 }

@@ -8,8 +8,6 @@
 import { apiRequest, setTokens, clearTokens } from './client';
 import { AUTH_ENDPOINTS } from '../config/constants';
 import type {
-  RegisterRequest,
-  RegisterResponse,
   LoginRequest,
   LoginResponse,
   RefreshRequest,
@@ -22,31 +20,19 @@ import type {
   ResetPasswordRequest,
   ResetPasswordResponse,
   ActiveSessionsResponse,
+  AcceptInviteRequest,
+  AcceptInviteResponse,
+  VerifyInviteRequest,
+  VerifyInviteResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  RevokeSessionResponse,
 } from '../types/auth';
 
 /**
  * Authentication API methods
  */
 export const authApi = {
-  /**
-   * Register a new user account
-   *
-   * @param data - Registration request payload
-   * @returns User information and token pair
-   */
-  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
-    const response = await apiRequest<RegisterResponse>({
-      method: 'POST',
-      url: AUTH_ENDPOINTS.REGISTER,
-      data,
-    });
-
-    // Store tokens after successful registration
-    setTokens(response.tokens);
-
-    return response;
-  },
-
   /**
    * Login with email and password
    *
@@ -176,13 +162,77 @@ export const authApi = {
       url: AUTH_ENDPOINTS.SESSIONS,
     });
   },
+
+  /**
+   * Accept invitation and set password
+   *
+   * @param data - Invite token and new password
+   * @returns Access token for auto-login
+   */
+  acceptInvite: async (data: AcceptInviteRequest): Promise<AcceptInviteResponse> => {
+    const response = await apiRequest<AcceptInviteResponse>({
+      method: 'POST',
+      url: AUTH_ENDPOINTS.ACCEPT_INVITE,
+      data,
+    });
+
+    // Store access token after successful invite acceptance
+    if (response.access_token) {
+      setTokens({
+        access_token: response.access_token,
+        refresh_token: '', // Will be set on next refresh
+      });
+    }
+
+    return response;
+  },
+
+  /**
+   * Verify if an invite token is valid
+   *
+   * @param data - Invite token to verify
+   * @returns Validity status
+   */
+  verifyInvite: async (data: VerifyInviteRequest): Promise<VerifyInviteResponse> => {
+    return apiRequest<VerifyInviteResponse>({
+      method: 'POST',
+      url: AUTH_ENDPOINTS.ACCEPT_INVITE.replace('accept-invite', 'verify-invite'),
+      data,
+    });
+  },
+
+  /**
+   * Change password for authenticated user
+   *
+   * @param data - Current and new password
+   * @returns Success message
+   */
+  changePassword: async (data: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
+    return apiRequest<ChangePasswordResponse>({
+      method: 'PUT',
+      url: AUTH_ENDPOINTS.CHANGE_PASSWORD,
+      data,
+    });
+  },
+
+  /**
+   * Revoke a specific session
+   *
+   * @param sessionId - ID of the session to revoke
+   * @returns Success message
+   */
+  revokeSession: async (sessionId: string): Promise<RevokeSessionResponse> => {
+    return apiRequest<RevokeSessionResponse>({
+      method: 'DELETE',
+      url: AUTH_ENDPOINTS.REVOKE_SESSION(sessionId),
+    });
+  },
 };
 
 /**
  * Export individual methods for convenience
  */
 export const {
-  register,
   login,
   refresh,
   logout,
@@ -191,4 +241,8 @@ export const {
   requestPasswordReset,
   resetPassword,
   getActiveSessions,
+  acceptInvite,
+  verifyInvite,
+  changePassword,
+  revokeSession,
 } = authApi;

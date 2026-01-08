@@ -1,9 +1,11 @@
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::net::SocketAddr;
+use std::sync::Arc;
 use timemanager_backend::{
     api::router::create_router,
     config::app::{AppConfig, AppState},
     config::database::create_pool,
+    services::EmailService,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -48,10 +50,19 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Database migrations completed successfully");
 
+    // Create email service
+    let email_service =
+        EmailService::new(config.email.clone()).expect("Failed to create email service");
+    tracing::info!(
+        "Email service initialized (enabled: {})",
+        email_service.is_enabled()
+    );
+
     // Create application state
     let state = AppState {
         config: config.clone(),
         db_pool,
+        email_service: Arc::new(email_service),
     };
 
     // Create application router with state

@@ -111,12 +111,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
-          <p className="text-sm text-muted-foreground text-center">
-            Don't have an account?{' '}
-            <a href="/register" className="text-primary hover:underline">
-              Register
-            </a>
-          </p>
           <a href="/password-reset-request" className="text-sm text-primary hover:underline">
             Forgot password?
           </a>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
 import { authApi } from '../../api/auth';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,16 +9,45 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { PasswordRequirements, isPasswordValid } from '../ui/password-requirements';
 import { mapErrorToMessage } from '../../utils/errorHandling';
 
-export const PasswordResetForm: React.FC = () => {
+export const AcceptInviteForm: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
+  const acceptInvite = useAuthStore((state) => state.acceptInvite);
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({ password: '', confirmPassword: '' });
   const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
+
+  // Validate token on mount
+  useEffect(() => {
+    const validateToken = async () => {
+      if (!token) {
+        setApiError('No invitation token provided');
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        const response = await authApi.verifyInvite({ token });
+        setIsTokenValid(response.valid);
+        if (!response.valid) {
+          setApiError(response.message || 'Invalid or expired invitation token');
+        }
+      } catch (err) {
+        setApiError(mapErrorToMessage(err));
+        setIsTokenValid(false);
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validateToken();
+  }, [token]);
 
   const validateForm = (): boolean => {
     const newErrors = { password: '', confirmPassword: '' };
@@ -43,7 +73,7 @@ export const PasswordResetForm: React.FC = () => {
     setApiError('');
 
     if (!token) {
-      setApiError('Invalid reset token');
+      setApiError('Invalid invitation token');
       return;
     }
 
@@ -51,8 +81,8 @@ export const PasswordResetForm: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await authApi.resetPassword({ reset_token: token, new_password: password });
-      navigate('/login', { state: { message: 'Password reset successful. Please log in.' } });
+      await acceptInvite({ token, password });
+      navigate('/', { replace: true });
     } catch (err) {
       setApiError(mapErrorToMessage(err));
     } finally {
@@ -60,11 +90,42 @@ export const PasswordResetForm: React.FC = () => {
     }
   };
 
+  if (isValidating) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-muted-foreground">Validating invitation...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isTokenValid) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Invalid Invitation</CardTitle>
+          <CardDescription>This invitation link is no longer valid</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
+            {apiError || 'The invitation link has expired or has already been used. Please contact your administrator for a new invitation.'}
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" className="w-full" onClick={() => navigate('/login')}>
+            Go to Login
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create New Password</CardTitle>
-        <CardDescription>Enter your new password below</CardDescription>
+        <CardTitle>Set Your Password</CardTitle>
+        <CardDescription>Create a password to activate your account</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -74,7 +135,7 @@ export const PasswordResetForm: React.FC = () => {
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="password">New Password</Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -82,6 +143,7 @@ export const PasswordResetForm: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
               disabled={isLoading}
+              autoComplete="new-password"
             />
             {password && <PasswordRequirements password={password} />}
           </div>
@@ -94,12 +156,13 @@ export const PasswordResetForm: React.FC = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               error={errors.confirmPassword}
               disabled={isLoading}
+              autoComplete="new-password"
             />
           </div>
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Resetting...' : 'Reset Password'}
+            {isLoading ? 'Activating...' : 'Activate Account'}
           </Button>
         </CardFooter>
       </form>

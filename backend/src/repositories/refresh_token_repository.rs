@@ -85,4 +85,37 @@ impl RefreshTokenRepository {
             .execute(&mut conn)
             .map_err(AppError::DatabaseError)
     }
+
+    /// Update last_used_at timestamp for a token
+    pub async fn update_last_used(&self, token_id: Uuid) -> Result<(), AppError> {
+        let mut conn = self.pool.get()?;
+
+        diesel::update(refresh_tokens::table.find(token_id))
+            .set(refresh_tokens::last_used_at.eq(chrono::Utc::now().naive_utc()))
+            .execute(&mut conn)?;
+
+        Ok(())
+    }
+
+    /// Revoke all active tokens for a user with matching user_agent
+    /// Used to revoke old sessions when logging in from the same device
+    pub async fn revoke_by_user_agent_for_user(
+        &self,
+        user_id: Uuid,
+        user_agent: &str,
+    ) -> Result<usize, AppError> {
+        let mut conn = self.pool.get()?;
+        let now = chrono::Utc::now().naive_utc();
+
+        diesel::update(
+            refresh_tokens::table
+                .filter(refresh_tokens::user_id.eq(user_id))
+                .filter(refresh_tokens::user_agent.eq(user_agent))
+                .filter(refresh_tokens::revoked_at.is_null())
+                .filter(refresh_tokens::expires_at.gt(now)),
+        )
+        .set(refresh_tokens::revoked_at.eq(Some(now)))
+        .execute(&mut conn)
+        .map_err(AppError::DatabaseError)
+    }
 }

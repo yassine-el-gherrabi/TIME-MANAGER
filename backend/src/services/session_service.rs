@@ -25,14 +25,12 @@ impl SessionService {
         &self,
         user_id: Uuid,
         refresh_token_id: Uuid,
-        ip_address: Option<String>,
         user_agent: Option<String>,
         expires_at: chrono::NaiveDateTime,
     ) -> Result<UserSession, AppError> {
         let new_session = NewUserSession {
             user_id,
             refresh_token_id,
-            ip_address: ip_address.unwrap_or_else(|| "unknown".to_string()),
             user_agent,
             expires_at,
         };
