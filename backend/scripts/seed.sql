@@ -1,5 +1,5 @@
 -- Seed data for development and testing
--- Based on TIME MANAGER REFERENCE.md specification
+-- Complete fixtures for all tables
 --
 -- ⚠️ DEVELOPMENT PASSWORD: "Password123!"
 -- The Argon2id hash below was generated using the backend's PasswordService
@@ -17,7 +17,7 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
--- Users (4 roles hierarchy)
+-- Users (10 users with role hierarchy)
 -- ============================================
 -- Password: "Password123!" for all users
 -- Hash generated with: cargo test test_generate_seed_hash -- --nocapture
@@ -46,37 +46,375 @@ VALUES (
     'admin'
 ) ON CONFLICT (id) DO NOTHING;
 
--- Manager user
+-- Manager 1
 INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
 VALUES (
     '00000000-0000-0000-0000-000000000012',
     '00000000-0000-0000-0000-000000000001',
     'manager@demo.com',
     '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
-    'Manager',
-    'User',
+    'Marie',
+    'Dupont',
     'manager'
 ) ON CONFLICT (id) DO NOTHING;
 
--- Employee user
+-- Manager 2
+INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000014',
+    '00000000-0000-0000-0000-000000000001',
+    'manager2@demo.com',
+    '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
+    'Jean',
+    'Martin',
+    'manager'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Employee 1
 INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
 VALUES (
     '00000000-0000-0000-0000-000000000013',
     '00000000-0000-0000-0000-000000000001',
     'employee@demo.com',
     '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
-    'Employee',
-    'User',
+    'Pierre',
+    'Bernard',
     'employee'
 ) ON CONFLICT (id) DO NOTHING;
+
+-- Employee 2
+INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000015',
+    '00000000-0000-0000-0000-000000000001',
+    'employee2@demo.com',
+    '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
+    'Sophie',
+    'Petit',
+    'employee'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Employee 3
+INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000016',
+    '00000000-0000-0000-0000-000000000001',
+    'employee3@demo.com',
+    '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
+    'Lucas',
+    'Moreau',
+    'employee'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Employee 4
+INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000017',
+    '00000000-0000-0000-0000-000000000001',
+    'employee4@demo.com',
+    '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
+    'Emma',
+    'Garcia',
+    'employee'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Employee 5
+INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000018',
+    '00000000-0000-0000-0000-000000000001',
+    'employee5@demo.com',
+    '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
+    'Thomas',
+    'Robert',
+    'employee'
+) ON CONFLICT (id) DO NOTHING;
+
+-- Employee 6
+INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role)
+VALUES (
+    '00000000-0000-0000-0000-000000000019',
+    '00000000-0000-0000-0000-000000000001',
+    'employee6@demo.com',
+    '$argon2id$v=19$m=19456,t=2,p=1$Rt6XiUq41JMErumeJ5qbNw$JZrbCaF+dv38aIYcg/lO4eKcVBvAUk0HQFUjqVm1ufA',
+    'Julie',
+    'Simon',
+    'employee'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Work Schedules
+-- ============================================
+
+-- Standard Schedule (35h/week)
+INSERT INTO work_schedules (id, organization_id, name, description, is_default)
+VALUES (
+    '00000000-0000-0000-0000-000000000020',
+    '00000000-0000-0000-0000-000000000001',
+    'Standard (35h)',
+    'Standard full-time schedule: Monday to Friday, 9AM to 5PM with 1 hour lunch break',
+    true
+) ON CONFLICT (id) DO NOTHING;
+
+-- Standard Schedule Days (Mon-Fri)
+INSERT INTO work_schedule_days (id, work_schedule_id, day_of_week, start_time, end_time, break_minutes) VALUES
+    ('00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000020', 0, '09:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000020', 1, '09:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000020', 2, '09:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000104', '00000000-0000-0000-0000-000000000020', 3, '09:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000020', 4, '09:00', '17:00', 60)
+ON CONFLICT (id) DO NOTHING;
+
+-- Part-time Schedule (24h/week)
+INSERT INTO work_schedules (id, organization_id, name, description, is_default)
+VALUES (
+    '00000000-0000-0000-0000-000000000021',
+    '00000000-0000-0000-0000-000000000001',
+    'Part-time (24h)',
+    'Part-time schedule: Monday, Wednesday, Friday, 9AM to 5PM with 30 min break',
+    false
+) ON CONFLICT (id) DO NOTHING;
+
+-- Part-time Schedule Days (Mon, Wed, Fri)
+INSERT INTO work_schedule_days (id, work_schedule_id, day_of_week, start_time, end_time, break_minutes) VALUES
+    ('00000000-0000-0000-0000-000000000111', '00000000-0000-0000-0000-000000000021', 0, '09:00', '17:00', 30),
+    ('00000000-0000-0000-0000-000000000112', '00000000-0000-0000-0000-000000000021', 2, '09:00', '17:00', 30),
+    ('00000000-0000-0000-0000-000000000113', '00000000-0000-0000-0000-000000000021', 4, '09:00', '17:00', 30)
+ON CONFLICT (id) DO NOTHING;
+
+-- Flexible Schedule (40h/week)
+INSERT INTO work_schedules (id, organization_id, name, description, is_default)
+VALUES (
+    '00000000-0000-0000-0000-000000000022',
+    '00000000-0000-0000-0000-000000000001',
+    'Flexible (40h)',
+    'Flexible schedule: Monday to Friday, 8AM to 5PM with 1 hour lunch break',
+    false
+) ON CONFLICT (id) DO NOTHING;
+
+-- Flexible Schedule Days (Mon-Fri)
+INSERT INTO work_schedule_days (id, work_schedule_id, day_of_week, start_time, end_time, break_minutes) VALUES
+    ('00000000-0000-0000-0000-000000000121', '00000000-0000-0000-0000-000000000022', 0, '08:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000122', '00000000-0000-0000-0000-000000000022', 1, '08:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000123', '00000000-0000-0000-0000-000000000022', 2, '08:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000124', '00000000-0000-0000-0000-000000000022', 3, '08:00', '17:00', 60),
+    ('00000000-0000-0000-0000-000000000125', '00000000-0000-0000-0000-000000000022', 4, '08:00', '17:00', 60)
+ON CONFLICT (id) DO NOTHING;
+
+-- Assign schedules to users
+UPDATE users SET work_schedule_id = '00000000-0000-0000-0000-000000000020'
+WHERE id IN (
+    '00000000-0000-0000-0000-000000000012',  -- Marie (Manager)
+    '00000000-0000-0000-0000-000000000013',  -- Pierre (Employee)
+    '00000000-0000-0000-0000-000000000015',  -- Sophie (Employee)
+    '00000000-0000-0000-0000-000000000016'   -- Lucas (Employee)
+);
+
+UPDATE users SET work_schedule_id = '00000000-0000-0000-0000-000000000021'
+WHERE id IN (
+    '00000000-0000-0000-0000-000000000019'   -- Julie (Part-time)
+);
+
+UPDATE users SET work_schedule_id = '00000000-0000-0000-0000-000000000022'
+WHERE id IN (
+    '00000000-0000-0000-0000-000000000014',  -- Jean (Manager)
+    '00000000-0000-0000-0000-000000000017',  -- Emma (Employee)
+    '00000000-0000-0000-0000-000000000018'   -- Thomas (Employee)
+);
+
+-- ============================================
+-- Teams
+-- ============================================
+
+-- Development Team
+INSERT INTO teams (id, organization_id, name, description, manager_id)
+VALUES (
+    '00000000-0000-0000-0000-000000000030',
+    '00000000-0000-0000-0000-000000000001',
+    'Development',
+    'Software development team responsible for product features',
+    '00000000-0000-0000-0000-000000000012'  -- Marie Dupont
+) ON CONFLICT (id) DO NOTHING;
+
+-- Marketing Team
+INSERT INTO teams (id, organization_id, name, description, manager_id)
+VALUES (
+    '00000000-0000-0000-0000-000000000031',
+    '00000000-0000-0000-0000-000000000001',
+    'Marketing',
+    'Marketing and communication team',
+    '00000000-0000-0000-0000-000000000014'  -- Jean Martin
+) ON CONFLICT (id) DO NOTHING;
+
+-- Support Team
+INSERT INTO teams (id, organization_id, name, description, manager_id)
+VALUES (
+    '00000000-0000-0000-0000-000000000032',
+    '00000000-0000-0000-0000-000000000001',
+    'Support',
+    'Customer support and helpdesk team',
+    '00000000-0000-0000-0000-000000000012'  -- Marie Dupont
+) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Team Members
+-- ============================================
+
+-- Development Team Members
+INSERT INTO team_members (id, team_id, user_id, joined_at) VALUES
+    ('00000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '90 days'),
+    ('00000000-0000-0000-0000-000000000202', '00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '60 days'),
+    ('00000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '45 days'),
+    ('00000000-0000-0000-0000-000000000204', '00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '30 days')
+ON CONFLICT (id) DO NOTHING;
+
+-- Marketing Team Members
+INSERT INTO team_members (id, team_id, user_id, joined_at) VALUES
+    ('00000000-0000-0000-0000-000000000211', '00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '120 days'),
+    ('00000000-0000-0000-0000-000000000212', '00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '75 days'),
+    ('00000000-0000-0000-0000-000000000213', '00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '50 days')
+ON CONFLICT (id) DO NOTHING;
+
+-- Support Team Members
+INSERT INTO team_members (id, team_id, user_id, joined_at) VALUES
+    ('00000000-0000-0000-0000-000000000221', '00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '40 days')
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Clock Entries (Last 30 days of history)
+-- ============================================
+
+-- Pierre Bernard (employee@demo.com) - Regular full-time employee
+-- Week 1 (oldest)
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '28 days' + TIME '09:05', NOW() - INTERVAL '28 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '27 days', NULL),
+    ('00000000-0000-0000-0000-000000001002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '27 days' + TIME '08:55', NOW() - INTERVAL '27 days' + TIME '17:15', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '26 days', NULL),
+    ('00000000-0000-0000-0000-000000001003', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '26 days' + TIME '09:10', NOW() - INTERVAL '26 days' + TIME '18:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '25 days', 'Stayed late for deployment'),
+    ('00000000-0000-0000-0000-000000001004', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '25 days' + TIME '09:00', NOW() - INTERVAL '25 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '24 days', NULL),
+    ('00000000-0000-0000-0000-000000001005', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '24 days' + TIME '09:15', NOW() - INTERVAL '24 days' + TIME '17:45', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '23 days', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Week 2
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001006', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '21 days' + TIME '08:45', NOW() - INTERVAL '21 days' + TIME '17:20', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '20 days', NULL),
+    ('00000000-0000-0000-0000-000000001007', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '20 days' + TIME '09:00', NOW() - INTERVAL '20 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '19 days', NULL),
+    ('00000000-0000-0000-0000-000000001008', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '19 days' + TIME '09:30', NOW() - INTERVAL '19 days' + TIME '18:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '18 days', 'Team meeting ran late'),
+    ('00000000-0000-0000-0000-000000001009', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '18 days' + TIME '09:05', NOW() - INTERVAL '18 days' + TIME '17:10', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '17 days', NULL),
+    ('00000000-0000-0000-0000-000000001010', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '17 days' + TIME '08:50', NOW() - INTERVAL '17 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '16 days', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Week 3
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001011', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '14 days' + TIME '09:00', NOW() - INTERVAL '14 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '13 days', NULL),
+    ('00000000-0000-0000-0000-000000001012', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '13 days' + TIME '09:10', NOW() - INTERVAL '13 days' + TIME '17:15', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '12 days', NULL),
+    ('00000000-0000-0000-0000-000000001013', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '12 days' + TIME '08:55', NOW() - INTERVAL '12 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '11 days', NULL),
+    ('00000000-0000-0000-0000-000000001014', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '11 days' + TIME '10:00', NOW() - INTERVAL '11 days' + TIME '18:00', 'rejected', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '10 days', 'Late arrival - doctor appointment not pre-approved'),
+    ('00000000-0000-0000-0000-000000001015', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '10 days' + TIME '09:00', NOW() - INTERVAL '10 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '9 days', NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Week 4 (recent - some pending)
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001016', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '7 days' + TIME '09:00', NOW() - INTERVAL '7 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '6 days', NULL),
+    ('00000000-0000-0000-0000-000000001017', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '6 days' + TIME '09:05', NOW() - INTERVAL '6 days' + TIME '17:20', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '5 days', NULL),
+    ('00000000-0000-0000-0000-000000001018', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '5 days' + TIME '09:00', NOW() - INTERVAL '5 days' + TIME '17:00', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001019', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '4 days' + TIME '08:50', NOW() - INTERVAL '4 days' + TIME '17:10', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001020', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', NOW() - INTERVAL '3 days' + TIME '09:15', NOW() - INTERVAL '3 days' + TIME '17:45', 'pending', NULL, NULL, 'Worked on urgent bug fix')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sophie Petit (employee2@demo.com)
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001101', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '28 days' + TIME '08:30', NOW() - INTERVAL '28 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '27 days', NULL),
+    ('00000000-0000-0000-0000-000000001102', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '27 days' + TIME '08:45', NOW() - INTERVAL '27 days' + TIME '17:15', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '26 days', NULL),
+    ('00000000-0000-0000-0000-000000001103', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '26 days' + TIME '09:00', NOW() - INTERVAL '26 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '25 days', NULL),
+    ('00000000-0000-0000-0000-000000001104', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '21 days' + TIME '08:55', NOW() - INTERVAL '21 days' + TIME '17:10', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '20 days', NULL),
+    ('00000000-0000-0000-0000-000000001105', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '20 days' + TIME '09:00', NOW() - INTERVAL '20 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '19 days', NULL),
+    ('00000000-0000-0000-0000-000000001106', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '14 days' + TIME '08:40', NOW() - INTERVAL '14 days' + TIME '17:20', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '13 days', NULL),
+    ('00000000-0000-0000-0000-000000001107', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '13 days' + TIME '09:00', NOW() - INTERVAL '13 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '12 days', NULL),
+    ('00000000-0000-0000-0000-000000001108', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '7 days' + TIME '08:50', NOW() - INTERVAL '7 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '6 days', NULL),
+    ('00000000-0000-0000-0000-000000001109', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '6 days' + TIME '09:00', NOW() - INTERVAL '6 days' + TIME '17:15', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001110', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', NOW() - INTERVAL '5 days' + TIME '08:45', NOW() - INTERVAL '5 days' + TIME '17:00', 'pending', NULL, NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Emma Garcia (employee4@demo.com) - Marketing
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001201', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '28 days' + TIME '08:00', NOW() - INTERVAL '28 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '27 days', NULL),
+    ('00000000-0000-0000-0000-000000001202', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '27 days' + TIME '08:15', NOW() - INTERVAL '27 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '26 days', 'Campaign launch day'),
+    ('00000000-0000-0000-0000-000000001203', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '26 days' + TIME '08:00', NOW() - INTERVAL '26 days' + TIME '16:30', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '25 days', NULL),
+    ('00000000-0000-0000-0000-000000001204', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '21 days' + TIME '08:30', NOW() - INTERVAL '21 days' + TIME '17:15', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '20 days', NULL),
+    ('00000000-0000-0000-0000-000000001205', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '20 days' + TIME '08:00', NOW() - INTERVAL '20 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '19 days', NULL),
+    ('00000000-0000-0000-0000-000000001206', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '14 days' + TIME '08:10', NOW() - INTERVAL '14 days' + TIME '17:20', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '13 days', NULL),
+    ('00000000-0000-0000-0000-000000001207', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '7 days' + TIME '08:00', NOW() - INTERVAL '7 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '6 days', NULL),
+    ('00000000-0000-0000-0000-000000001208', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '6 days' + TIME '08:20', NOW() - INTERVAL '6 days' + TIME '17:10', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001209', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', NOW() - INTERVAL '5 days' + TIME '08:00', NOW() - INTERVAL '5 days' + TIME '17:30', 'pending', NULL, NULL, 'Prepared Q1 report')
+ON CONFLICT (id) DO NOTHING;
+
+-- Thomas Robert (employee5@demo.com) - Marketing
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001301', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '28 days' + TIME '08:00', NOW() - INTERVAL '28 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '27 days', NULL),
+    ('00000000-0000-0000-0000-000000001302', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '27 days' + TIME '08:30', NOW() - INTERVAL '27 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '26 days', NULL),
+    ('00000000-0000-0000-0000-000000001303', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '21 days' + TIME '08:15', NOW() - INTERVAL '21 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '20 days', NULL),
+    ('00000000-0000-0000-0000-000000001304', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '20 days' + TIME '08:00', NOW() - INTERVAL '20 days' + TIME '16:45', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '19 days', NULL),
+    ('00000000-0000-0000-0000-000000001305', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '14 days' + TIME '09:30', NOW() - INTERVAL '14 days' + TIME '17:00', 'rejected', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '13 days', 'Came in late without notice'),
+    ('00000000-0000-0000-0000-000000001306', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '13 days' + TIME '08:00', NOW() - INTERVAL '13 days' + TIME '17:15', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '12 days', NULL),
+    ('00000000-0000-0000-0000-000000001307', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '7 days' + TIME '08:10', NOW() - INTERVAL '7 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000014', NOW() - INTERVAL '6 days', NULL),
+    ('00000000-0000-0000-0000-000000001308', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '6 days' + TIME '08:00', NOW() - INTERVAL '6 days' + TIME '17:20', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001309', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', NOW() - INTERVAL '5 days' + TIME '08:15', NOW() - INTERVAL '5 days' + TIME '17:00', 'pending', NULL, NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+-- Julie Simon (employee6@demo.com) - Support (Part-time: Mon, Wed, Fri)
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001401', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '28 days' + TIME '09:00', NOW() - INTERVAL '28 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '27 days', NULL),
+    ('00000000-0000-0000-0000-000000001402', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '26 days' + TIME '09:00', NOW() - INTERVAL '26 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '25 days', NULL),
+    ('00000000-0000-0000-0000-000000001403', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '24 days' + TIME '09:00', NOW() - INTERVAL '24 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '23 days', NULL),
+    ('00000000-0000-0000-0000-000000001404', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '21 days' + TIME '09:00', NOW() - INTERVAL '21 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '20 days', NULL),
+    ('00000000-0000-0000-0000-000000001405', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '19 days' + TIME '09:00', NOW() - INTERVAL '19 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '18 days', NULL),
+    ('00000000-0000-0000-0000-000000001406', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '14 days' + TIME '09:00', NOW() - INTERVAL '14 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '13 days', NULL),
+    ('00000000-0000-0000-0000-000000001407', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '12 days' + TIME '09:00', NOW() - INTERVAL '12 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '11 days', NULL),
+    ('00000000-0000-0000-0000-000000001408', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '7 days' + TIME '09:00', NOW() - INTERVAL '7 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '6 days', NULL),
+    ('00000000-0000-0000-0000-000000001409', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '5 days' + TIME '09:00', NOW() - INTERVAL '5 days' + TIME '17:00', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001410', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', NOW() - INTERVAL '3 days' + TIME '09:00', NOW() - INTERVAL '3 days' + TIME '17:00', 'pending', NULL, NULL, 'Handled 15 support tickets')
+ON CONFLICT (id) DO NOTHING;
+
+-- Lucas Moreau (employee3@demo.com) - Development
+INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, status, approved_by, approved_at, notes) VALUES
+    ('00000000-0000-0000-0000-000000001501', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '28 days' + TIME '09:00', NOW() - INTERVAL '28 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '27 days', NULL),
+    ('00000000-0000-0000-0000-000000001502', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '27 days' + TIME '09:15', NOW() - INTERVAL '27 days' + TIME '18:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '26 days', 'Code review session'),
+    ('00000000-0000-0000-0000-000000001503', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '21 days' + TIME '09:00', NOW() - INTERVAL '21 days' + TIME '17:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '20 days', NULL),
+    ('00000000-0000-0000-0000-000000001504', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '20 days' + TIME '09:30', NOW() - INTERVAL '20 days' + TIME '17:30', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '19 days', NULL),
+    ('00000000-0000-0000-0000-000000001505', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '14 days' + TIME '09:00', NOW() - INTERVAL '14 days' + TIME '17:15', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '13 days', NULL),
+    ('00000000-0000-0000-0000-000000001506', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '13 days' + TIME '09:00', NOW() - INTERVAL '13 days' + TIME '19:00', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '12 days', 'Sprint deadline'),
+    ('00000000-0000-0000-0000-000000001507', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '7 days' + TIME '09:10', NOW() - INTERVAL '7 days' + TIME '17:20', 'approved', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '6 days', NULL),
+    ('00000000-0000-0000-0000-000000001508', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '6 days' + TIME '09:00', NOW() - INTERVAL '6 days' + TIME '17:00', 'pending', NULL, NULL, NULL),
+    ('00000000-0000-0000-0000-000000001509', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', NOW() - INTERVAL '5 days' + TIME '09:05', NOW() - INTERVAL '5 days' + TIME '17:30', 'pending', NULL, NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
 -- Summary of seeded data:
 -- ============================================
 -- Organization: Demo Company (slug: demo)
--- Users:
---   superadmin@demo.com | super_admin | Password123!
---   admin@demo.com      | admin       | Password123!
---   manager@demo.com    | manager     | Password123!
---   employee@demo.com   | employee    | Password123!
+--
+-- Users (10):
+--   superadmin@demo.com  | super_admin | Password123!
+--   admin@demo.com       | admin       | Password123!
+--   manager@demo.com     | manager     | Marie Dupont    | Dev & Support Manager
+--   manager2@demo.com    | manager     | Jean Martin     | Marketing Manager
+--   employee@demo.com    | employee    | Pierre Bernard  | Development
+--   employee2@demo.com   | employee    | Sophie Petit    | Development
+--   employee3@demo.com   | employee    | Lucas Moreau    | Development
+--   employee4@demo.com   | employee    | Emma Garcia     | Marketing
+--   employee5@demo.com   | employee    | Thomas Robert   | Marketing
+--   employee6@demo.com   | employee    | Julie Simon     | Support (Part-time)
+--
+-- Work Schedules (3):
+--   Standard (35h): Mon-Fri 09:00-17:00, 60min break (default)
+--   Part-time (24h): Mon/Wed/Fri 09:00-17:00, 30min break
+--   Flexible (40h): Mon-Fri 08:00-17:00, 60min break
+--
+-- Teams (3):
+--   Development: Marie (manager), Pierre, Sophie, Lucas
+--   Marketing: Jean (manager), Emma, Thomas
+--   Support: Marie (manager), Julie
+--
+-- Clock Entries (~60):
+--   30 days of history with mix of approved/pending/rejected
 -- ============================================
