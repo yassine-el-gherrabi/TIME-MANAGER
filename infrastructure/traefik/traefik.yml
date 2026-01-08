@@ -1,9 +1,11 @@
 # Traefik Static Configuration
+# NOTE: Production settings are controlled via environment variables in docker-compose
+# Set TRAEFIK_DASHBOARD=false in .env.prod for production deployments
 
-# API and Dashboard
+# API and Dashboard (defaults for development)
 api:
-  dashboard: true
-  insecure: true # For development only
+  dashboard: true  # Overridden by TRAEFIK_API_DASHBOARD env var
+  insecure: true   # DEVELOPMENT ONLY - dashboard on :8080 without auth
 
 # Entry Points
 entryPoints:
