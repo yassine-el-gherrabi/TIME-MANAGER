@@ -1,5 +1,6 @@
 use crate::config::email::EmailConfig;
-use crate::services::EmailService;
+use crate::config::hibp::HibpConfig;
+use crate::services::{EmailService, HibpService};
 use anyhow::{Context, Result};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
@@ -13,6 +14,7 @@ pub struct AppState {
     pub config: AppConfig,
     pub db_pool: Pool<ConnectionManager<PgConnection>>,
     pub email_service: Arc<EmailService>,
+    pub hibp_service: Arc<HibpService>,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +29,7 @@ pub struct AppConfig {
     pub cors_allowed_origins: Vec<String>,
     pub metrics_enabled: bool,
     pub email: EmailConfig,
+    pub hibp: HibpConfig,
 }
 
 impl AppConfig {
@@ -66,6 +69,7 @@ impl AppConfig {
             .parse::<bool>()?;
 
         let email = EmailConfig::from_env()?;
+        let hibp = HibpConfig::from_env()?;
 
         Ok(Self {
             app_host,
@@ -78,6 +82,7 @@ impl AppConfig {
             cors_allowed_origins,
             metrics_enabled,
             email,
+            hibp,
         })
     }
 }

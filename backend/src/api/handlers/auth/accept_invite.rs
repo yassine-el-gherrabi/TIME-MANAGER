@@ -39,6 +39,12 @@ pub async fn accept_invite(
         .validate()
         .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
+    // Check password against HIBP breach database
+    state
+        .hibp_service
+        .validate_not_compromised(&payload.password)
+        .await?;
+
     // Create invite service
     let jwt_service = JwtService::new(&state.config.jwt_secret);
     let invite_service = InviteService::new(state.db_pool.clone(), jwt_service);
@@ -48,7 +54,10 @@ pub async fn accept_invite(
         .accept_invite(&payload.token, &payload.password)
         .await?;
 
-    // Build response
+    // Generate CSRF token for double submit cookie
+    let csrf_token = generate_csrf_token();
+
+    // Build response - only access_token in JSON, refresh_token in HttpOnly cookie
     let response = AcceptInviteResponse {
         message: "Account activated successfully".to_string(),
         access_token: token_pair.access_token,
@@ -56,7 +65,34 @@ pub async fn accept_invite(
         expires_in: 900, // 15 minutes in seconds
     };
 
-    Ok((StatusCode::OK, Json(response)))
+    // Set HttpOnly cookie for refresh token
+    let refresh_cookie = format!(
+        "refresh_token={}; HttpOnly; SameSite=Strict; Path=/v1/auth; Max-Age=604800",
+        token_pair.refresh_token
+    );
+
+    // Set CSRF token cookie (readable by JS for double submit)
+    let csrf_cookie = format!(
+        "csrf_token={}; SameSite=Strict; Path=/; Max-Age=604800",
+        csrf_token
+    );
+
+    Ok((
+        StatusCode::OK,
+        [
+            (axum::http::header::SET_COOKIE, refresh_cookie),
+            (axum::http::header::SET_COOKIE, csrf_cookie),
+        ],
+        Json(response),
+    ))
+}
+
+/// Generate a CSRF token (64 hex characters)
+fn generate_csrf_token() -> String {
+    use rand::RngCore;
+    let mut bytes = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    hex::encode(bytes)
 }
 
 /// Verify invite token request (optional - for frontend validation)

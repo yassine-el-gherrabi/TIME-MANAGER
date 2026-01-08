@@ -36,6 +36,12 @@ pub async fn change_password(
         .validate()
         .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
+    // Check password against HIBP breach database
+    state
+        .hibp_service
+        .validate_not_compromised(&payload.new_password)
+        .await?;
+
     // Create password reset service
     let password_service = PasswordResetService::new(state.db_pool.clone());
 

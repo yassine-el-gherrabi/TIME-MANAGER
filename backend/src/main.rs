@@ -6,7 +6,7 @@ use timemanager_backend::{
     api::router::create_router,
     config::app::{AppConfig, AppState},
     config::database::create_pool,
-    services::EmailService,
+    services::{EmailService, HibpService},
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -59,11 +59,19 @@ async fn main() -> anyhow::Result<()> {
         email_service.is_enabled()
     );
 
+    // Create HIBP service
+    let hibp_service = HibpService::new(config.hibp.clone());
+    tracing::info!(
+        "HIBP password breach checking initialized (enabled: {})",
+        hibp_service.is_enabled()
+    );
+
     // Create application state
     let state = AppState {
         config: config.clone(),
         db_pool,
         email_service: Arc::new(email_service),
+        hibp_service: Arc::new(hibp_service),
     };
 
     // Create application router with state

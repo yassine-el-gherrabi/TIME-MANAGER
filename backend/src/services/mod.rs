@@ -5,6 +5,7 @@ pub mod auth_service;
 pub mod brute_force_service;
 pub mod email_service;
 pub mod email_templates;
+pub mod hibp_service;
 pub mod invite_service;
 pub mod password_expiry_service;
 pub mod password_reset_service;
@@ -14,6 +15,7 @@ pub mod session_service;
 pub use auth_service::AuthService;
 pub use brute_force_service::BruteForceService;
 pub use email_service::EmailService;
+pub use hibp_service::HibpService;
 pub use invite_service::InviteService;
 pub use password_expiry_service::{
     PasswordExpiryPolicy, PasswordExpiryService, PasswordExpiryStatus,
