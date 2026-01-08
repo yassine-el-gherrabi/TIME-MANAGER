@@ -13,6 +13,8 @@ export interface UserFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   error?: string;
+  /** Use 'sheet' variant when rendering inside a Sheet/Drawer */
+  variant?: 'card' | 'sheet';
 }
 
 interface FormData {
@@ -34,6 +36,7 @@ export const UserForm: FC<UserFormProps> = ({
   onCancel,
   isLoading,
   error,
+  variant = 'card',
 }) => {
   const isEditing = !!user;
 
@@ -53,6 +56,14 @@ export const UserForm: FC<UserFormProps> = ({
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
+      });
+    } else {
+      // Reset form when user is cleared (e.g., sheet closed)
+      setFormData({
+        email: '',
+        first_name: '',
+        last_name: '',
+        role: UserRole.Employee,
       });
     }
   }, [user]);
@@ -92,6 +103,99 @@ export const UserForm: FC<UserFormProps> = ({
     }
   };
 
+  const formContent = (
+    <>
+      {error && (
+        <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => handleChange('email', e.target.value)}
+          error={errors.email}
+          disabled={isLoading}
+          autoComplete="email"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="first_name">First Name</Label>
+          <Input
+            id="first_name"
+            type="text"
+            value={formData.first_name}
+            onChange={(e) => handleChange('first_name', e.target.value)}
+            error={errors.first_name}
+            disabled={isLoading}
+            autoComplete="given-name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="last_name">Last Name</Label>
+          <Input
+            id="last_name"
+            type="text"
+            value={formData.last_name}
+            onChange={(e) => handleChange('last_name', e.target.value)}
+            error={errors.last_name}
+            disabled={isLoading}
+            autoComplete="family-name"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="role">Role</Label>
+        <select
+          id="role"
+          value={formData.role}
+          onChange={(e) => handleChange('role', e.target.value)}
+          disabled={isLoading}
+          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value={UserRole.Employee}>Employee</option>
+          <option value={UserRole.Manager}>Manager</option>
+          <option value={UserRole.Admin}>Admin</option>
+          <option value={UserRole.SuperAdmin}>Super Admin</option>
+        </select>
+      </div>
+    </>
+  );
+
+  const formButtons = (
+    <>
+      <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+        Cancel
+      </Button>
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save' : 'Create'}
+      </Button>
+    </>
+  );
+
+  // Sheet variant - no Card wrapper
+  if (variant === 'sheet') {
+    return (
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-4">
+        <div className="space-y-4">
+          {formContent}
+        </div>
+        <div className="flex justify-end gap-4 pt-4 border-t">
+          {formButtons}
+        </div>
+      </form>
+    );
+  }
+
+  // Default Card variant
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
@@ -104,75 +208,10 @@ export const UserForm: FC<UserFormProps> = ({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {error && (
-            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              error={errors.email}
-              disabled={isLoading}
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">First Name</Label>
-              <Input
-                id="first_name"
-                type="text"
-                value={formData.first_name}
-                onChange={(e) => handleChange('first_name', e.target.value)}
-                error={errors.first_name}
-                disabled={isLoading}
-                autoComplete="given-name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name</Label>
-              <Input
-                id="last_name"
-                type="text"
-                value={formData.last_name}
-                onChange={(e) => handleChange('last_name', e.target.value)}
-                error={errors.last_name}
-                disabled={isLoading}
-                autoComplete="family-name"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <select
-              id="role"
-              value={formData.role}
-              onChange={(e) => handleChange('role', e.target.value)}
-              disabled={isLoading}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value={UserRole.Employee}>Employee</option>
-              <option value={UserRole.Manager}>Manager</option>
-              <option value={UserRole.Admin}>Admin</option>
-            </select>
-          </div>
+          {formContent}
         </CardContent>
         <CardFooter className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save' : 'Create'}
-          </Button>
+          {formButtons}
         </CardFooter>
       </form>
     </Card>

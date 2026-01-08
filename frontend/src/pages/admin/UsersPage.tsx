@@ -1,80 +1,166 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+/**
+ * Users Page
+ *
+ * Admin page to manage organization users with infinite scroll.
+ * Supports filtering by search and role.
+ * User creation and editing are done via side sheets.
+ */
+
+import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
-import { UsersTable, UserFilters } from '../../components/admin';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '../../components/ui/sheet';
+import { UsersTable, UserFilters, UserForm } from '../../components/admin';
 import { usersApi } from '../../api/users';
 import { useAuthStore } from '../../stores/authStore';
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { mapErrorToMessage } from '../../utils/errorHandling';
-import type { UserResponse, PaginatedUsersResponse } from '../../types/user';
+import type { UserResponse, CreateUserRequest } from '../../types/user';
 import { UserRole } from '../../types/auth';
 
 export function UsersPage() {
-  const navigate = useNavigate();
   const currentUser = useAuthStore((state) => state.user);
 
-  const [users, setUsers] = useState<UserResponse[]>([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    perPage: 10,
-    total: 0,
-    totalPages: 0,
-  });
+  // Filter state
   const [filters, setFilters] = useState({
     search: '',
     role: '' as UserRole | '',
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+
+  // Build fetch params from filters
+  const fetchParams = useMemo(() => {
+    const params: Record<string, string | undefined> = {};
+    if (filters.search) params.search = filters.search;
+    if (filters.role) params.role = filters.role;
+    return params;
+  }, [filters]);
+
+  // Fetch function for infinite scroll
+  const fetchUsers = useCallback(
+    async (params: { page: number; per_page: number }) => {
+      const response = await usersApi.list({
+        ...fetchParams,
+        page: params.page,
+        per_page: params.per_page,
+      });
+      return response;
+    },
+    [fetchParams]
+  );
+
+  // Use infinite scroll hook
+  const {
+    items: users,
+    isLoading,
+    isInitialLoading,
+    hasMore,
+    total,
+    error,
+    sentinelRef,
+    reset,
+  } = useInfiniteScroll<UserResponse>({
+    fetchFn: fetchUsers,
+    params: fetchParams,
+    perPage: 20,
+  });
+
+  // Track removed user IDs for optimistic updates
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const displayedUsers = users.filter((u) => !removedIds.has(u.id));
+  const displayTotal = Math.max(0, total - removedIds.size);
+
+  // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     user: UserResponse | null;
     loading: boolean;
   }>({ open: false, user: null, loading: false });
 
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const response: PaginatedUsersResponse = await usersApi.list({
-        page: pagination.page,
-        per_page: pagination.perPage,
-        search: filters.search || undefined,
-        role: filters.role || undefined,
-      });
-      setUsers(response.data);
-      setPagination((prev) => ({
-        ...prev,
-        total: response.total,
-        totalPages: response.total_pages,
-      }));
-    } catch (err) {
-      setError(mapErrorToMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pagination.page, pagination.perPage, filters.search, filters.role]);
+  // Create drawer state
+  const [createDrawer, setCreateDrawer] = useState<{
+    open: boolean;
+    loading: boolean;
+    error: string;
+  }>({ open: false, loading: false, error: '' });
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  // Edit drawer state
+  const [editDrawer, setEditDrawer] = useState<{
+    open: boolean;
+    user: UserResponse | null;
+    loading: boolean;
+    error: string;
+  }>({ open: false, user: null, loading: false, error: '' });
+
+  const hasActiveFilters = filters.search !== '' || filters.role !== '';
 
   const handleSearchChange = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setRemovedIds(new Set());
   };
 
   const handleRoleChange = (value: UserRole | '') => {
     setFilters((prev) => ({ ...prev, role: value }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setRemovedIds(new Set());
   };
 
+  // Create handlers
+  const handleCreateClick = () => {
+    setCreateDrawer({ open: true, loading: false, error: '' });
+  };
+
+  const handleCreateSubmit = async (data: CreateUserRequest) => {
+    setCreateDrawer((prev) => ({ ...prev, loading: true, error: '' }));
+    try {
+      await usersApi.create(data);
+      toast.success(`${data.first_name} ${data.last_name} has been invited`);
+      setCreateDrawer({ open: false, loading: false, error: '' });
+      // Reset the list to show the new user
+      setRemovedIds(new Set());
+      reset();
+    } catch (err) {
+      setCreateDrawer((prev) => ({ ...prev, loading: false, error: mapErrorToMessage(err) }));
+    }
+  };
+
+  const handleCreateCancel = () => {
+    setCreateDrawer({ open: false, loading: false, error: '' });
+  };
+
+  // Edit handlers
   const handleEdit = (user: UserResponse) => {
-    navigate(`/admin/users/${user.id}/edit`);
+    setEditDrawer({ open: true, user, loading: false, error: '' });
   };
 
+  const handleEditSubmit = async (data: CreateUserRequest) => {
+    if (!editDrawer.user) return;
+
+    setEditDrawer((prev) => ({ ...prev, loading: true, error: '' }));
+    try {
+      await usersApi.update(editDrawer.user.id, data);
+      toast.success(`${data.first_name} ${data.last_name} has been updated`);
+      setEditDrawer({ open: false, user: null, loading: false, error: '' });
+      // Reset the list to refresh with updated data
+      setRemovedIds(new Set());
+      reset();
+    } catch (err) {
+      setEditDrawer((prev) => ({ ...prev, loading: false, error: mapErrorToMessage(err) }));
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditDrawer({ open: false, user: null, loading: false, error: '' });
+  };
+
+  // Delete handlers
   const handleDeleteClick = (user: UserResponse) => {
     setDeleteDialog({ open: true, user, loading: false });
   };
@@ -86,8 +172,9 @@ export function UsersPage() {
     try {
       await usersApi.delete(deleteDialog.user.id);
       toast.success(`${deleteDialog.user.first_name} ${deleteDialog.user.last_name} has been deleted`);
+      // Optimistic removal from local list
+      setRemovedIds((prev) => new Set(prev).add(deleteDialog.user!.id));
       setDeleteDialog({ open: false, user: null, loading: false });
-      await fetchUsers();
     } catch (err) {
       toast.error(mapErrorToMessage(err));
       setDeleteDialog((prev) => ({ ...prev, loading: false }));
@@ -103,24 +190,30 @@ export function UsersPage() {
     }
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
-
   return (
     <div className="container mx-auto py-8 px-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Users</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Users</span>
+              {displayTotal > 0 && (
+                <span className="text-sm font-normal text-muted-foreground ml-4">
+                  {displayedUsers.length} of {displayTotal} {hasActiveFilters && '(filtered)'}
+                </span>
+              )}
+            </CardTitle>
             <CardDescription>Manage users in your organization</CardDescription>
           </div>
-          <Button onClick={() => navigate('/admin/users/new')}>Add User</Button>
+          <Button onClick={handleCreateClick}>Add User</Button>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
-              {error}
+              {error.message}
+              <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
+                Try again
+              </Button>
             </div>
           )}
 
@@ -132,13 +225,35 @@ export function UsersPage() {
           />
 
           <UsersTable
-            users={users}
+            users={displayedUsers}
             currentUserId={currentUser?.id}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
             onResendInvite={handleResendInvite}
-            isLoading={isLoading}
+            isLoading={isInitialLoading}
           />
+
+          {/* Infinite scroll elements */}
+          {!isInitialLoading && displayedUsers.length > 0 && (
+            <>
+              {/* Sentinel element for intersection observer */}
+              <div ref={sentinelRef} className="h-4" />
+
+              {/* Loading more indicator */}
+              {isLoading && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {/* End of list indicator */}
+              {!hasMore && (
+                <p className="text-center text-sm text-muted-foreground py-4">
+                  All users loaded
+                </p>
+              )}
+            </>
+          )}
 
           <ConfirmDialog
             open={deleteDialog.open}
@@ -155,33 +270,44 @@ export function UsersPage() {
             loading={deleteDialog.loading}
           />
 
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Showing {(pagination.page - 1) * pagination.perPage + 1} to{' '}
-                {Math.min(pagination.page * pagination.perPage, pagination.total)} of{' '}
-                {pagination.total} users
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Create User Drawer */}
+          <Sheet open={createDrawer.open} onOpenChange={(open) => !open && handleCreateCancel()}>
+            <SheetContent className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Add User</SheetTitle>
+                <SheetDescription>
+                  Create a new user. They will receive an invitation email.
+                </SheetDescription>
+              </SheetHeader>
+              <UserForm
+                onSubmit={handleCreateSubmit}
+                onCancel={handleCreateCancel}
+                isLoading={createDrawer.loading}
+                error={createDrawer.error}
+                variant="sheet"
+              />
+            </SheetContent>
+          </Sheet>
+
+          {/* Edit User Drawer */}
+          <Sheet open={editDrawer.open} onOpenChange={(open) => !open && handleEditCancel()}>
+            <SheetContent className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Edit User</SheetTitle>
+                <SheetDescription>
+                  Update user information
+                </SheetDescription>
+              </SheetHeader>
+              <UserForm
+                user={editDrawer.user}
+                onSubmit={handleEditSubmit}
+                onCancel={handleEditCancel}
+                isLoading={editDrawer.loading}
+                error={editDrawer.error}
+                variant="sheet"
+              />
+            </SheetContent>
+          </Sheet>
         </CardContent>
       </Card>
     </div>

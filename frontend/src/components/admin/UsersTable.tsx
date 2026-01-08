@@ -15,6 +15,8 @@ export interface UsersTableProps {
 
 const getRoleBadgeClass = (role: UserRole): string => {
   switch (role) {
+    case UserRole.SuperAdmin:
+      return 'bg-amber-100 text-amber-800 border-amber-200';
     case UserRole.Admin:
       return 'bg-purple-100 text-purple-800 border-purple-200';
     case UserRole.Manager:
@@ -93,19 +95,19 @@ export const UsersTable: React.FC<UsersTableProps> = ({
               </td>
               <td className="px-4 py-3 text-sm text-right">
                 <div className="flex items-center justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(user)}>
+                  <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
                     Edit
                   </Button>
                   {!user.has_password && (
-                    <Button variant="ghost" size="sm" onClick={() => onResendInvite(user)}>
+                    <Button variant="outline" size="sm" onClick={() => onResendInvite(user)}>
                       Resend Invite
                     </Button>
                   )}
                   {user.id !== currentUserId && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/50"
                       onClick={() => onDelete(user)}
                     >
                       Delete
