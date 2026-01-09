@@ -1,273 +1,656 @@
 # Time Manager
 
-SaaS Workforce Management Platform - A complete time tracking and workforce management solution built with modern technologies.
+![Backend CI](https://github.com/your-org/time-manager/workflows/Backend%20CI/badge.svg)
+![Frontend CI](https://github.com/your-org/time-manager/workflows/Frontend%20CI/badge.svg)
+![Rust](https://img.shields.io/badge/Rust-1.75+-orange?logo=rust)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue?logo=typescript)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## 📋 Project Overview
-
-Time Manager is a comprehensive SaaS application designed for efficient workforce time tracking, management, and analytics. Built with a focus on performance, security, and scalability.
-
-## 🚀 Tech Stack
-
-### Backend
-- **Rust** + **Axum** 0.7 - High-performance async web framework
-- **Diesel** 2.1 - Type-safe ORM with PostgreSQL
-- **PostgreSQL** 16 - Robust relational database
-- **JWT** - Secure authentication
-
-### Frontend
-- **React** 18 + **TypeScript** 5 - Modern type-safe UI
-- **Vite** 5 - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **Shadcn/UI** - Accessible component library
-
-### Infrastructure
-- **Docker Compose** - Service orchestration
-- **Traefik** v2.11 - Reverse proxy with automatic HTTPS
-- **Prometheus** + **Loki** + **Grafana** - Observability stack
-- **Mailpit** - Email testing
-
-### CI/CD
-- **GitHub Actions** - Automated testing and quality gates
-- **Cargo** (clippy, fmt) - Rust linting and formatting
-- **ESLint** + **Prettier** - JavaScript/TypeScript quality
-
-## ✨ Features
-
-- ✅ Multi-tenant organization support
-- ✅ Role-based access control (Admin, Manager, Employee)
-- ✅ RESTful API with comprehensive error handling
-- ✅ Real-time metrics and monitoring
-- ✅ Security headers and rate limiting
-- ✅ CORS configuration
-- ✅ Database migrations
-- ✅ Automated CI/CD pipeline
-
-## 🛠️ Prerequisites
-
-- **Docker** 20.10+ and **Docker Compose** v2.0+
-- **Rust** 1.92+ (for local development)
-- **Node.js** 20+ (for frontend development)
-- **PostgreSQL** 16+ (provided via Docker)
-
-## 🚀 Quick Start
-
-### 1. Clone the repository
-```bash
-git clone <repository-url>
-cd time-manager
-```
-
-### 2. Start all services
-```bash
-docker compose up -d
-```
-
-### 3. Verify services
-```bash
-docker compose ps
-```
-
-### 4. Access the application
-- **Frontend**: http://localhost:8000
-- **Backend API**: http://localhost:8000/api/health
-- **Grafana**: http://localhost:3001 (admin/admin)
-- **Prometheus**: http://localhost:9090
-- **Mailpit**: http://localhost:8025
-- **Traefik Dashboard**: http://localhost:8081
-
-## 📁 Project Structure
-
-```
-.
-├── backend/                 # Rust/Axum API
-│   ├── src/
-│   │   ├── main.rs         # Application entry point
-│   │   ├── api/            # API routes and handlers
-│   │   ├── config/         # Configuration management
-│   │   ├── domain/         # Domain models and enums
-│   │   ├── error/          # Error handling
-│   │   └── models/         # Database models
-│   ├── migrations/         # Diesel migrations
-│   └── Dockerfile          # Multi-stage Rust build
-│
-├── frontend/               # React/TypeScript app
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── lib/            # Utilities
-│   │   └── main.tsx        # Application entry
-│   ├── nginx.conf          # Nginx configuration
-│   └── Dockerfile          # Multi-stage Node build
-│
-├── infrastructure/         # Configuration files
-│   ├── traefik/           # Reverse proxy config
-│   ├── prometheus/        # Metrics collection
-│   ├── loki/              # Log aggregation
-│   └── grafana/           # Dashboards and datasources
-│
-├── .github/workflows/     # CI/CD pipelines
-├── docker-compose.yml     # Service orchestration
-└── docs/                  # Additional documentation
-```
-
-## 🔐 Environment Variables
-
-### Backend (.env)
-```bash
-APP_HOST=0.0.0.0
-APP_PORT=8080
-DATABASE_URL=postgres://timemanager:timemanager_dev_password@postgres:5432/timemanager
-RUST_LOG=debug
-JWT_SECRET=dev-secret-key-not-for-production
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
-```
-
-### Frontend (.env)
-```bash
-VITE_API_URL=http://localhost:8000/api/v1
-```
-
-## 🗄️ Database
-
-### Run migrations
-```bash
-cd backend
-diesel migration run
-```
-
-### Rollback migration
-```bash
-diesel migration revert
-```
-
-### Load seed data
-```bash
-docker compose exec postgres psql -U timemanager -d timemanager -f /path/to/seed.sql
-```
-
-**Test Credentials**:
-- Admin: admin@acme.com / Password123!
-- Manager: manager@acme.com / Password123!
-- Employee: employee@acme.com / Password123!
-
-## 💻 Development
-
-### Backend Development
-```bash
-cd backend
-
-# Run with hot reload
-cargo watch -x run
-
-# Format code
-cargo fmt
-
-# Lint
-cargo clippy
-
-# Build release
-cargo build --release
-```
-
-### Frontend Development
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Development server
-npm run dev
-
-# Lint
-npm run lint
-
-# Type check
-npm run type-check
-
-# Build
-npm run build
-```
-
-## 🧪 Testing
-
-### Run all tests
-```bash
-# Backend
-cd backend && cargo test
-
-# Frontend
-cd frontend && npm test
-```
-
-## 🔒 Security
-
-- ✅ Rate limiting (100 req/min global, 5 req/min auth endpoints)
-- ✅ Security headers (CSP, X-Frame-Options, HSTS)
-- ✅ CORS configuration
-- ✅ JWT-based authentication
-- ✅ Input validation
-- ✅ SQL injection protection (Diesel ORM)
-
-## 📊 Monitoring
-
-Access Grafana at http://localhost:3001:
-- **Username**: admin
-- **Password**: admin
-
-**Available Metrics**:
-- HTTP request rate and latency
-- Error rates (4xx, 5xx)
-- Database connection pool status
-- Application logs (via Loki)
-
-## 🔄 CI/CD
-
-GitHub Actions workflows run on every push:
-- **Backend**: Format check, linting (clippy), build
-- **Frontend**: ESLint, TypeScript check, build
-- **Security**: Dependency audits (cargo-audit, npm-audit)
-
-## 🐛 Troubleshooting
-
-### Port conflicts
-If port 8000 is already in use:
-```bash
-# Edit docker-compose.yml
-# Change "8000:80" to "8001:80" for traefik service
-```
-
-### Database connection issues
-```bash
-# Check PostgreSQL is healthy
-docker compose ps postgres
-
-# View logs
-docker compose logs postgres
-```
-
-### Frontend not loading
-```bash
-# Rebuild frontend
-docker compose build frontend
-docker compose up -d frontend
-```
-
-## 📚 Additional Documentation
-
-- [Setup Guide](docs/SETUP.md) - Detailed installation instructions
-- [Development Guide](docs/DEVELOPMENT.md) - Development workflows and patterns
-
-## 📄 License
-
-This project is part of an academic assignment at EPITECH.
-
-## 🤝 Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
+Plateforme SaaS de gestion du temps de travail. Pointage, absences, équipes, plannings et KPIs pour les entreprises multi-sites.
 
 ---
 
-**Built with ❤️ for EPITECH MSC1**
+## Tech Stack
+
+| Couche | Technologies |
+|--------|--------------|
+| **Backend** | Rust, Axum, Diesel ORM, PostgreSQL 16, JWT, Argon2 |
+| **Frontend** | React 18, TypeScript 5, Vite, Tailwind CSS, Zustand, Radix UI |
+| **Infrastructure** | Docker, Traefik v2, Prometheus, Loki, Grafana |
+
+---
+
+## Fonctionnalités
+
+- **Pointage** - Clock in/out avec workflow d'approbation
+- **Absences** - Demandes, types configurables, soldes automatiques
+- **Équipes** - Gestion des membres et managers
+- **Plannings** - Horaires hebdomadaires personnalisables
+- **KPIs** - Tableaux de bord et analytics
+- **Multi-tenant** - Isolation par organisation
+- **Sécurité** - JWT, CSRF, rate limiting, protection brute-force
+- **Observabilité** - Métriques, logs centralisés, dashboards
+
+---
+
+## Prérequis
+
+### Docker & Docker Compose
+
+Le projet utilise Docker pour l'environnement de développement et de production. Installez Docker selon votre système d'exploitation.
+
+---
+
+### Windows
+
+**Option 1 : Winget (recommandé)**
+```powershell
+winget install Docker.DockerDesktop
+```
+
+**Option 2 : Téléchargement manuel**
+1. Télécharger [Docker Desktop](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe)
+2. Exécuter l'installateur
+3. Activer WSL2 si demandé (recommandé)
+4. Redémarrer
+
+**Vérification**
+```powershell
+docker --version
+docker compose version
+```
+
+---
+
+### macOS
+
+#### Apple Silicon (M1/M2/M3/M4)
+
+**Option 1 : Homebrew (recommandé)**
+```bash
+brew install --cask docker
+```
+
+**Option 2 : Téléchargement manuel**
+1. Télécharger [Docker Desktop pour Apple Silicon](https://desktop.docker.com/mac/main/arm64/Docker.dmg)
+2. Ouvrir le .dmg et glisser Docker dans Applications
+3. Lancer Docker depuis Applications
+
+#### Intel
+
+**Option 1 : Homebrew**
+```bash
+brew install --cask docker
+```
+
+**Option 2 : Téléchargement manuel**
+1. Télécharger [Docker Desktop pour Intel](https://desktop.docker.com/mac/main/amd64/Docker.dmg)
+2. Ouvrir le .dmg et glisser Docker dans Applications
+3. Lancer Docker depuis Applications
+
+**Vérification**
+```bash
+docker --version
+docker compose version
+```
+
+---
+
+### Linux
+
+#### Ubuntu / Debian
+
+```bash
+# Désinstaller les anciennes versions
+sudo apt-get remove docker docker-engine docker.io containerd runc 2>/dev/null
+
+# Ajouter le repo Docker
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Installer Docker
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### Fedora
+
+```bash
+# Désinstaller les anciennes versions
+sudo dnf remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-selinux docker-engine-selinux docker-engine 2>/dev/null
+
+# Ajouter le repo Docker
+sudo dnf -y install dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
+# Installer Docker
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Démarrer Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### RHEL / CentOS / AlmaLinux / Rocky Linux
+
+```bash
+# Désinstaller les anciennes versions
+sudo yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine 2>/dev/null
+
+# Ajouter le repo Docker
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+# Installer Docker
+sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Démarrer Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### Arch Linux / Manjaro
+
+```bash
+# Installer Docker
+sudo pacman -S docker docker-compose
+
+# Démarrer Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### OpenSUSE
+
+```bash
+# Installer Docker
+sudo zypper install docker docker-compose
+
+# Démarrer Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### Gentoo
+
+```bash
+# Installer Docker
+sudo emerge --ask app-containers/docker app-containers/docker-compose
+
+# Démarrer Docker
+sudo rc-service docker start
+sudo rc-update add docker default
+
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+**Vérification (Linux)**
+```bash
+docker --version
+docker compose version
+docker run hello-world
+```
+
+---
+
+## Lancement
+
+### Mode Développement
+
+Le mode développement offre le hot reload pour le backend et le frontend.
+
+```bash
+# 1. Cloner le repository
+git clone <repository-url>
+cd time-manager
+
+# 2. Configurer l'environnement
+cp .env.dev.example .env
+
+# 3. Lancer les services
+docker compose up -d
+
+# 4. Vérifier le statut
+docker compose ps
+```
+
+**Accéder à l'application** : http://localhost:8000
+
+**Caractéristiques du mode dev :**
+| Caractéristique | Description |
+|-----------------|-------------|
+| Hot reload backend | cargo-watch |
+| Hot reload frontend | Vite HMR |
+| Logs | `RUST_LOG=debug` |
+| Traefik Dashboard | http://localhost:8081 |
+| Mailpit (emails) | http://localhost:8025 |
+| pgAdmin | http://localhost:5050 |
+
+---
+
+### Mode Production
+
+Le mode production utilise des images Docker optimisées.
+
+```bash
+# 1. Configurer l'environnement
+cp .env.prod.example .env
+
+# 2. IMPORTANT : Éditer le fichier .env
+# Modifier les valeurs suivantes :
+#   - JWT_SECRET : Générer une clé sécurisée (min 32 caractères)
+#   - POSTGRES_PASSWORD : Mot de passe fort
+#   - VITE_API_BASE_URL : URL de votre domaine
+#   - CORS_ALLOWED_ORIGINS : URL de votre domaine
+#   - SMTP_* : Configuration email (Brevo, SendGrid, etc.)
+
+# 3. Lancer les services
+docker compose up -d
+
+# 4. Vérifier le statut
+docker compose ps
+```
+
+**Caractéristiques du mode prod :**
+| Caractéristique | Description |
+|-----------------|-------------|
+| Images | Multi-stage builds optimisées |
+| Logs | `RUST_LOG=info` |
+| Traefik Dashboard | Désactivé |
+| SMTP | Externe (Brevo/SendGrid) |
+
+---
+
+## Services & Ports
+
+| Service | Port | URL | Description |
+|---------|------|-----|-------------|
+| **Application** | 8000 | http://localhost:8000 | Frontend React |
+| **API** | 8000 | http://localhost:8000/api | Backend Rust/Axum |
+| **Traefik** | 8081 | http://localhost:8081 | Dashboard reverse proxy |
+| **PostgreSQL** | 5432 | - | Base de données |
+| **pgAdmin** | 5050 | http://localhost:5050 | Interface PostgreSQL (admin@timemanager.dev / admin) |
+| **Mailpit** | 8025 | http://localhost:8025 | Emails (dev only) |
+| **Prometheus** | 9090 | http://localhost:9090 | Métriques |
+| **Grafana** | 3001 | http://localhost:3001 | Dashboards (admin / admin) |
+| **Loki** | 3100 | - | Agrégation logs |
+
+---
+
+## Configuration
+
+### Variables d'environnement principales
+
+| Variable | Description | Exemple Dev | Exemple Prod |
+|----------|-------------|-------------|--------------|
+| `ENV` | Mode d'exécution | `dev` | `prod` |
+| `JWT_SECRET` | Clé JWT (min 32 chars) | `dev-secret-key...` | `<générer une clé sécurisée>` |
+| `DATABASE_URL` | Connection PostgreSQL | `postgres://...@postgres:5432/timemanager` | Idem |
+| `POSTGRES_PASSWORD` | Mot de passe DB | `timemanager_dev_password` | `<mot de passe fort>` |
+| `RUST_LOG` | Niveau de logs | `debug` | `info` |
+| `CORS_ALLOWED_ORIGINS` | URLs CORS | `http://localhost:8000` | `https://votre-domaine.com` |
+| `EMAIL_ENABLED` | Emails actifs | `true` | `true` |
+| `SMTP_HOST` | Serveur SMTP | `mailpit` | `smtp-relay.brevo.com` |
+| `SMTP_PORT` | Port SMTP | `1025` | `587` |
+| `FRONTEND_URL` | URL frontend | `http://localhost:8000` | `https://votre-domaine.com` |
+
+---
+
+## Commandes Docker
+
+### Gestion des services
+
+```bash
+# Démarrer tous les services
+docker compose up -d
+
+# Arrêter tous les services
+docker compose down
+
+# Redémarrer un service spécifique
+docker compose restart backend
+
+# Voir le statut
+docker compose ps
+```
+
+### Logs
+
+```bash
+# Tous les logs en temps réel
+docker compose logs -f
+
+# Logs d'un service
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f postgres
+
+# Dernières N lignes
+docker compose logs --tail=100 backend
+```
+
+### Build
+
+```bash
+# Rebuild un service
+docker compose build backend
+
+# Rebuild sans cache
+docker compose build --no-cache backend
+
+# Rebuild et redémarrer
+docker compose up -d --build backend
+```
+
+### Base de données
+
+```bash
+# Accès shell PostgreSQL
+docker compose exec postgres psql -U timemanager -d timemanager
+
+# Lancer les migrations (automatique au démarrage)
+docker compose exec backend diesel migration run
+
+# Charger les données de test
+docker compose exec -T postgres psql -U timemanager -d timemanager < backend/scripts/seed.sql
+```
+
+### Shell dans les conteneurs
+
+```bash
+# Shell backend
+docker compose exec backend sh
+
+# Shell frontend
+docker compose exec frontend sh
+
+# Shell PostgreSQL
+docker compose exec postgres bash
+```
+
+### Reset complet
+
+```bash
+# Arrêter et supprimer les volumes (ATTENTION : perte de données)
+docker compose down -v
+
+# Supprimer aussi les images
+docker compose down -v --rmi all
+
+# Rebuild complet
+docker compose build --no-cache
+docker compose up -d
+```
+
+---
+
+## Comptes de Test
+
+Après avoir chargé les données de test :
+
+```bash
+docker compose exec -T postgres psql -U timemanager -d timemanager < backend/scripts/seed.sql
+```
+
+| Email | Rôle | Mot de passe |
+|-------|------|--------------|
+| `superadmin@demo.com` | Super Admin | `Password123!` |
+| `admin@demo.com` | Admin | `Password123!` |
+| `manager@demo.com` | Manager | `Password123!` |
+| `manager2@demo.com` | Manager | `Password123!` |
+| `employee@demo.com` | Employee | `Password123!` |
+| `employee2@demo.com` | Employee | `Password123!` |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          CLIENTS                                │
+│                     (Browser / Mobile)                          │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         TRAEFIK                                 │
+│                    (Reverse Proxy)                              │
+│                      Port: 8000                                 │
+│  • Rate limiting    • CORS headers    • SSL termination        │
+└──────────────┬─────────────────────────────────┬────────────────┘
+               │                                 │
+               ▼                                 ▼
+┌──────────────────────────┐      ┌──────────────────────────────┐
+│        FRONTEND          │      │           BACKEND            │
+│         (React)          │      │        (Rust/Axum)           │
+│                          │      │                              │
+│  • TypeScript            │      │  • JWT Authentication        │
+│  • Tailwind CSS          │      │  • Diesel ORM                │
+│  • Zustand               │      │  • Argon2 Password Hash      │
+│  • Radix UI              │      │  • HIBP Integration          │
+└──────────────────────────┘      └──────────────┬───────────────┘
+                                                 │
+                                                 ▼
+                                  ┌──────────────────────────────┐
+                                  │         POSTGRESQL           │
+                                  │           (5432)             │
+                                  │                              │
+                                  │  • Multi-tenant data         │
+                                  │  • Diesel migrations         │
+                                  └──────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                      OBSERVABILITÉ                              │
+├─────────────────┬──────────────────┬────────────────────────────┤
+│   PROMETHEUS    │      LOKI        │         GRAFANA            │
+│     (9090)      │     (3100)       │         (3001)             │
+│                 │                  │                            │
+│   Métriques     │  Logs agrégés    │   Dashboards               │
+└─────────────────┴──────────────────┴────────────────────────────┘
+```
+
+---
+
+## Structure du Projet
+
+```
+time-manager/
+├── backend/                    # API Rust/Axum
+│   ├── src/
+│   │   ├── api/               # Couche HTTP
+│   │   │   ├── handlers/      # Handlers par domaine
+│   │   │   └── router.rs      # Configuration des routes
+│   │   ├── services/          # Logique métier (15+ services)
+│   │   ├── repositories/      # Accès données (16+ repos)
+│   │   ├── models/            # Modèles Diesel
+│   │   ├── domain/            # Enums et types métier
+│   │   ├── middleware/        # Middleware HTTP
+│   │   ├── config/            # Configuration app
+│   │   ├── error/             # Gestion d'erreurs unifiée
+│   │   └── utils/             # Utilitaires (JWT, password, etc.)
+│   ├── migrations/            # Migrations SQL Diesel
+│   ├── scripts/               # Scripts (seed.sql, etc.)
+│   ├── Cargo.toml
+│   ├── Dockerfile             # Image production
+│   └── Dockerfile.dev         # Image développement
+│
+├── frontend/                   # Application React
+│   ├── src/
+│   │   ├── components/        # Composants React
+│   │   │   ├── ui/           # Composants Radix/Shadcn
+│   │   │   ├── auth/         # Login, password reset
+│   │   │   ├── admin/        # Gestion users, teams, schedules
+│   │   │   ├── clock/        # Pointage
+│   │   │   ├── absences/     # Gestion absences
+│   │   │   └── kpi/          # Tableaux de bord
+│   │   ├── pages/            # Pages de l'application
+│   │   ├── api/              # Clients API Axios
+│   │   ├── stores/           # État Zustand
+│   │   ├── hooks/            # Hooks personnalisés
+│   │   └── types/            # Types TypeScript
+│   ├── package.json
+│   ├── Dockerfile             # Image production
+│   └── Dockerfile.dev         # Image développement
+│
+├── infrastructure/             # Configuration infrastructure
+│   ├── traefik/               # Reverse proxy + rate limiting
+│   ├── prometheus/            # Collecte métriques
+│   ├── grafana/               # Dashboards + provisioning
+│   └── loki/                  # Agrégation logs
+│
+├── docker-compose.yml          # Orchestration des services
+├── .env.dev.example           # Variables environnement dev
+├── .env.prod.example          # Variables environnement prod
+└── README.md
+```
+
+---
+
+## Dépannage
+
+### Les conteneurs ne démarrent pas
+
+```bash
+# Vérifier les logs
+docker compose logs
+
+# Vérifier que Docker tourne
+docker info
+
+# Vérifier les ports utilisés
+lsof -i :8000    # macOS/Linux
+netstat -ano | findstr :8000  # Windows
+```
+
+### Problème de permissions (Linux)
+
+```bash
+# Ajouter l'utilisateur au groupe docker
+sudo usermod -aG docker $USER
+
+# Appliquer le changement
+newgrp docker
+# ou déconnexion/reconnexion
+```
+
+### Base de données non accessible
+
+```bash
+# Vérifier que PostgreSQL est healthy
+docker compose ps postgres
+
+# Redémarrer PostgreSQL
+docker compose restart postgres
+
+# Vérifier les logs
+docker compose logs postgres
+```
+
+### Frontend ne se charge pas
+
+```bash
+# Vérifier les logs frontend
+docker compose logs frontend
+
+# Rebuild le frontend
+docker compose build --no-cache frontend
+docker compose up -d frontend
+```
+
+### Reset complet de l'environnement
+
+```bash
+docker compose down -v
+docker compose build --no-cache
+docker compose up -d
+```
+
+---
+
+## API Endpoints
+
+### Authentification
+- `POST /api/v1/auth/login` - Connexion
+- `POST /api/v1/auth/logout` - Déconnexion
+- `POST /api/v1/auth/refresh` - Rafraîchir le token
+- `POST /api/v1/auth/change-password` - Changer mot de passe
+
+### Utilisateurs
+- `GET /api/v1/users` - Liste des utilisateurs
+- `POST /api/v1/users` - Créer un utilisateur
+- `GET /api/v1/users/:id` - Détails utilisateur
+- `PUT /api/v1/users/:id` - Modifier utilisateur
+- `DELETE /api/v1/users/:id` - Supprimer utilisateur
+
+### Pointage
+- `POST /api/v1/clocks/clock-in` - Pointer l'arrivée
+- `POST /api/v1/clocks/clock-out` - Pointer le départ
+- `GET /api/v1/clocks/history` - Historique pointages
+
+### Équipes
+- `GET /api/v1/teams` - Liste des équipes
+- `POST /api/v1/teams` - Créer une équipe
+- `PUT /api/v1/teams/:id` - Modifier une équipe
+
+### Absences
+- `GET /api/v1/absences` - Liste des absences
+- `POST /api/v1/absences` - Créer une demande
+- `PUT /api/v1/absences/:id/approve` - Approuver
+- `PUT /api/v1/absences/:id/reject` - Rejeter
+
+### KPIs
+- `GET /api/v1/kpis/me` - Mes KPIs
+- `GET /api/v1/kpis/team/:id` - KPIs équipe
+- `GET /api/v1/kpis/organization` - KPIs organisation
+
+---
+
+## Sécurité
+
+- **Authentification** : JWT avec refresh tokens
+- **Mots de passe** : Argon2id + validation force + historique
+- **HIBP** : Vérification des mots de passe compromis
+- **Rate limiting** : 100 req/min global, 5 req/min auth
+- **CORS** : Configuration stricte par environnement
+- **Headers** : CSP, X-Frame-Options, HSTS via Traefik
+- **Brute-force** : Verrouillage après 6 tentatives
+
+---
+
+## License
+
+MIT License
+
+---
+
+**Développé pour EPITECH MSC1**
