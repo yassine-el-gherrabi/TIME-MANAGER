@@ -13,6 +13,7 @@ export interface Team {
   name: string;
   description: string | null;
   manager_id: string | null;
+  work_schedule_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +27,7 @@ export interface TeamResponse {
   name: string;
   description: string | null;
   manager_id: string | null;
+  work_schedule_id: string | null;
   member_count: number;
   created_at: string;
   updated_at: string;
@@ -57,6 +59,7 @@ export interface CreateTeamRequest {
   name: string;
   description?: string;
   manager_id?: string;
+  work_schedule_id?: string;
 }
 
 /**
@@ -66,6 +69,7 @@ export interface UpdateTeamRequest {
   name?: string;
   description?: string | null;
   manager_id?: string | null;
+  work_schedule_id?: string | null;
 }
 
 /**

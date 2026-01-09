@@ -19,6 +19,7 @@ pub struct CreateTeamRequest {
     pub name: String,
     pub description: Option<String>,
     pub manager_id: Option<Uuid>,
+    pub work_schedule_id: Option<Uuid>,
 }
 
 /// Request to update a team
@@ -27,6 +28,7 @@ pub struct UpdateTeamRequest {
     pub name: Option<String>,
     pub description: Option<Option<String>>,
     pub manager_id: Option<Option<Uuid>>,
+    pub work_schedule_id: Option<Option<Uuid>>,
 }
 
 /// Service for team operations
@@ -52,6 +54,7 @@ impl TeamService {
             name: request.name,
             description: request.description,
             manager_id: request.manager_id,
+            work_schedule_id: request.work_schedule_id,
         };
 
         self.team_repo.create(new_team).await
@@ -68,6 +71,7 @@ impl TeamService {
             name: team.name,
             description: team.description,
             manager_id: team.manager_id,
+            work_schedule_id: team.work_schedule_id,
             member_count,
             created_at: team.created_at,
             updated_at: team.updated_at,
@@ -115,6 +119,7 @@ impl TeamService {
                 name: team.name,
                 description: team.description,
                 manager_id: team.manager_id,
+                work_schedule_id: team.work_schedule_id,
                 member_count,
                 created_at: team.created_at,
                 updated_at: team.updated_at,
@@ -135,6 +140,7 @@ impl TeamService {
             name: request.name,
             description: request.description,
             manager_id: request.manager_id,
+            work_schedule_id: request.work_schedule_id,
             updated_at: Some(Utc::now()),
         };
 

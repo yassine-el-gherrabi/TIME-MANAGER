@@ -17,6 +17,7 @@ pub struct Team {
     pub manager_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub work_schedule_id: Option<Uuid>,
 }
 
 /// NewTeam for creating teams
@@ -27,6 +28,7 @@ pub struct NewTeam {
     pub name: String,
     pub description: Option<String>,
     pub manager_id: Option<Uuid>,
+    pub work_schedule_id: Option<Uuid>,
 }
 
 /// Team update struct for partial updates
@@ -36,6 +38,7 @@ pub struct TeamUpdate {
     pub name: Option<String>,
     pub description: Option<Option<String>>,
     pub manager_id: Option<Option<Uuid>>,
+    pub work_schedule_id: Option<Option<Uuid>>,
     pub updated_at: Option<DateTime<Utc>>,
 }
 
@@ -47,6 +50,7 @@ pub struct TeamResponse {
     pub name: String,
     pub description: Option<String>,
     pub manager_id: Option<Uuid>,
+    pub work_schedule_id: Option<Uuid>,
     pub member_count: i64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

@@ -65,7 +65,7 @@ export const TeamForm: FC<TeamFormProps> = ({
         name: team.name,
         description: team.description || '',
         manager_id: team.manager_id || '',
-        work_schedule_id: '',
+        work_schedule_id: team.work_schedule_id || '',
       });
     } else {
       setFormData({
@@ -102,6 +102,10 @@ export const TeamForm: FC<TeamFormProps> = ({
 
     if (formData.manager_id) {
       data.manager_id = formData.manager_id;
+    }
+
+    if (formData.work_schedule_id) {
+      data.work_schedule_id = formData.work_schedule_id;
     }
 
     await onSubmit(data);

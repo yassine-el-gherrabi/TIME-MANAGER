@@ -25,6 +25,7 @@ import { TeamForm } from '../../components/admin/TeamForm';
 import { TeamMembersPanel } from '../../components/admin/TeamMembersPanel';
 import { teamsApi } from '../../api/teams';
 import { usersApi } from '../../api/users';
+import { schedulesApi } from '../../api/schedules';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { mapErrorToMessage } from '../../utils/errorHandling';
 import type { TeamResponse, CreateTeamRequest } from '../../types/team';
@@ -42,7 +43,10 @@ export function TeamsPage() {
   const [managers, setManagers] = useState<Array<{ id: string; name: string }>>([]);
   const [managerNames, setManagerNames] = useState<Record<string, string>>({});
 
-  // Load managers on mount
+  // Schedules list for form dropdowns
+  const [schedules, setSchedules] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Load managers and schedules on mount
   useEffect(() => {
     const loadManagers = async () => {
       try {
@@ -70,7 +74,18 @@ export function TeamsPage() {
         console.error('Failed to load managers:', err);
       }
     };
+
+    const loadSchedules = async () => {
+      try {
+        const data = await schedulesApi.list();
+        setSchedules(data.map((s) => ({ id: s.id, name: s.name })));
+      } catch {
+        // Silently fail - schedule dropdown will just be empty
+      }
+    };
+
     loadManagers();
+    loadSchedules();
   }, []);
 
   // Build fetch params from filters
@@ -334,6 +349,7 @@ export function TeamsPage() {
                 error={createDrawer.error}
                 variant="sheet"
                 managers={managers}
+                schedules={schedules}
               />
             </SheetContent>
           </Sheet>
@@ -355,6 +371,7 @@ export function TeamsPage() {
                 error={editDrawer.error}
                 variant="sheet"
                 managers={managers}
+                schedules={schedules}
               />
             </SheetContent>
           </Sheet>

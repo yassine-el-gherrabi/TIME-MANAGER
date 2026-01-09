@@ -123,6 +123,7 @@ diesel::table! {
         manager_id -> Nullable<Uuid>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        work_schedule_id -> Nullable<Uuid>,
     }
 }
 
@@ -198,6 +199,7 @@ diesel::joinable!(team_members -> teams (team_id));
 diesel::joinable!(team_members -> users (user_id));
 diesel::joinable!(teams -> organizations (organization_id));
 diesel::joinable!(teams -> users (manager_id));
+diesel::joinable!(teams -> work_schedules (work_schedule_id));
 diesel::joinable!(user_sessions -> refresh_tokens (refresh_token_id));
 diesel::joinable!(user_sessions -> users (user_id));
 diesel::joinable!(users -> organizations (organization_id));
@@ -206,4 +208,17 @@ diesel::joinable!(work_schedule_days -> work_schedules (work_schedule_id));
 diesel::joinable!(work_schedules -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    clock_entries,invite_tokens,login_attempts,organizations,password_history,password_reset_tokens,refresh_tokens,team_members,teams,user_sessions,users,work_schedule_days,work_schedules,);
+    clock_entries,
+    invite_tokens,
+    login_attempts,
+    organizations,
+    password_history,
+    password_reset_tokens,
+    refresh_tokens,
+    team_members,
+    teams,
+    user_sessions,
+    users,
+    work_schedule_days,
+    work_schedules,
+);
