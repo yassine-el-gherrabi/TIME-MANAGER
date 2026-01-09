@@ -106,15 +106,15 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
 
             return (
               <tr
-                key={schedule.schedule.id}
+                key={schedule.id}
                 className="border-b hover:bg-muted/25 transition-colors"
               >
                 <td className="px-4 py-3 text-sm">
                   <div>
-                    <div className="font-medium">{schedule.schedule.name}</div>
-                    {schedule.schedule.description && (
+                    <div className="font-medium">{schedule.name}</div>
+                    {schedule.description && (
                       <div className="text-xs text-muted-foreground truncate max-w-xs">
-                        {schedule.schedule.description}
+                        {schedule.description}
                       </div>
                     )}
                   </div>
@@ -129,7 +129,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-center">
-                  {schedule.schedule.is_default ? (
+                  {schedule.is_default ? (
                     <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
                       Default
                     </Badge>
@@ -150,8 +150,8 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                       size="sm"
                       className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/50"
                       onClick={() => onDelete(schedule)}
-                      disabled={schedule.schedule.is_default}
-                      title={schedule.schedule.is_default ? 'Cannot delete default schedule' : 'Delete schedule'}
+                      disabled={schedule.is_default}
+                      title={schedule.is_default ? 'Cannot delete default schedule' : 'Delete schedule'}
                     >
                       Delete
                     </Button>

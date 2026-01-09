@@ -107,9 +107,9 @@ export const ScheduleForm: FC<ScheduleFormProps> = ({
   useEffect(() => {
     if (schedule) {
       setFormData({
-        name: schedule.schedule.name,
-        description: schedule.schedule.description || '',
-        is_default: schedule.schedule.is_default,
+        name: schedule.name,
+        description: schedule.description || '',
+        is_default: schedule.is_default,
         days: apiDaysToFormDays(schedule),
       });
     } else {

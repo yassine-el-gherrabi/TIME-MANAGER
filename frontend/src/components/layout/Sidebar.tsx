@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
+  UsersRound,
+  Calendar,
   KeyRound,
   MonitorSmartphone,
   LogOut,
@@ -65,6 +67,12 @@ export const Sidebar: FC = () => {
             </p>
             <NavLink to="/admin/users" icon={<Users className="h-4 w-4" />}>
               Users
+            </NavLink>
+            <NavLink to="/admin/teams" icon={<UsersRound className="h-4 w-4" />}>
+              Teams
+            </NavLink>
+            <NavLink to="/admin/schedules" icon={<Calendar className="h-4 w-4" />}>
+              Schedules
             </NavLink>
           </div>
         )}

@@ -30,10 +30,9 @@ export interface WorkScheduleDay {
 }
 
 /**
- * Work schedule with its days
+ * Work schedule with its days (API uses flatten, so properties are at root level)
  */
-export interface WorkScheduleWithDays {
-  schedule: WorkSchedule;
+export interface WorkScheduleWithDays extends WorkSchedule {
   days: WorkScheduleDay[];
 }
 

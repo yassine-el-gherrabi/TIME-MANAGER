@@ -110,7 +110,7 @@ export function SchedulesPage() {
     setEditDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       // Update schedule metadata
-      await schedulesApi.update(editDrawer.schedule.schedule.id, {
+      await schedulesApi.update(editDrawer.schedule.id, {
         name: data.name,
         description: data.description,
         is_default: data.is_default,
@@ -124,7 +124,7 @@ export function SchedulesPage() {
 
       // Then add new days
       for (const newDay of data.days) {
-        await schedulesApi.addDay(editDrawer.schedule.schedule.id, {
+        await schedulesApi.addDay(editDrawer.schedule.id, {
           day_of_week: newDay.day_of_week,
           start_time: newDay.start_time,
           end_time: newDay.end_time,
@@ -155,7 +155,7 @@ export function SchedulesPage() {
 
   // Delete handlers
   const handleDeleteClick = (schedule: WorkScheduleWithDays) => {
-    if (schedule.schedule.is_default) {
+    if (schedule.is_default) {
       toast.error('Cannot delete the default schedule');
       return;
     }
@@ -167,8 +167,8 @@ export function SchedulesPage() {
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await schedulesApi.delete(deleteDialog.schedule.schedule.id);
-      toast.success(`Schedule "${deleteDialog.schedule.schedule.name}" has been deleted`);
+      await schedulesApi.delete(deleteDialog.schedule.id);
+      toast.success(`Schedule "${deleteDialog.schedule.name}" has been deleted`);
       setDeleteDialog({ open: false, schedule: null, loading: false });
       loadSchedules();
     } catch (err) {
@@ -224,7 +224,7 @@ export function SchedulesPage() {
             title="Delete Schedule"
             description={
               deleteDialog.schedule
-                ? `Are you sure you want to delete "${deleteDialog.schedule.schedule.name}"? Users assigned to this schedule will need a new assignment.`
+                ? `Are you sure you want to delete "${deleteDialog.schedule.name}"? Users assigned to this schedule will need a new assignment.`
                 : ''
             }
             confirmText="Delete"
@@ -278,7 +278,7 @@ export function SchedulesPage() {
               <SheetHeader>
                 <SheetTitle>Assign Schedule</SheetTitle>
                 <SheetDescription>
-                  Assign "{assignDrawer.schedule?.schedule.name}" to users.
+                  Assign "{assignDrawer.schedule?.name}" to users.
                 </SheetDescription>
               </SheetHeader>
               <ScheduleAssignPanel

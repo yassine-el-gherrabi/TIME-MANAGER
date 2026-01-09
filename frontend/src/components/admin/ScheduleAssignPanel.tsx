@@ -103,7 +103,7 @@ export const ScheduleAssignPanel: FC<ScheduleAssignPanelProps> = ({
 
       for (const user of selectedUsers) {
         await schedulesApi.assignToUser(user.id, {
-          schedule_id: schedule.schedule.id,
+          schedule_id: schedule.id,
         });
       }
 
