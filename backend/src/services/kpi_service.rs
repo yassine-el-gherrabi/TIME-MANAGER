@@ -381,7 +381,7 @@ impl KPIService {
                 }
                 Granularity::Week => {
                     let next = current + chrono::Duration::weeks(1);
-                    (next, format!("Week {}", current.iso_week().week()))
+                    (next, current.format("%Y-%m-%d").to_string())
                 }
                 Granularity::Month => {
                     let next = current + chrono::Duration::days(30);

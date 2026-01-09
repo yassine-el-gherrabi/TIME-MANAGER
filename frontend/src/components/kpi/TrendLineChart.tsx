@@ -260,6 +260,7 @@ export function TrendLineChart({
                   stroke="hsl(var(--primary))"
                   fill="url(#colorWorked)"
                   name="hours_worked"
+                  legendType="none"
                 />
                 <Line
                   type="monotone"
