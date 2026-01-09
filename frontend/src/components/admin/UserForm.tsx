@@ -7,6 +7,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { UserRole } from '../../types/auth';
 import type { UserResponse, CreateUserRequest } from '../../types/user';
 
+export interface ScheduleOption {
+  id: string;
+  name: string;
+}
+
 export interface UserFormProps {
   user?: UserResponse | null;
   onSubmit: (data: CreateUserRequest) => Promise<void>;
@@ -15,6 +20,10 @@ export interface UserFormProps {
   error?: string;
   /** Use 'sheet' variant when rendering inside a Sheet/Drawer */
   variant?: 'card' | 'sheet';
+  /** Available schedules for assignment (Admin only) */
+  schedules?: ScheduleOption[];
+  /** Callback when schedule should be assigned after user save */
+  onScheduleAssign?: (userId: string, scheduleId: string | null) => Promise<void>;
 }
 
 interface FormData {
@@ -22,6 +31,8 @@ interface FormData {
   first_name: string;
   last_name: string;
   role: UserRole;
+  /** Schedule ID to assign - empty string means no change, 'none' means remove */
+  schedule_id: string;
 }
 
 interface FormErrors {
@@ -37,6 +48,8 @@ export const UserForm: FC<UserFormProps> = ({
   isLoading,
   error,
   variant = 'card',
+  schedules = [],
+  onScheduleAssign,
 }) => {
   const isEditing = !!user;
 
@@ -45,6 +58,7 @@ export const UserForm: FC<UserFormProps> = ({
     first_name: '',
     last_name: '',
     role: UserRole.Employee,
+    schedule_id: '', // Empty = no change when editing
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -56,6 +70,7 @@ export const UserForm: FC<UserFormProps> = ({
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
+        schedule_id: '', // Empty = no change when editing
       });
     } else {
       // Reset form when user is cleared (e.g., sheet closed)
@@ -64,6 +79,7 @@ export const UserForm: FC<UserFormProps> = ({
         first_name: '',
         last_name: '',
         role: UserRole.Employee,
+        schedule_id: '', // Empty = default when creating
       });
     }
   }, [user]);
@@ -93,7 +109,16 @@ export const UserForm: FC<UserFormProps> = ({
     e.preventDefault();
     if (!validateForm()) return;
 
-    await onSubmit(formData);
+    // Submit user data (without schedule_id which is handled separately)
+    const { schedule_id, ...userData } = formData;
+    await onSubmit(userData);
+
+    // Handle schedule assignment if callback provided and schedule was selected
+    // schedule_id: '' = no change, 'none' = remove schedule, uuid = assign schedule
+    if (onScheduleAssign && user && schedule_id) {
+      const scheduleToAssign = schedule_id === 'none' ? null : schedule_id;
+      await onScheduleAssign(user.id, scheduleToAssign);
+    }
   };
 
   const handleChange = (field: keyof FormData, value: string) => {
@@ -167,6 +192,31 @@ export const UserForm: FC<UserFormProps> = ({
           <option value={UserRole.SuperAdmin}>Super Admin</option>
         </select>
       </div>
+
+      {/* Schedule assignment - only show when editing and schedules are available */}
+      {isEditing && schedules.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="schedule">Personal Schedule</Label>
+          <select
+            id="schedule"
+            value={formData.schedule_id}
+            onChange={(e) => handleChange('schedule_id', e.target.value)}
+            disabled={isLoading}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="">— No change —</option>
+            <option value="none">No personal schedule (use default)</option>
+            {schedules.map((schedule) => (
+              <option key={schedule.id} value={schedule.id}>
+                {schedule.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Personal schedules override team defaults
+          </p>
+        </div>
+      )}
     </>
   );
 

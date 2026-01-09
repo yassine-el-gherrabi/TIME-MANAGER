@@ -6,7 +6,7 @@
  * User creation and editing are done via side sheets.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -21,14 +21,32 @@ import {
 } from '../../components/ui/sheet';
 import { UsersTable, UserFilters, UserForm } from '../../components/admin';
 import { usersApi } from '../../api/users';
+import { schedulesApi } from '../../api/schedules';
 import { useAuthStore } from '../../stores/authStore';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { mapErrorToMessage } from '../../utils/errorHandling';
 import type { UserResponse, CreateUserRequest } from '../../types/user';
+import type { ScheduleOption } from '../../components/admin/UserForm';
 import { UserRole } from '../../types/auth';
 
 export function UsersPage() {
   const currentUser = useAuthStore((state) => state.user);
+
+  // Schedules for assignment dropdown
+  const [schedules, setSchedules] = useState<ScheduleOption[]>([]);
+
+  // Load schedules on mount (Admin+ can assign schedules)
+  useEffect(() => {
+    const loadSchedules = async () => {
+      try {
+        const data = await schedulesApi.list();
+        setSchedules(data.map((s) => ({ id: s.id, name: s.name })));
+      } catch {
+        // Silently fail - schedule dropdown will just be empty
+      }
+    };
+    loadSchedules();
+  }, []);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -190,6 +208,21 @@ export function UsersPage() {
     }
   };
 
+  // Schedule assignment callback
+  const handleScheduleAssign = async (userId: string, scheduleId: string | null) => {
+    if (scheduleId === null) {
+      // TODO: Backend doesn't currently support removing schedule assignment
+      // Would need a separate endpoint like DELETE /users/:id/schedule
+      return;
+    }
+    try {
+      await schedulesApi.assignToUser(userId, { schedule_id: scheduleId });
+      toast.success('Schedule assigned successfully');
+    } catch (err) {
+      toast.error(mapErrorToMessage(err));
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <Card>
@@ -305,6 +338,8 @@ export function UsersPage() {
                 isLoading={editDrawer.loading}
                 error={editDrawer.error}
                 variant="sheet"
+                schedules={schedules}
+                onScheduleAssign={handleScheduleAssign}
               />
             </SheetContent>
           </Sheet>
