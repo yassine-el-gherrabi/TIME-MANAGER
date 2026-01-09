@@ -40,16 +40,22 @@ interface TrendLineChartProps {
  * Format date based on granularity
  */
 function formatDate(dateStr: string, granularity: Granularity): string {
-  const date = parseISO(dateStr);
-  switch (granularity) {
-    case 'day':
-      return format(date, 'dd MMM');
-    case 'week':
-      return format(date, "'W'w MMM");
-    case 'month':
-      return format(date, 'MMM yy');
-    default:
-      return format(date, 'dd/MM');
+  if (!dateStr) return '';
+  try {
+    const date = parseISO(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    switch (granularity) {
+      case 'day':
+        return format(date, 'dd MMM');
+      case 'week':
+        return format(date, "'W'w MMM");
+      case 'month':
+        return format(date, 'MMM yy');
+      default:
+        return format(date, 'dd/MM');
+    }
+  } catch {
+    return dateStr;
   }
 }
 
