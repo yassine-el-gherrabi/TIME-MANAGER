@@ -9,3 +9,4 @@ export { TeamsPage } from './TeamsPage';
 export { SchedulesPage } from './SchedulesPage';
 export { AbsenceTypesPage } from './AbsenceTypesPage';
 export { ClosedDaysPage } from './ClosedDaysPage';
+export { AuditLogsPage } from './AuditLogsPage';

@@ -3,6 +3,7 @@
 
 pub mod absence_repository;
 pub mod absence_type_repository;
+pub mod audit_repository;
 pub mod clock_repository;
 pub mod closed_day_repository;
 pub mod leave_balance_repository;
@@ -33,3 +34,4 @@ pub use team_repository::TeamRepository;
 pub use user_repository::{User, UserRepository};
 pub use user_session_repository::UserSessionRepository;
 pub use work_schedule_repository::WorkScheduleRepository;
+pub use audit_repository::AuditRepository;

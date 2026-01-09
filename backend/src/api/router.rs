@@ -7,6 +7,7 @@ use tower_http::trace::TraceLayer;
 
 use super::handlers::absence_types;
 use super::handlers::absences;
+use super::handlers::audit_logs;
 use super::handlers::auth;
 use super::handlers::balances;
 use super::handlers::clocks;
@@ -177,6 +178,11 @@ pub fn create_router(state: AppState) -> Router {
         .route("/:id/read", put(notifications::mark_read))
         .route("/read-all", put(notifications::mark_all_read));
 
+    // Audit log routes (Super Admin only)
+    let audit_log_routes = Router::new()
+        .route("/", get(audit_logs::list_audit_logs))
+        .route("/export", get(audit_logs::export_audit_logs));
+
     // Main router
     Router::new()
         .route("/health", get(health_check))
@@ -192,6 +198,7 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/balances", balance_routes)
         .nest("/v1/closed-days", closed_day_routes)
         .nest("/v1/notifications", notification_routes)
+        .nest("/v1/audit-logs", audit_log_routes)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)

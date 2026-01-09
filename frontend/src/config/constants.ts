@@ -159,6 +159,14 @@ export const NOTIFICATION_ENDPOINTS = {
 } as const;
 
 /**
+ * Audit log endpoints (Super Admin only)
+ */
+export const AUDIT_ENDPOINTS = {
+  LIST: '/audit-logs',
+  EXPORT: '/audit-logs/export',
+} as const;
+
+/**
  * Local storage keys
  * Note: Access tokens stored in memory only, refresh tokens in HttpOnly cookies
  */

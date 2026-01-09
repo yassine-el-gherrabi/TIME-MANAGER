@@ -41,3 +41,8 @@ export type { DayGridProps } from './DayGrid';
 export type { ScheduleFormProps } from './ScheduleForm';
 export type { SchedulesTableProps } from './SchedulesTable';
 export type { ScheduleAssignPanelProps } from './ScheduleAssignPanel';
+
+// Audit log components
+export { AuditLogFilters } from './AuditLogFilters';
+export { AuditLogsTable } from './AuditLogsTable';
+export { AuditLogDetailsSheet } from './AuditLogDetailsSheet';

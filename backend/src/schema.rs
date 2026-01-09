@@ -6,6 +6,10 @@ pub mod sql_types {
     pub struct AbsenceStatus;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "audit_action"))]
+    pub struct AuditAction;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "clock_entry_status"))]
     pub struct ClockEntryStatus;
 
@@ -55,6 +59,28 @@ diesel::table! {
         approved_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::AuditAction;
+
+    audit_logs (id) {
+        id -> Uuid,
+        organization_id -> Nullable<Uuid>,
+        user_id -> Nullable<Uuid>,
+        action -> AuditAction,
+        #[max_length = 50]
+        entity_type -> Varchar,
+        entity_id -> Uuid,
+        old_values -> Nullable<Jsonb>,
+        new_values -> Nullable<Jsonb>,
+        #[max_length = 45]
+        ip_address -> Nullable<Varchar>,
+        #[max_length = 512]
+        user_agent -> Nullable<Varchar>,
+        created_at -> Timestamptz,
     }
 }
 
@@ -301,6 +327,8 @@ diesel::table! {
 diesel::joinable!(absence_types -> organizations (organization_id));
 diesel::joinable!(absences -> absence_types (type_id));
 diesel::joinable!(absences -> organizations (organization_id));
+diesel::joinable!(audit_logs -> organizations (organization_id));
+diesel::joinable!(audit_logs -> users (user_id));
 diesel::joinable!(clock_entries -> organizations (organization_id));
 diesel::joinable!(closed_days -> organizations (organization_id));
 diesel::joinable!(holidays -> organizations (organization_id));
@@ -326,4 +354,24 @@ diesel::joinable!(work_schedule_days -> work_schedules (work_schedule_id));
 diesel::joinable!(work_schedules -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    absence_types,absences,clock_entries,closed_days,holidays,invite_tokens,leave_balances,login_attempts,notifications,organizations,password_history,password_reset_tokens,refresh_tokens,team_members,teams,user_sessions,users,work_schedule_days,work_schedules,);
+    absence_types,
+    absences,
+    audit_logs,
+    clock_entries,
+    closed_days,
+    holidays,
+    invite_tokens,
+    leave_balances,
+    login_attempts,
+    notifications,
+    organizations,
+    password_history,
+    password_reset_tokens,
+    refresh_tokens,
+    team_members,
+    teams,
+    user_sessions,
+    users,
+    work_schedule_days,
+    work_schedules,
+);

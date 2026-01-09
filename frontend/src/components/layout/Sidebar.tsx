@@ -17,6 +17,7 @@ import {
   FileType,
   PartyPopper,
   User,
+  ScrollText,
 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
@@ -98,6 +99,18 @@ export const Sidebar: FC = () => {
             </NavLink>
             <NavLink to="/admin/closed-days" icon={<PartyPopper className="h-4 w-4" />}>
               Closed Days
+            </NavLink>
+          </div>
+        )}
+
+        {/* Super Admin Only */}
+        {user?.role === UserRole.SuperAdmin && (
+          <div className="pt-4">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Super Admin
+            </p>
+            <NavLink to="/admin/audit-logs" icon={<ScrollText className="h-4 w-4" />}>
+              Audit Logs
             </NavLink>
           </div>
         )}

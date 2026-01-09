@@ -133,5 +133,20 @@ export {
   NOTIFICATION_TYPE_COLORS,
 } from './notification';
 
+// Audit types
+export type {
+  AuditUserInfo,
+  AuditLog,
+  PaginatedAuditLogs,
+  AuditLogFilter,
+} from './audit';
+export {
+  AuditAction,
+  ENTITY_TYPE_LABELS,
+  ACTION_LABELS,
+  ACTION_COLORS,
+  ACTION_COLORS_DARK,
+} from './audit';
+
 // Re-export enums
 export { UserRole } from './auth';

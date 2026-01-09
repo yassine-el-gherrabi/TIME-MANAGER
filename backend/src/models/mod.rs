@@ -3,6 +3,7 @@
 
 pub mod absence;
 pub mod absence_type;
+pub mod audit_log;
 pub mod claims;
 pub mod clock_entry;
 pub mod closed_day;
@@ -51,4 +52,8 @@ pub use user_session::{NewUserSession, UserSession};
 pub use work_schedule::{
     DayConfig, NewWorkSchedule, NewWorkScheduleDay, WorkSchedule, WorkScheduleDay,
     WorkScheduleDayUpdate, WorkScheduleUpdate, WorkScheduleWithDays,
+};
+pub use audit_log::{
+    AuditContext, AuditLog, AuditLogFilter, AuditLogResponse, AuditUserInfo, NewAuditLog,
+    PaginatedAuditLogs,
 };

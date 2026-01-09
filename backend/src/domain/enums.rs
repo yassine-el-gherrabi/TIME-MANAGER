@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 
 use crate::schema::sql_types::AbsenceStatus as AbsenceStatusSqlType;
+use crate::schema::sql_types::AuditAction as AuditActionSqlType;
 use crate::schema::sql_types::ClockEntryStatus as ClockEntryStatusSqlType;
 use crate::schema::sql_types::NotificationType as NotificationTypeSqlType;
 use crate::schema::sql_types::UserRole as UserRoleSqlType;
@@ -188,6 +189,40 @@ impl FromSql<NotificationTypeSqlType, Pg> for NotificationType {
             "clock_approved" => Ok(NotificationType::ClockApproved),
             "clock_rejected" => Ok(NotificationType::ClockRejected),
             _ => Err(format!("Unrecognized notification type: {}", type_str).into()),
+        }
+    }
+}
+
+/// Audit action enumeration matching the database audit_action ENUM
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = AuditActionSqlType)]
+#[serde(rename_all = "lowercase")]
+pub enum AuditAction {
+    Create,
+    Update,
+    Delete,
+}
+
+impl ToSql<AuditActionSqlType, Pg> for AuditAction {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let action_str = match self {
+            AuditAction::Create => "create",
+            AuditAction::Update => "update",
+            AuditAction::Delete => "delete",
+        };
+        out.write_all(action_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<AuditActionSqlType, Pg> for AuditAction {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let action_str = std::str::from_utf8(bytes.as_bytes())?;
+        match action_str {
+            "create" => Ok(AuditAction::Create),
+            "update" => Ok(AuditAction::Update),
+            "delete" => Ok(AuditAction::Delete),
+            _ => Err(format!("Unrecognized audit action: {}", action_str).into()),
         }
     }
 }

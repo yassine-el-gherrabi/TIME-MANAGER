@@ -3,6 +3,7 @@
 
 pub mod absence_service;
 pub mod absence_type_service;
+pub mod audit_service;
 pub mod auth_service;
 pub mod closed_day_service;
 pub mod leave_balance_service;
@@ -48,3 +49,4 @@ pub use work_schedule_service::{
     AddDayRequest, CreateScheduleRequest, UpdateDayRequest, UpdateScheduleRequest,
     WorkScheduleService,
 };
+pub use audit_service::AuditService;
