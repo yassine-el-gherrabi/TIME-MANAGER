@@ -11,20 +11,25 @@ import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { ClockWidget } from '../components/clock';
-import { KPICard, PresenceWidget } from '../components/kpi';
+import { KPICard, PresenceWidget, HoursBarChart, TrendLineChart } from '../components/kpi';
 import { useKPIStore, getDateRange } from '../stores/kpiStore';
 import { UserRole } from '../types/auth';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { myKpis, fetchMyKpis } = useKPIStore();
+  const { myKpis, fetchMyKpis, charts, fetchCharts } = useKPIStore();
 
-  // Load user KPIs on mount
+  // Load user KPIs and chart data on mount
   useEffect(() => {
     const params = getDateRange('month');
     fetchMyKpis(params);
-  }, [fetchMyKpis]);
+    // Fetch weekly chart data (last 7 days, daily granularity)
+    fetchCharts({
+      ...getDateRange('week'),
+      granularity: 'day',
+    });
+  }, [fetchMyKpis, fetchCharts]);
 
   const handleLogout = async () => {
     try {
@@ -104,6 +109,22 @@ export function DashboardPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Charts Section - All Users */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <HoursBarChart
+          data={charts?.data ?? []}
+          title="Weekly Hours"
+          description="Hours worked this week"
+          granularity={charts?.granularity ?? 'day'}
+        />
+        <TrendLineChart
+          data={charts?.data ?? []}
+          title="Hours Trend"
+          description="Daily progression"
+          granularity={charts?.granularity ?? 'day'}
+        />
       </div>
 
       {/* Manager Section - Presence Widget */}
