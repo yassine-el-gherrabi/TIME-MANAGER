@@ -8,7 +8,6 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import type { WorkScheduleWithDays } from '../../types/schedule';
-import { DAY_LABELS } from '../../types/schedule';
 
 export interface SchedulesTableProps {
   schedules: WorkScheduleWithDays[];
