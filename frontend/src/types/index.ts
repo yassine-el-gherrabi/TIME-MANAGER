@@ -102,7 +102,7 @@ export type {
   AbsenceType,
   Absence,
   LeaveBalance,
-  Holiday,
+  ClosedDay,
   PaginatedAbsences,
   CreateAbsenceTypeRequest,
   UpdateAbsenceTypeRequest,
@@ -110,10 +110,10 @@ export type {
   RejectAbsenceRequest,
   SetBalanceRequest,
   AdjustBalanceRequest,
-  CreateHolidayRequest,
-  UpdateHolidayRequest,
+  CreateClosedDayRequest,
+  UpdateClosedDayRequest,
   AbsenceFilter,
-  HolidayFilter,
+  ClosedDayFilter,
   BalanceFilter,
 } from './absence';
 export { AbsenceStatus, STATUS_COLORS, STATUS_LABELS } from './absence';

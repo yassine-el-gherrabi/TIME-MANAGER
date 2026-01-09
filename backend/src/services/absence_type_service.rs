@@ -155,38 +155,4 @@ impl AbsenceTypeService {
     pub async fn get_type(&self, org_id: Uuid, type_id: Uuid) -> Result<AbsenceType, AppError> {
         self.absence_type_repo.find_by_id(org_id, type_id).await
     }
-
-    /// Seed default French absence types for an organization
-    pub async fn seed_default_types(&self, org_id: Uuid) -> Result<(), AppError> {
-        let default_types = vec![
-            ("Congés payés", "CP", "#22C55E", true, true, true),
-            ("RTT", "RTT", "#3B82F6", true, true, true),
-            ("Maladie", "MALADIE", "#EF4444", false, false, true),
-            ("Sans solde", "SANS_SOLDE", "#6B7280", true, false, false),
-            ("Congé maternité", "MATERNITE", "#EC4899", false, false, true),
-            ("Congé paternité", "PATERNITE", "#8B5CF6", false, false, true),
-        ];
-
-        for (name, code, color, requires_approval, affects_balance, is_paid) in default_types {
-            // Skip if already exists
-            if self.absence_type_repo.find_by_code(org_id, code).await?.is_some() {
-                continue;
-            }
-
-            let new_type = NewAbsenceType {
-                organization_id: org_id,
-                name: name.to_string(),
-                code: code.to_string(),
-                color: Some(color.to_string()),
-                requires_approval,
-                affects_balance,
-                is_paid,
-            };
-
-            // Ignore errors (type might already exist from another process)
-            let _ = self.absence_type_repo.create(new_type).await;
-        }
-
-        Ok(())
-    }
 }

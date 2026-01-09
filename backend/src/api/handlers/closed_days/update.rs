@@ -10,26 +10,26 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::{HolidayService, UpdateHolidayRequest};
+use crate::services::{ClosedDayService, UpdateClosedDayRequest};
 
-/// PUT /api/v1/holidays/:id
+/// PUT /api/v1/closed-days/:id
 ///
-/// Update a holiday (Admin+ only)
-pub async fn update_holiday(
+/// Update a closed day (Admin+ only)
+pub async fn update_closed_day(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,
-    Path(holiday_id): Path<Uuid>,
-    Json(body): Json<UpdateHolidayRequest>,
+    Path(closed_day_id): Path<Uuid>,
+    Json(body): Json<UpdateClosedDayRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Check authorization - Admin+ only
     if claims.role < UserRole::Admin {
         return Err(AppError::Forbidden(
-            "Only admins can update holidays".to_string(),
+            "Only admins can update closed days".to_string(),
         ));
     }
 
-    let service = HolidayService::new(state.db_pool.clone());
-    let holiday = service.update(claims.org_id, holiday_id, body).await?;
+    let service = ClosedDayService::new(state.db_pool.clone());
+    let closed_day = service.update(claims.org_id, closed_day_id, body).await?;
 
-    Ok((StatusCode::OK, Json(holiday)))
+    Ok((StatusCode::OK, Json(closed_day)))
 }

@@ -71,9 +71,9 @@ export interface LeaveBalance {
 }
 
 /**
- * Holiday definition
+ * Closed day definition (company holidays, office closures)
  */
-export interface Holiday {
+export interface ClosedDay {
   id: string;
   name: string;
   date: string;
@@ -151,18 +151,18 @@ export interface AdjustBalanceRequest {
 }
 
 /**
- * Create holiday request
+ * Create closed day request
  */
-export interface CreateHolidayRequest {
+export interface CreateClosedDayRequest {
   name: string;
   date: string;
   is_recurring?: boolean;
 }
 
 /**
- * Update holiday request
+ * Update closed day request
  */
-export interface UpdateHolidayRequest {
+export interface UpdateClosedDayRequest {
   name?: string;
   date?: string;
   is_recurring?: boolean;
@@ -182,9 +182,9 @@ export interface AbsenceFilter {
 }
 
 /**
- * Holiday filter options
+ * Closed day filter options
  */
-export interface HolidayFilter {
+export interface ClosedDayFilter {
   start_date?: string;
   end_date?: string;
   is_recurring?: boolean;

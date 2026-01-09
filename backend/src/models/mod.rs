@@ -5,7 +5,7 @@ pub mod absence;
 pub mod absence_type;
 pub mod claims;
 pub mod clock_entry;
-pub mod holiday;
+pub mod closed_day;
 pub mod invite_token;
 pub mod leave_balance;
 pub mod login_attempt;
@@ -29,7 +29,7 @@ pub use clock_entry::{
     ClockEntry, ClockEntryResponse, ClockEntryUpdate, ClockFilter, ClockStatus, NewClockEntry,
     PaginatedClockEntries,
 };
-pub use holiday::{Holiday, HolidayFilter, HolidayResponse, HolidayUpdate, NewHoliday};
+pub use closed_day::{ClosedDay, ClosedDayFilter, ClosedDayResponse, ClosedDayUpdate, NewClosedDay};
 pub use invite_token::{InviteToken, NewInviteToken};
 pub use login_attempt::{LoginAttempt, NewLoginAttempt};
 pub use password_history::{NewPasswordHistory, PasswordHistory};

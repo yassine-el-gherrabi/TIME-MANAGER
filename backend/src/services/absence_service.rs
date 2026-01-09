@@ -12,7 +12,7 @@ use crate::models::{
     PaginatedAbsences,
 };
 use crate::repositories::{
-    AbsenceRepository, AbsenceTypeRepository, HolidayRepository, LeaveBalanceRepository,
+    AbsenceRepository, AbsenceTypeRepository, ClosedDayRepository, LeaveBalanceRepository,
     TeamRepository,
 };
 
@@ -32,7 +32,7 @@ pub struct AbsenceService {
     absence_repo: AbsenceRepository,
     absence_type_repo: AbsenceTypeRepository,
     leave_balance_repo: LeaveBalanceRepository,
-    holiday_repo: HolidayRepository,
+    closed_day_repo: ClosedDayRepository,
     team_repo: TeamRepository,
 }
 
@@ -42,7 +42,7 @@ impl AbsenceService {
             absence_repo: AbsenceRepository::new(pool.clone()),
             absence_type_repo: AbsenceTypeRepository::new(pool.clone()),
             leave_balance_repo: LeaveBalanceRepository::new(pool.clone()),
-            holiday_repo: HolidayRepository::new(pool.clone()),
+            closed_day_repo: ClosedDayRepository::new(pool.clone()),
             team_repo: TeamRepository::new(pool),
         }
     }
@@ -437,16 +437,16 @@ impl AbsenceService {
         Ok(responses)
     }
 
-    /// Calculate working days between two dates (excluding weekends and holidays)
+    /// Calculate working days between two dates (excluding weekends and closed days)
     async fn calculate_working_days(
         &self,
         org_id: Uuid,
         start_date: NaiveDate,
         end_date: NaiveDate,
     ) -> Result<f64, AppError> {
-        // Get holidays in range
-        let holidays = self
-            .holiday_repo
+        // Get closed days in range
+        let closed_days = self
+            .closed_day_repo
             .list_range(org_id, start_date, end_date)
             .await?;
 
@@ -458,8 +458,8 @@ impl AbsenceService {
 
             // Skip weekends
             if weekday != Weekday::Sat && weekday != Weekday::Sun {
-                // Skip holidays
-                if !holidays.contains(&current) {
+                // Skip closed days
+                if !closed_days.contains(&current) {
                     working_days += 1.0;
                 }
             }

@@ -3,13 +3,13 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::holidays;
+use crate::schema::closed_days;
 
-/// Holiday entity from database
+/// ClosedDay entity from database
 #[derive(Debug, Clone, Queryable, Selectable, Serialize, Deserialize)]
-#[diesel(table_name = holidays)]
+#[diesel(table_name = closed_days)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Holiday {
+pub struct ClosedDay {
     pub id: Uuid,
     pub organization_id: Uuid,
     pub name: String,
@@ -18,28 +18,28 @@ pub struct Holiday {
     pub created_at: DateTime<Utc>,
 }
 
-/// NewHoliday for creating holidays
+/// NewClosedDay for creating closed days
 #[derive(Debug, Insertable)]
-#[diesel(table_name = holidays)]
-pub struct NewHoliday {
+#[diesel(table_name = closed_days)]
+pub struct NewClosedDay {
     pub organization_id: Uuid,
     pub name: String,
     pub date: NaiveDate,
     pub is_recurring: bool,
 }
 
-/// Holiday update struct for partial updates
+/// ClosedDay update struct for partial updates
 #[derive(Debug, AsChangeset, Default)]
-#[diesel(table_name = holidays)]
-pub struct HolidayUpdate {
+#[diesel(table_name = closed_days)]
+pub struct ClosedDayUpdate {
     pub name: Option<String>,
     pub date: Option<NaiveDate>,
     pub is_recurring: Option<bool>,
 }
 
-/// Holiday response for API
+/// ClosedDay response for API
 #[derive(Debug, Serialize)]
-pub struct HolidayResponse {
+pub struct ClosedDayResponse {
     pub id: Uuid,
     pub name: String,
     pub date: NaiveDate,
@@ -47,21 +47,21 @@ pub struct HolidayResponse {
     pub created_at: DateTime<Utc>,
 }
 
-impl From<Holiday> for HolidayResponse {
-    fn from(h: Holiday) -> Self {
+impl From<ClosedDay> for ClosedDayResponse {
+    fn from(cd: ClosedDay) -> Self {
         Self {
-            id: h.id,
-            name: h.name,
-            date: h.date,
-            is_recurring: h.is_recurring,
-            created_at: h.created_at,
+            id: cd.id,
+            name: cd.name,
+            date: cd.date,
+            is_recurring: cd.is_recurring,
+            created_at: cd.created_at,
         }
     }
 }
 
-/// Holiday filter options
+/// ClosedDay filter options
 #[derive(Debug, Clone, Default, Deserialize)]
-pub struct HolidayFilter {
+pub struct ClosedDayFilter {
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
     pub is_recurring: Option<bool>,

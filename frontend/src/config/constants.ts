@@ -112,7 +112,6 @@ export const ABSENCE_TYPE_ENDPOINTS = {
   GET: (id: string) => `/absence-types/${id}`,
   UPDATE: (id: string) => `/absence-types/${id}`,
   DELETE: (id: string) => `/absence-types/${id}`,
-  SEED: '/absence-types/seed',
 } as const;
 
 /**
@@ -139,15 +138,14 @@ export const BALANCE_ENDPOINTS = {
 } as const;
 
 /**
- * Holiday endpoints
+ * Closed day endpoints
  */
-export const HOLIDAY_ENDPOINTS = {
-  LIST: '/holidays',
-  CREATE: '/holidays',
-  GET: (id: string) => `/holidays/${id}`,
-  UPDATE: (id: string) => `/holidays/${id}`,
-  DELETE: (id: string) => `/holidays/${id}`,
-  SEED: '/holidays/seed',
+export const CLOSED_DAY_ENDPOINTS = {
+  LIST: '/closed-days',
+  CREATE: '/closed-days',
+  GET: (id: string) => `/closed-days/${id}`,
+  UPDATE: (id: string) => `/closed-days/${id}`,
+  DELETE: (id: string) => `/closed-days/${id}`,
 } as const;
 
 /**

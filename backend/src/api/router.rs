@@ -11,7 +11,7 @@ use super::handlers::auth;
 use super::handlers::balances;
 use super::handlers::clocks;
 use super::handlers::health::health_check;
-use super::handlers::holidays;
+use super::handlers::closed_days;
 use super::handlers::kpis;
 use super::handlers::password;
 use super::handlers::schedules;
@@ -131,7 +131,6 @@ pub fn create_router(state: AppState) -> Router {
             "/",
             get(absence_types::list_absence_types).post(absence_types::create_absence_type),
         )
-        .route("/seed", post(absence_types::seed_absence_types))
         .route(
             "/:id",
             get(absence_types::get_absence_type)
@@ -157,18 +156,17 @@ pub fn create_router(state: AppState) -> Router {
         .route("/me", get(balances::get_my_balances))
         .route("/:id/adjust", put(balances::adjust_balance));
 
-    // Holiday routes
-    let holiday_routes = Router::new()
+    // Closed Day routes
+    let closed_day_routes = Router::new()
         .route(
             "/",
-            get(holidays::list_holidays).post(holidays::create_holiday),
+            get(closed_days::list_closed_days).post(closed_days::create_closed_day),
         )
-        .route("/seed", post(holidays::seed_holidays))
         .route(
             "/:id",
-            get(holidays::get_holiday)
-                .put(holidays::update_holiday)
-                .delete(holidays::delete_holiday),
+            get(closed_days::get_closed_day)
+                .put(closed_days::update_closed_day)
+                .delete(closed_days::delete_closed_day),
         );
 
     // Main router
@@ -184,7 +182,7 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/absence-types", absence_type_routes)
         .nest("/v1/absences", absence_routes)
         .nest("/v1/balances", balance_routes)
-        .nest("/v1/holidays", holiday_routes)
+        .nest("/v1/closed-days", closed_day_routes)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)

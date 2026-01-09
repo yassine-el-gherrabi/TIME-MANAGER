@@ -12,7 +12,7 @@ import { PasswordResetRequestPage } from '../pages/PasswordResetRequestPage';
 import { PasswordResetPage } from '../pages/PasswordResetPage';
 import { AcceptInvitePage } from '../pages/AcceptInvitePage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
-import { UsersPage, TeamsPage, SchedulesPage, AbsenceTypesPage, HolidaysPage } from '../pages/admin';
+import { UsersPage, TeamsPage, SchedulesPage, AbsenceTypesPage, ClosedDaysPage } from '../pages/admin';
 import { ChangePasswordPage, SessionsPage } from '../pages/settings';
 import { UserRole } from '../types/auth';
 
@@ -134,11 +134,11 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/admin/holidays',
+    path: '/admin/closed-days',
     element: (
       <ProtectedRoute requiredRole={UserRole.Admin}>
         <MainLayout>
-          <HolidaysPage />
+          <ClosedDaysPage />
         </MainLayout>
       </ProtectedRoute>
     ),

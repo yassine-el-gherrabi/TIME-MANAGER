@@ -91,8 +91,8 @@ export const Sidebar: FC = () => {
             <NavLink to="/admin/absence-types" icon={<FileType className="h-4 w-4" />}>
               Absence Types
             </NavLink>
-            <NavLink to="/admin/holidays" icon={<PartyPopper className="h-4 w-4" />}>
-              Holidays
+            <NavLink to="/admin/closed-days" icon={<PartyPopper className="h-4 w-4" />}>
+              Closed Days
             </NavLink>
           </div>
         )}

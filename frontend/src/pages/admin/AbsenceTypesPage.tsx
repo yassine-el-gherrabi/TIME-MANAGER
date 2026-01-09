@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Plus, Loader2, Pencil, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
@@ -45,7 +45,6 @@ const initialFormData: FormData = {
 export function AbsenceTypesPage() {
   const [types, setTypes] = useState<AbsenceType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [seedLoading, setSeedLoading] = useState(false);
 
   // Form drawer state
   const [formDrawer, setFormDrawer] = useState<{
@@ -145,19 +144,6 @@ export function AbsenceTypesPage() {
     }
   };
 
-  const handleSeed = async () => {
-    setSeedLoading(true);
-    try {
-      await absenceTypesApi.seed();
-      toast.success('Default French absence types created');
-      loadTypes();
-    } catch (err) {
-      toast.error(mapErrorToMessage(err));
-    } finally {
-      setSeedLoading(false);
-    }
-  };
-
   const isEditing = !!formDrawer.type;
 
   return (
@@ -170,20 +156,10 @@ export function AbsenceTypesPage() {
               Configure the types of absences employees can request
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleSeed} disabled={seedLoading}>
-              {seedLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              Seed Defaults
-            </Button>
-            <Button onClick={handleCreateClick}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Type
-            </Button>
-          </div>
+          <Button onClick={handleCreateClick}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Type
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -195,9 +171,9 @@ export function AbsenceTypesPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 No absence types configured yet
               </p>
-              <Button onClick={handleSeed} disabled={seedLoading}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Create Default French Types
+              <Button onClick={handleCreateClick}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Absence Type
               </Button>
             </div>
           ) : (
@@ -286,7 +262,7 @@ export function AbsenceTypesPage() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Congés payés"
+                placeholder="e.g., Paid Leave"
                 disabled={formDrawer.loading}
               />
             </div>
@@ -297,7 +273,7 @@ export function AbsenceTypesPage() {
                 id="code"
                 value={formData.code}
                 onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                placeholder="e.g., CP"
+                placeholder="e.g., PL"
                 disabled={formDrawer.loading}
               />
             </div>

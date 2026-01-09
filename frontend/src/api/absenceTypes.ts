@@ -81,18 +81,6 @@ export const absenceTypesApi = {
       url: ABSENCE_TYPE_ENDPOINTS.DELETE(id),
     });
   },
-
-  /**
-   * Seed default French absence types (Admin+)
-   *
-   * @returns Success message
-   */
-  seed: async (): Promise<{ message: string }> => {
-    return apiRequest<{ message: string }>({
-      method: 'POST',
-      url: ABSENCE_TYPE_ENDPOINTS.SEED,
-    });
-  },
 };
 
 /**
@@ -104,5 +92,4 @@ export const {
   create: createAbsenceType,
   update: updateAbsenceType,
   delete: deleteAbsenceType,
-  seed: seedAbsenceTypes,
 } = absenceTypesApi;

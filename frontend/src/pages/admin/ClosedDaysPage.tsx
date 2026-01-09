@@ -1,13 +1,13 @@
 /**
- * Holidays Management Page (Admin)
+ * Closed Days Management Page (Admin)
  *
- * Admin page to manage organization holidays.
+ * Admin page to manage organization closed days (company holidays, office closures).
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Plus, Loader2, Pencil, Trash2, Sparkles, Calendar, Repeat } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Calendar, Repeat } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
@@ -22,9 +22,9 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
-import { holidaysApi } from '../../api/holidays';
+import { closedDaysApi } from '../../api/closedDays';
 import { mapErrorToMessage } from '../../utils/errorHandling';
-import type { Holiday, CreateHolidayRequest, UpdateHolidayRequest } from '../../types/absence';
+import type { ClosedDay, CreateClosedDayRequest, UpdateClosedDayRequest } from '../../types/absence';
 
 interface FormData {
   name: string;
@@ -38,10 +38,9 @@ const initialFormData: FormData = {
   is_recurring: false,
 };
 
-export function HolidaysPage() {
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
+export function ClosedDaysPage() {
+  const [closedDays, setClosedDays] = useState<ClosedDay[]>([]);
   const [loading, setLoading] = useState(true);
-  const [seedLoading, setSeedLoading] = useState(false);
 
   // Filter state
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
@@ -50,32 +49,32 @@ export function HolidaysPage() {
   // Form drawer state
   const [formDrawer, setFormDrawer] = useState<{
     open: boolean;
-    holiday: Holiday | null;
+    closedDay: ClosedDay | null;
     loading: boolean;
     error: string;
-  }>({ open: false, holiday: null, loading: false, error: '' });
+  }>({ open: false, closedDay: null, loading: false, error: '' });
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
 
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
-    holiday: Holiday | null;
+    closedDay: ClosedDay | null;
     loading: boolean;
-  }>({ open: false, holiday: null, loading: false });
+  }>({ open: false, closedDay: null, loading: false });
 
-  // Load holidays
-  const loadHolidays = useCallback(async () => {
+  // Load closed days
+  const loadClosedDays = useCallback(async () => {
     setLoading(true);
     try {
       const startDate = `${filterYear}-01-01`;
       const endDate = `${filterYear}-12-31`;
-      const data = await holidaysApi.list({
+      const data = await closedDaysApi.list({
         start_date: startDate,
         end_date: endDate,
         is_recurring: showRecurring ? undefined : false,
       });
-      setHolidays(data);
+      setClosedDays(data);
     } catch (err) {
       toast.error(mapErrorToMessage(err));
     } finally {
@@ -84,22 +83,22 @@ export function HolidaysPage() {
   }, [filterYear, showRecurring]);
 
   useEffect(() => {
-    loadHolidays();
-  }, [loadHolidays]);
+    loadClosedDays();
+  }, [loadClosedDays]);
 
   // Handlers
   const handleCreateClick = () => {
     setFormData(initialFormData);
-    setFormDrawer({ open: true, holiday: null, loading: false, error: '' });
+    setFormDrawer({ open: true, closedDay: null, loading: false, error: '' });
   };
 
-  const handleEditClick = (holiday: Holiday) => {
+  const handleEditClick = (closedDay: ClosedDay) => {
     setFormData({
-      name: holiday.name,
-      date: holiday.date,
-      is_recurring: holiday.is_recurring,
+      name: closedDay.name,
+      date: closedDay.date,
+      is_recurring: closedDay.is_recurring,
     });
-    setFormDrawer({ open: true, holiday, loading: false, error: '' });
+    setFormDrawer({ open: true, closedDay, loading: false, error: '' });
   };
 
   const handleFormSubmit = async () => {
@@ -110,65 +109,52 @@ export function HolidaysPage() {
 
     setFormDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
-      if (formDrawer.holiday) {
+      if (formDrawer.closedDay) {
         // Update
-        await holidaysApi.update(formDrawer.holiday.id, formData as UpdateHolidayRequest);
-        toast.success(`Holiday "${formData.name}" updated`);
+        await closedDaysApi.update(formDrawer.closedDay.id, formData as UpdateClosedDayRequest);
+        toast.success(`Closed day "${formData.name}" updated`);
       } else {
         // Create
-        await holidaysApi.create(formData as CreateHolidayRequest);
-        toast.success(`Holiday "${formData.name}" created`);
+        await closedDaysApi.create(formData as CreateClosedDayRequest);
+        toast.success(`Closed day "${formData.name}" created`);
       }
-      setFormDrawer({ open: false, holiday: null, loading: false, error: '' });
-      loadHolidays();
+      setFormDrawer({ open: false, closedDay: null, loading: false, error: '' });
+      loadClosedDays();
     } catch (err) {
       setFormDrawer((prev) => ({ ...prev, loading: false, error: mapErrorToMessage(err) }));
     }
   };
 
   const handleFormCancel = () => {
-    setFormDrawer({ open: false, holiday: null, loading: false, error: '' });
+    setFormDrawer({ open: false, closedDay: null, loading: false, error: '' });
   };
 
-  const handleDeleteClick = (holiday: Holiday) => {
-    setDeleteDialog({ open: true, holiday, loading: false });
+  const handleDeleteClick = (closedDay: ClosedDay) => {
+    setDeleteDialog({ open: true, closedDay, loading: false });
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteDialog.holiday) return;
+    if (!deleteDialog.closedDay) return;
 
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
-      await holidaysApi.delete(deleteDialog.holiday.id);
-      toast.success(`Holiday "${deleteDialog.holiday.name}" deleted`);
-      setDeleteDialog({ open: false, holiday: null, loading: false });
-      loadHolidays();
+      await closedDaysApi.delete(deleteDialog.closedDay.id);
+      toast.success(`Closed day "${deleteDialog.closedDay.name}" deleted`);
+      setDeleteDialog({ open: false, closedDay: null, loading: false });
+      loadClosedDays();
     } catch (err) {
       toast.error(mapErrorToMessage(err));
       setDeleteDialog((prev) => ({ ...prev, loading: false }));
     }
   };
 
-  const handleSeed = async () => {
-    setSeedLoading(true);
-    try {
-      await holidaysApi.seed();
-      toast.success('Default French holidays created');
-      loadHolidays();
-    } catch (err) {
-      toast.error(mapErrorToMessage(err));
-    } finally {
-      setSeedLoading(false);
-    }
-  };
+  const isEditing = !!formDrawer.closedDay;
 
-  const isEditing = !!formDrawer.holiday;
-
-  // Group holidays by month
-  const holidaysByMonth = holidays.reduce<Record<string, Holiday[]>>((acc, holiday) => {
-    const month = format(new Date(holiday.date), 'MMMM');
+  // Group closed days by month
+  const closedDaysByMonth = closedDays.reduce<Record<string, ClosedDay[]>>((acc, closedDay) => {
+    const month = format(new Date(closedDay.date), 'MMMM');
     if (!acc[month]) acc[month] = [];
-    acc[month].push(holiday);
+    acc[month].push(closedDay);
     return acc;
   }, {});
 
@@ -183,26 +169,16 @@ export function HolidaysPage() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Holidays
+              Closed Days
             </CardTitle>
             <CardDescription>
-              Configure organization holidays (excluded from working days)
+              Configure organization closed days (excluded from working days)
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleSeed} disabled={seedLoading}>
-              {seedLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              Seed French Holidays
-            </Button>
-            <Button onClick={handleCreateClick}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Holiday
-            </Button>
-          </div>
+          <Button onClick={handleCreateClick}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Closed Day
+          </Button>
         </CardHeader>
         <CardContent>
           {/* Filters */}
@@ -238,20 +214,20 @@ export function HolidaysPage() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : holidays.length === 0 ? (
+          ) : closedDays.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground mb-4">
-                No holidays configured for {filterYear}
+                No closed days configured for {filterYear}
               </p>
-              <Button onClick={handleSeed} disabled={seedLoading}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Create French Holidays
+              <Button onClick={handleCreateClick}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Closed Day
               </Button>
             </div>
           ) : (
             <div className="space-y-6">
-              {Object.entries(holidaysByMonth).map(([month, monthHolidays]) => (
+              {Object.entries(closedDaysByMonth).map(([month, monthClosedDays]) => (
                 <div key={month}>
                   <h3 className="text-sm font-medium text-muted-foreground mb-3">
                     {month}
@@ -259,17 +235,17 @@ export function HolidaysPage() {
                   <div className="rounded-md border">
                     <table className="w-full">
                       <tbody>
-                        {monthHolidays.map((holiday) => (
-                          <tr key={holiday.id} className="border-b last:border-b-0">
+                        {monthClosedDays.map((closedDay) => (
+                          <tr key={closedDay.id} className="border-b last:border-b-0">
                             <td className="px-4 py-3 w-[140px]">
                               <span className="text-sm text-muted-foreground">
-                                {format(new Date(holiday.date), 'EEE, MMM d')}
+                                {format(new Date(closedDay.date), 'EEE, MMM d')}
                               </span>
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium">{holiday.name}</span>
-                                {holiday.is_recurring && (
+                                <span className="font-medium">{closedDay.name}</span>
+                                {closedDay.is_recurring && (
                                   <Badge variant="secondary" className="gap-1">
                                     <Repeat className="h-3 w-3" />
                                     Recurring
@@ -282,14 +258,14 @@ export function HolidaysPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleEditClick(holiday)}
+                                  onClick={() => handleEditClick(closedDay)}
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDeleteClick(holiday)}
+                                  onClick={() => handleDeleteClick(closedDay)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -311,11 +287,11 @@ export function HolidaysPage() {
       <Sheet open={formDrawer.open} onOpenChange={(open) => !open && handleFormCancel()}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{isEditing ? 'Edit Holiday' : 'Add Holiday'}</SheetTitle>
+            <SheetTitle>{isEditing ? 'Edit Closed Day' : 'Add Closed Day'}</SheetTitle>
             <SheetDescription>
               {isEditing
-                ? 'Update the holiday details'
-                : 'Add a new holiday to the organization calendar'}
+                ? 'Update the closed day details'
+                : 'Add a new closed day to the organization calendar'}
             </SheetDescription>
           </SheetHeader>
 
@@ -332,7 +308,7 @@ export function HolidaysPage() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Jour de l'An"
+                placeholder="e.g., New Year's Day"
                 disabled={formDrawer.loading}
               />
             </div>
@@ -352,7 +328,7 @@ export function HolidaysPage() {
               <div className="space-y-0.5">
                 <Label>Recurring Yearly</Label>
                 <p className="text-xs text-muted-foreground">
-                  This holiday occurs every year on the same date
+                  This closed day occurs every year on the same date
                 </p>
               </div>
               <Switch
@@ -380,10 +356,10 @@ export function HolidaysPage() {
       <ConfirmDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
-        title="Delete Holiday"
+        title="Delete Closed Day"
         description={
-          deleteDialog.holiday
-            ? `Are you sure you want to delete "${deleteDialog.holiday.name}"?`
+          deleteDialog.closedDay
+            ? `Are you sure you want to delete "${deleteDialog.closedDay.name}"?`
             : ''
         }
         confirmText="Delete"

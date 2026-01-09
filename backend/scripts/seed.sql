@@ -389,6 +389,70 @@ INSERT INTO clock_entries (id, organization_id, user_id, clock_in, clock_out, st
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
+-- Absence Types (Generic)
+-- ============================================
+INSERT INTO absence_types (id, organization_id, name, code, color, requires_approval, affects_balance, is_paid) VALUES
+    ('00000000-0000-0000-0000-000000000501', '00000000-0000-0000-0000-000000000001', 'Paid Leave', 'PL', '#10B981', true, true, true),
+    ('00000000-0000-0000-0000-000000000502', '00000000-0000-0000-0000-000000000001', 'Sick Leave', 'SL', '#EF4444', true, false, true),
+    ('00000000-0000-0000-0000-000000000503', '00000000-0000-0000-0000-000000000001', 'Unpaid Leave', 'UL', '#F59E0B', true, false, false),
+    ('00000000-0000-0000-0000-000000000504', '00000000-0000-0000-0000-000000000001', 'Remote Work', 'RW', '#3B82F6', false, false, true),
+    ('00000000-0000-0000-0000-000000000505', '00000000-0000-0000-0000-000000000001', 'Training', 'TR', '#8B5CF6', true, false, true),
+    ('00000000-0000-0000-0000-000000000506', '00000000-0000-0000-0000-000000000001', 'Personal Day', 'PD', '#EC4899', true, true, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Closed Days (Company holidays - generic)
+-- ============================================
+INSERT INTO closed_days (id, organization_id, name, date, is_recurring) VALUES
+    ('00000000-0000-0000-0000-000000000601', '00000000-0000-0000-0000-000000000001', 'New Year''s Day', (DATE_TRUNC('year', NOW()))::date, true),
+    ('00000000-0000-0000-0000-000000000602', '00000000-0000-0000-0000-000000000001', 'Company Anniversary', (DATE_TRUNC('year', NOW()) + INTERVAL '90 days')::date, true),
+    ('00000000-0000-0000-0000-000000000603', '00000000-0000-0000-0000-000000000001', 'Summer Closure', (DATE_TRUNC('year', NOW()) + INTERVAL '212 days')::date, false),
+    ('00000000-0000-0000-0000-000000000604', '00000000-0000-0000-0000-000000000001', 'Winter Holiday', (DATE_TRUNC('year', NOW()) + INTERVAL '358 days')::date, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Leave Balances (for employees with Paid Leave and Personal Day)
+-- ============================================
+INSERT INTO leave_balances (id, organization_id, user_id, absence_type_id, year, initial_balance, used, adjustment) VALUES
+    -- Pierre Bernard - Paid Leave
+    ('00000000-0000-0000-0000-000000000801', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000501', EXTRACT(YEAR FROM NOW())::int, 25.0, 5.0, 0.0),
+    -- Pierre Bernard - Personal Day
+    ('00000000-0000-0000-0000-000000000802', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000506', EXTRACT(YEAR FROM NOW())::int, 5.0, 1.0, 0.0),
+    -- Sophie Petit - Paid Leave
+    ('00000000-0000-0000-0000-000000000803', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000501', EXTRACT(YEAR FROM NOW())::int, 25.0, 8.0, 0.0),
+    -- Sophie Petit - Personal Day
+    ('00000000-0000-0000-0000-000000000804', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000506', EXTRACT(YEAR FROM NOW())::int, 5.0, 0.0, 0.0),
+    -- Lucas Moreau - Paid Leave
+    ('00000000-0000-0000-0000-000000000805', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000501', EXTRACT(YEAR FROM NOW())::int, 25.0, 3.0, 2.0),
+    -- Emma Garcia - Paid Leave
+    ('00000000-0000-0000-0000-000000000806', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', '00000000-0000-0000-0000-000000000501', EXTRACT(YEAR FROM NOW())::int, 25.0, 10.0, 0.0),
+    -- Thomas Robert - Paid Leave
+    ('00000000-0000-0000-0000-000000000807', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', '00000000-0000-0000-0000-000000000501', EXTRACT(YEAR FROM NOW())::int, 25.0, 0.0, 0.0),
+    -- Julie Simon - Paid Leave (part-time prorated)
+    ('00000000-0000-0000-0000-000000000808', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', '00000000-0000-0000-0000-000000000501', EXTRACT(YEAR FROM NOW())::int, 15.0, 2.0, 0.0)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Sample Absences (mix of statuses)
+-- ============================================
+INSERT INTO absences (id, organization_id, user_id, type_id, start_date, end_date, days_count, status, reason, approved_by, approved_at) VALUES
+    -- Pierre - Approved sick leave last week
+    ('00000000-0000-0000-0000-000000000701', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000502', (CURRENT_DATE - INTERVAL '10 days')::date, (CURRENT_DATE - INTERVAL '8 days')::date, 3.0, 'approved', 'Flu', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '9 days'),
+    -- Sophie - Upcoming paid leave (approved)
+    ('00000000-0000-0000-0000-000000000702', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000501', (CURRENT_DATE + INTERVAL '5 days')::date, (CURRENT_DATE + INTERVAL '12 days')::date, 6.0, 'approved', 'Summer vacation', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '5 days'),
+    -- Emma - Pending training request
+    ('00000000-0000-0000-0000-000000000703', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000017', '00000000-0000-0000-0000-000000000505', (CURRENT_DATE + INTERVAL '20 days')::date, (CURRENT_DATE + INTERVAL '22 days')::date, 3.0, 'pending', 'Marketing conference', NULL, NULL),
+    -- Thomas - Remote work (auto-approved)
+    ('00000000-0000-0000-0000-000000000704', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000018', '00000000-0000-0000-0000-000000000504', (CURRENT_DATE - INTERVAL '3 days')::date, (CURRENT_DATE - INTERVAL '3 days')::date, 1.0, 'approved', 'Working from home', NULL, NOW() - INTERVAL '3 days'),
+    -- Lucas - Pending paid leave request
+    ('00000000-0000-0000-0000-000000000705', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000501', (CURRENT_DATE + INTERVAL '15 days')::date, (CURRENT_DATE + INTERVAL '19 days')::date, 5.0, 'pending', 'Family event', NULL, NULL),
+    -- Pierre - Rejected unpaid leave
+    ('00000000-0000-0000-0000-000000000706', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000503', (CURRENT_DATE - INTERVAL '20 days')::date, (CURRENT_DATE - INTERVAL '15 days')::date, 4.0, 'rejected', 'Personal travel', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '22 days'),
+    -- Julie - Approved personal day
+    ('00000000-0000-0000-0000-000000000707', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000019', '00000000-0000-0000-0000-000000000506', (CURRENT_DATE - INTERVAL '7 days')::date, (CURRENT_DATE - INTERVAL '7 days')::date, 1.0, 'approved', 'Appointment', '00000000-0000-0000-0000-000000000012', NOW() - INTERVAL '8 days')
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
 -- Summary of seeded data:
 -- ============================================
 -- Organization: Demo Company (slug: demo)
@@ -417,4 +481,16 @@ ON CONFLICT (id) DO NOTHING;
 --
 -- Clock Entries (~60):
 --   30 days of history with mix of approved/pending/rejected
+--
+-- Absence Types (6):
+--   Paid Leave, Sick Leave, Unpaid Leave, Remote Work, Training, Personal Day
+--
+-- Closed Days (4):
+--   New Year's Day, Company Anniversary, Summer Closure, Winter Holiday
+--
+-- Leave Balances (8):
+--   Balances for each employee for Paid Leave and Personal Day
+--
+-- Absences (7):
+--   Mix of approved, pending, and rejected absences
 -- ============================================

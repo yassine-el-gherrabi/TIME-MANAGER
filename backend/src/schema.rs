@@ -74,6 +74,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    closed_days (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        #[max_length = 100]
+        name -> Varchar,
+        date -> Date,
+        is_recurring -> Bool,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     holidays (id) {
         id -> Uuid,
         organization_id -> Uuid,
@@ -265,6 +277,7 @@ diesel::joinable!(absence_types -> organizations (organization_id));
 diesel::joinable!(absences -> absence_types (type_id));
 diesel::joinable!(absences -> organizations (organization_id));
 diesel::joinable!(clock_entries -> organizations (organization_id));
+diesel::joinable!(closed_days -> organizations (organization_id));
 diesel::joinable!(holidays -> organizations (organization_id));
 diesel::joinable!(invite_tokens -> users (user_id));
 diesel::joinable!(leave_balances -> absence_types (absence_type_id));
@@ -286,21 +299,4 @@ diesel::joinable!(work_schedule_days -> work_schedules (work_schedule_id));
 diesel::joinable!(work_schedules -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    absence_types,
-    absences,
-    clock_entries,
-    holidays,
-    invite_tokens,
-    leave_balances,
-    login_attempts,
-    organizations,
-    password_history,
-    password_reset_tokens,
-    refresh_tokens,
-    team_members,
-    teams,
-    user_sessions,
-    users,
-    work_schedule_days,
-    work_schedules,
-);
+    absence_types,absences,clock_entries,closed_days,holidays,invite_tokens,leave_balances,login_attempts,organizations,password_history,password_reset_tokens,refresh_tokens,team_members,teams,user_sessions,users,work_schedule_days,work_schedules,);
