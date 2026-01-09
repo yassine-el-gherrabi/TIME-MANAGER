@@ -45,6 +45,7 @@ export const USER_ENDPOINTS = {
   GET: (id: string) => `/users/${id}`,
   UPDATE: (id: string) => `/users/${id}`,
   DELETE: (id: string) => `/users/${id}`,
+  RESTORE: (id: string) => `/users/${id}/restore`,
   RESEND_INVITE: (id: string) => `/users/${id}/resend-invite`,
   ASSIGN_SCHEDULE: (id: string) => `/users/${id}/schedule`,
 } as const;
@@ -164,6 +165,24 @@ export const NOTIFICATION_ENDPOINTS = {
 export const AUDIT_ENDPOINTS = {
   LIST: '/audit-logs',
   EXPORT: '/audit-logs/export',
+} as const;
+
+/**
+ * Organization endpoints (Super Admin only)
+ */
+export const ORGANIZATION_ENDPOINTS = {
+  LIST: '/organizations',
+  CREATE: '/organizations',
+  GET: (id: string) => `/organizations/${id}`,
+  UPDATE: (id: string) => `/organizations/${id}`,
+  DELETE: (id: string) => `/organizations/${id}`,
+} as const;
+
+/**
+ * Reports endpoints (Admin+)
+ */
+export const REPORTS_ENDPOINTS = {
+  EXPORT: '/reports/export',
 } as const;
 
 /**

@@ -46,3 +46,11 @@ export type { ScheduleAssignPanelProps } from './ScheduleAssignPanel';
 export { AuditLogFilters } from './AuditLogFilters';
 export { AuditLogsTable } from './AuditLogsTable';
 export { AuditLogDetailsSheet } from './AuditLogDetailsSheet';
+
+// Organization components
+export { OrganizationsTable } from './OrganizationsTable';
+export { OrganizationForm } from './OrganizationForm';
+
+// Organization component types
+export type { OrganizationsTableProps } from './OrganizationsTable';
+export type { OrganizationFormProps } from './OrganizationForm';

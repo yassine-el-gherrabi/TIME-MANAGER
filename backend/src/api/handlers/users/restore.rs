@@ -34,17 +34,18 @@ fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
     None
 }
 
-/// Delete user response
+/// Restore user response
 #[derive(Debug, Serialize)]
-pub struct DeleteUserResponse {
+pub struct RestoreUserResponse {
     pub message: String,
+    pub user: UserResponse,
 }
 
-/// DELETE /api/v1/users/:id
+/// PUT /api/v1/users/:id/restore
 ///
-/// Soft delete a user (Admin+)
-/// Sets deleted_at timestamp, user can be restored later
-pub async fn delete_user(
+/// Restore a soft-deleted user (Admin+)
+/// Clears the deleted_at timestamp, reactivating the user
+pub async fn restore_user(
     State(state): State<AppState>,
     RoleGuard(user, _): RoleGuard<Admin>,
     headers: HeaderMap,
@@ -60,35 +61,39 @@ pub async fn delete_user(
         headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
     );
 
-    // Prevent self-deletion
-    if claims.sub == user_id {
-        return Err(AppError::ValidationError(
-            "You cannot delete your own account".to_string(),
-        ));
-    }
-
     // Get user repository
     let user_repo = UserRepository::new(state.db_pool.clone());
 
-    // Check user exists and is in the same organization
-    let user_to_delete = user_repo.find_by_id(user_id).await?;
-    if user_to_delete.organization_id != claims.org_id {
+    // Find the deleted user (including deleted)
+    let user_to_restore = user_repo.find_by_id_including_deleted(user_id).await?;
+
+    // Check user is in the same organization
+    if user_to_restore.organization_id != claims.org_id {
         return Err(AppError::NotFound("User not found".to_string()));
     }
 
-    // Capture user data for audit before deletion
-    let old_user_response = UserResponse::from_user(&user_to_delete);
+    // Check user is actually deleted
+    if user_to_restore.deleted_at.is_none() {
+        return Err(AppError::ValidationError(
+            "User is not deleted and cannot be restored".to_string(),
+        ));
+    }
 
-    // Soft delete user (sets deleted_at timestamp)
-    user_repo.soft_delete(user_id).await?;
+    // Capture old state for audit
+    let old_user_response = UserResponse::from_user(&user_to_restore);
 
-    // Log audit event (fire and forget)
+    // Restore the user
+    let restored_user = user_repo.restore(user_id).await?;
+    let new_user_response = UserResponse::from_user(&restored_user);
+
+    // Log audit event (fire and forget) - log as update since we're changing deleted_at
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_delete(&audit_ctx, "users", user_id, &old_user_response).await;
+    let _ = audit_service.log_update(&audit_ctx, "users", user_id, &old_user_response, &new_user_response).await;
 
     // Build response
-    let response = DeleteUserResponse {
-        message: "User deactivated successfully".to_string(),
+    let response = RestoreUserResponse {
+        message: "User restored successfully".to_string(),
+        user: new_user_response,
     };
 
     Ok((StatusCode::OK, Json(response)))

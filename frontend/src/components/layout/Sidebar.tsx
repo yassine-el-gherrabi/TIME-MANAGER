@@ -18,6 +18,7 @@ import {
   PartyPopper,
   User,
   ScrollText,
+  Building2,
 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
@@ -109,6 +110,9 @@ export const Sidebar: FC = () => {
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Super Admin
             </p>
+            <NavLink to="/admin/organizations" icon={<Building2 className="h-4 w-4" />}>
+              Organizations
+            </NavLink>
             <NavLink to="/admin/audit-logs" icon={<ScrollText className="h-4 w-4" />}>
               Audit Logs
             </NavLink>

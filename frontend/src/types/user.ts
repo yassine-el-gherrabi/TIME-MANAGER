@@ -26,6 +26,7 @@ export interface UserResponse {
   has_password: boolean;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 /**
@@ -66,6 +67,7 @@ export interface ListUsersParams {
   per_page?: number;
   role?: UserRole;
   search?: string;
+  include_deleted?: boolean;
 }
 
 /**

@@ -148,5 +148,15 @@ export {
   ACTION_COLORS_DARK,
 } from './audit';
 
+// Organization types
+export type {
+  OrganizationResponse,
+  CreateOrganizationRequest,
+  UpdateOrganizationRequest,
+  ListOrganizationsParams,
+  PaginatedOrganizationsResponse,
+  DeleteOrganizationResponse,
+} from './organization';
+
 // Re-export enums
 export { UserRole } from './auth';

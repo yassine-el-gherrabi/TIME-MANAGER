@@ -1,20 +1,25 @@
 import React from 'react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
 import { UserRole } from '../../types/auth';
 
 export interface UserFiltersProps {
   search: string;
   role: UserRole | '';
+  showDeleted?: boolean;
   onSearchChange: (value: string) => void;
   onRoleChange: (value: UserRole | '') => void;
+  onShowDeletedChange?: (value: boolean) => void;
 }
 
 export const UserFilters: React.FC<UserFiltersProps> = ({
   search,
   role,
+  showDeleted = false,
   onSearchChange,
   onRoleChange,
+  onShowDeletedChange,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -48,6 +53,18 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
           <option value={UserRole.Employee}>Employee</option>
         </select>
       </div>
+      {onShowDeletedChange && (
+        <div className="flex items-center gap-2">
+          <Switch
+            id="show-deleted"
+            checked={showDeleted}
+            onCheckedChange={onShowDeletedChange}
+          />
+          <Label htmlFor="show-deleted" className="text-sm cursor-pointer">
+            Show Deleted
+          </Label>
+        </div>
+      )}
     </div>
   );
 };

@@ -380,4 +380,63 @@ impl ClockRepository {
 
         Ok((format!("{} {}", first_name, last_name), email))
     }
+
+    /// List all clock entries for organization (for export)
+    pub async fn list_all(
+        &self,
+        org_id: Uuid,
+        filter: &ClockFilter,
+        pagination: &Pagination,
+    ) -> Result<(Vec<ClockEntry>, i64), AppError> {
+        let mut conn = self.pool.get()?;
+
+        // Get total count
+        let total: i64 = {
+            let mut count_query = clock_entries::table
+                .filter(clock_entries::organization_id.eq(org_id))
+                .into_boxed();
+
+            if let Some(user_id) = filter.user_id {
+                count_query = count_query.filter(clock_entries::user_id.eq(user_id));
+            }
+            if let Some(start) = filter.start_date {
+                count_query = count_query.filter(clock_entries::clock_in.ge(start));
+            }
+            if let Some(end) = filter.end_date {
+                count_query = count_query.filter(clock_entries::clock_in.le(end));
+            }
+            if let Some(status) = filter.status {
+                count_query = count_query.filter(clock_entries::status.eq(status));
+            }
+
+            count_query.count().get_result(&mut conn)?
+        };
+
+        // Build data query
+        let mut query = clock_entries::table
+            .filter(clock_entries::organization_id.eq(org_id))
+            .into_boxed();
+
+        if let Some(user_id) = filter.user_id {
+            query = query.filter(clock_entries::user_id.eq(user_id));
+        }
+        if let Some(start) = filter.start_date {
+            query = query.filter(clock_entries::clock_in.ge(start));
+        }
+        if let Some(end) = filter.end_date {
+            query = query.filter(clock_entries::clock_in.le(end));
+        }
+        if let Some(status) = filter.status {
+            query = query.filter(clock_entries::status.eq(status));
+        }
+
+        let offset = (pagination.page - 1) * pagination.per_page;
+        let entries = query
+            .order(clock_entries::clock_in.desc())
+            .limit(pagination.per_page)
+            .offset(offset)
+            .load::<ClockEntry>(&mut conn)?;
+
+        Ok((entries, total))
+    }
 }

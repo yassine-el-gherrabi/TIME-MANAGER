@@ -42,6 +42,9 @@ export const usersApi = {
     if (params.search) {
       queryParams.set('search', params.search);
     }
+    if (params.include_deleted) {
+      queryParams.set('include_deleted', 'true');
+    }
 
     const queryString = queryParams.toString();
     const url = queryString ? `${USER_ENDPOINTS.LIST}?${queryString}` : USER_ENDPOINTS.LIST;
@@ -119,6 +122,19 @@ export const usersApi = {
       url: USER_ENDPOINTS.RESEND_INVITE(id),
     });
   },
+
+  /**
+   * Restore a soft-deleted user
+   *
+   * @param id - User ID
+   * @returns Restored user
+   */
+  restore: async (id: string): Promise<UserResponse> => {
+    return apiRequest<UserResponse>({
+      method: 'PUT',
+      url: USER_ENDPOINTS.RESTORE(id),
+    });
+  },
 };
 
 /**
@@ -131,4 +147,5 @@ export const {
   update: updateUser,
   delete: deleteUser,
   resendInvite,
+  restore: restoreUser,
 } = usersApi;

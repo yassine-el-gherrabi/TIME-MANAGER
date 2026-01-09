@@ -15,7 +15,9 @@ use super::handlers::health::health_check;
 use super::handlers::closed_days;
 use super::handlers::kpis;
 use super::handlers::notifications;
+use super::handlers::organizations;
 use super::handlers::password;
+use super::handlers::reports;
 use super::handlers::schedules;
 use super::handlers::teams;
 use super::handlers::users;
@@ -77,6 +79,7 @@ pub fn create_router(state: AppState) -> Router {
                 .delete(users::delete_user),
         )
         .route("/:id/resend-invite", post(users::resend_invite))
+        .route("/:id/restore", put(users::restore_user))
         .route("/:id/schedule", put(schedules::assign_schedule));
 
     // Clock in/out routes
@@ -178,6 +181,23 @@ pub fn create_router(state: AppState) -> Router {
         .route("/:id/read", put(notifications::mark_read))
         .route("/read-all", put(notifications::mark_all_read));
 
+    // Reports export routes (Admin only)
+    let reports_routes = Router::new()
+        .route("/export", get(reports::export_reports));
+
+    // Organization routes (Super Admin only)
+    let organization_routes = Router::new()
+        .route(
+            "/",
+            get(organizations::list_organizations).post(organizations::create_organization),
+        )
+        .route(
+            "/:id",
+            get(organizations::get_organization)
+                .put(organizations::update_organization)
+                .delete(organizations::delete_organization),
+        );
+
     // Audit log routes (Super Admin only)
     let audit_log_routes = Router::new()
         .route("/", get(audit_logs::list_audit_logs))
@@ -198,6 +218,8 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/balances", balance_routes)
         .nest("/v1/closed-days", closed_day_routes)
         .nest("/v1/notifications", notification_routes)
+        .nest("/v1/reports", reports_routes)
+        .nest("/v1/organizations", organization_routes)
         .nest("/v1/audit-logs", audit_log_routes)
         .layer(TraceLayer::new_for_http())
         .layer(cors)

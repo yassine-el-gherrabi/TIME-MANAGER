@@ -12,7 +12,7 @@ import { PasswordResetRequestPage } from '../pages/PasswordResetRequestPage';
 import { PasswordResetPage } from '../pages/PasswordResetPage';
 import { AcceptInvitePage } from '../pages/AcceptInvitePage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
-import { UsersPage, TeamsPage, SchedulesPage, AbsenceTypesPage, ClosedDaysPage, AuditLogsPage } from '../pages/admin';
+import { UsersPage, TeamsPage, SchedulesPage, AbsenceTypesPage, ClosedDaysPage, AuditLogsPage, OrganizationsPage } from '../pages/admin';
 import { ChangePasswordPage, SessionsPage, ProfilePage } from '../pages/settings';
 import { UserRole } from '../types/auth';
 
@@ -159,6 +159,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={UserRole.SuperAdmin}>
         <MainLayout>
           <AuditLogsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/organizations',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.SuperAdmin}>
+        <MainLayout>
+          <OrganizationsPage />
         </MainLayout>
       </ProtectedRoute>
     ),

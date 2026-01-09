@@ -2,7 +2,7 @@
  * Users Page
  *
  * Admin page to manage organization users with infinite scroll.
- * Supports filtering by search and role.
+ * Supports filtering by search and role, soft delete, and restore.
  * User creation and editing are done via side sheets.
  */
 
@@ -52,13 +52,15 @@ export function UsersPage() {
   const [filters, setFilters] = useState({
     search: '',
     role: '' as UserRole | '',
+    showDeleted: false,
   });
 
   // Build fetch params from filters
   const fetchParams = useMemo(() => {
-    const params: Record<string, string | undefined> = {};
+    const params: Record<string, string | boolean | undefined> = {};
     if (filters.search) params.search = filters.search;
     if (filters.role) params.role = filters.role;
+    if (filters.showDeleted) params.include_deleted = true;
     return params;
   }, [filters]);
 
@@ -103,6 +105,13 @@ export function UsersPage() {
     loading: boolean;
   }>({ open: false, user: null, loading: false });
 
+  // Restore dialog state
+  const [restoreDialog, setRestoreDialog] = useState<{
+    open: boolean;
+    user: UserResponse | null;
+    loading: boolean;
+  }>({ open: false, user: null, loading: false });
+
   // Create drawer state
   const [createDrawer, setCreateDrawer] = useState<{
     open: boolean;
@@ -118,7 +127,7 @@ export function UsersPage() {
     error: string;
   }>({ open: false, user: null, loading: false, error: '' });
 
-  const hasActiveFilters = filters.search !== '' || filters.role !== '';
+  const hasActiveFilters = filters.search !== '' || filters.role !== '' || filters.showDeleted;
 
   const handleSearchChange = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
@@ -127,6 +136,11 @@ export function UsersPage() {
 
   const handleRoleChange = (value: UserRole | '') => {
     setFilters((prev) => ({ ...prev, role: value }));
+    setRemovedIds(new Set());
+  };
+
+  const handleShowDeletedChange = (value: boolean) => {
+    setFilters((prev) => ({ ...prev, showDeleted: value }));
     setRemovedIds(new Set());
   };
 
@@ -190,12 +204,39 @@ export function UsersPage() {
     try {
       await usersApi.delete(deleteDialog.user.id);
       toast.success(`${deleteDialog.user.first_name} ${deleteDialog.user.last_name} has been deleted`);
-      // Optimistic removal from local list
-      setRemovedIds((prev) => new Set(prev).add(deleteDialog.user!.id));
+      // Optimistic removal from local list (unless showing deleted)
+      if (!filters.showDeleted) {
+        setRemovedIds((prev) => new Set(prev).add(deleteDialog.user!.id));
+      } else {
+        // Refresh to show updated deleted_at status
+        reset();
+      }
       setDeleteDialog({ open: false, user: null, loading: false });
     } catch (err) {
       toast.error(mapErrorToMessage(err));
       setDeleteDialog((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Restore handlers
+  const handleRestoreClick = (user: UserResponse) => {
+    setRestoreDialog({ open: true, user, loading: false });
+  };
+
+  const handleRestoreConfirm = async () => {
+    if (!restoreDialog.user) return;
+
+    setRestoreDialog((prev) => ({ ...prev, loading: true }));
+    try {
+      await usersApi.restore(restoreDialog.user.id);
+      toast.success(`${restoreDialog.user.first_name} ${restoreDialog.user.last_name} has been restored`);
+      // Reset the list to refresh with restored user
+      setRemovedIds(new Set());
+      reset();
+      setRestoreDialog({ open: false, user: null, loading: false });
+    } catch (err) {
+      toast.error(mapErrorToMessage(err));
+      setRestoreDialog((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -253,8 +294,10 @@ export function UsersPage() {
           <UserFilters
             search={filters.search}
             role={filters.role}
+            showDeleted={filters.showDeleted}
             onSearchChange={handleSearchChange}
             onRoleChange={handleRoleChange}
+            onShowDeletedChange={handleShowDeletedChange}
           />
 
           <UsersTable
@@ -263,6 +306,7 @@ export function UsersPage() {
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
             onResendInvite={handleResendInvite}
+            onRestore={handleRestoreClick}
             isLoading={isInitialLoading}
           />
 
@@ -288,19 +332,35 @@ export function UsersPage() {
             </>
           )}
 
+          {/* Delete Confirmation Dialog */}
           <ConfirmDialog
             open={deleteDialog.open}
             onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
             title="Delete User"
             description={
               deleteDialog.user
-                ? `Are you sure you want to delete ${deleteDialog.user.first_name} ${deleteDialog.user.last_name}? This action cannot be undone.`
+                ? `Are you sure you want to delete ${deleteDialog.user.first_name} ${deleteDialog.user.last_name}? The user will be soft-deleted and can be restored later.`
                 : ''
             }
             confirmText="Delete"
             variant="destructive"
             onConfirm={handleDeleteConfirm}
             loading={deleteDialog.loading}
+          />
+
+          {/* Restore Confirmation Dialog */}
+          <ConfirmDialog
+            open={restoreDialog.open}
+            onOpenChange={(open) => setRestoreDialog((prev) => ({ ...prev, open }))}
+            title="Restore User"
+            description={
+              restoreDialog.user
+                ? `Are you sure you want to restore ${restoreDialog.user.first_name} ${restoreDialog.user.last_name}? They will be able to access the system again.`
+                : ''
+            }
+            confirmText="Restore"
+            onConfirm={handleRestoreConfirm}
+            loading={restoreDialog.loading}
           />
 
           {/* Create User Drawer */}

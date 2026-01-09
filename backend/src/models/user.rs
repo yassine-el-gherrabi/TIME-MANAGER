@@ -75,6 +75,8 @@ pub struct UserResponse {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub has_password: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deleted_at: Option<NaiveDateTime>,
 }
 
 impl UserResponse {
@@ -93,6 +95,7 @@ impl UserResponse {
             created_at: user.created_at,
             updated_at: user.updated_at,
             has_password,
+            deleted_at: user.deleted_at,
         }
     }
 }

@@ -5,6 +5,7 @@ pub mod absence;
 pub mod absence_type;
 pub mod audit_log;
 pub mod claims;
+pub mod organization;
 pub mod clock_entry;
 pub mod closed_day;
 pub mod invite_token;
@@ -56,4 +57,9 @@ pub use work_schedule::{
 pub use audit_log::{
     AuditContext, AuditLog, AuditLogFilter, AuditLogResponse, AuditUserInfo, NewAuditLog,
     PaginatedAuditLogs,
+};
+pub use organization::{
+    CreateOrganizationRequest, NewOrganization, Organization, OrganizationFilter,
+    OrganizationPagination, OrganizationResponse, OrganizationUpdate, PaginatedOrganizations,
+    UpdateOrganizationRequest,
 };

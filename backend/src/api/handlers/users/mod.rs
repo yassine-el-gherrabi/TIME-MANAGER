@@ -6,6 +6,7 @@ pub mod delete;
 pub mod get;
 pub mod list;
 pub mod resend_invite;
+pub mod restore;
 pub mod update;
 
 // Re-export handler functions
@@ -14,4 +15,5 @@ pub use delete::delete_user;
 pub use get::get_user;
 pub use list::list_users;
 pub use resend_invite::resend_invite;
+pub use restore::restore_user;
 pub use update::update_user;
