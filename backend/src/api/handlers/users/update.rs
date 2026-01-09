@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{header::USER_AGENT, HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
@@ -12,8 +12,29 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::models::{UserResponse, UserUpdate};
+use crate::models::{AuditContext, UserResponse, UserUpdate};
 use crate::repositories::UserRepository;
+use crate::services::AuditService;
+
+/// Extract client IP from request headers
+fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
+    if let Some(forwarded) = headers.get("x-forwarded-for") {
+        if let Ok(value) = forwarded.to_str() {
+            if let Some(ip) = value.split(',').next() {
+                let ip = ip.trim();
+                if !ip.is_empty() {
+                    return Some(ip.to_string());
+                }
+            }
+        }
+    }
+    if let Some(real_ip) = headers.get("x-real-ip") {
+        if let Ok(ip) = real_ip.to_str() {
+            return Some(ip.to_string());
+        }
+    }
+    None
+}
 
 /// Update user request payload
 #[derive(Debug, Deserialize, Validate)]
@@ -56,9 +77,18 @@ pub struct UpdateUserResponse {
 pub async fn update_user(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,
+    headers: HeaderMap,
     Path(user_id): Path<Uuid>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Extract audit context from request
+    let audit_ctx = AuditContext::new(
+        Some(claims.sub),
+        Some(claims.org_id),
+        extract_client_ip(&headers),
+        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+    );
+
     // Validate payload
     payload
         .validate()
@@ -67,8 +97,9 @@ pub async fn update_user(
     // Get user repository
     let user_repo = UserRepository::new(state.db_pool.clone());
 
-    // Get existing user
+    // Get existing user (also serves as old values for audit)
     let existing_user = user_repo.find_by_id(user_id).await?;
+    let old_user_response = UserResponse::from_user(&existing_user);
 
     // Determine what updates are allowed based on role
     // Admin+ (Admin or SuperAdmin) can update any user in their organization
@@ -123,11 +154,16 @@ pub async fn update_user(
 
     // Update user
     let updated_user = user_repo.update(user_id, update).await?;
+    let new_user_response = UserResponse::from_user(&updated_user);
+
+    // Log audit event (fire and forget)
+    let audit_service = AuditService::new(state.db_pool.clone());
+    let _ = audit_service.log_update(&audit_ctx, "users", user_id, &old_user_response, &new_user_response).await;
 
     // Build response
     let response = UpdateUserResponse {
         message: "User updated successfully".to_string(),
-        user: UserResponse::from_user(&updated_user),
+        user: new_user_response,
     };
 
     Ok((StatusCode::OK, Json(response)))

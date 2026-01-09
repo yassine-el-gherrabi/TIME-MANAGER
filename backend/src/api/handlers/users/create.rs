@@ -1,4 +1,9 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{header::USER_AGENT, HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -6,10 +11,30 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::{Admin, RoleGuard};
-use crate::models::{NewUser, UserResponse};
+use crate::models::{AuditContext, NewUser, UserResponse};
 use crate::repositories::UserRepository;
-use crate::services::InviteService;
+use crate::services::{AuditService, InviteService};
 use crate::utils::JwtService;
+
+/// Extract client IP from request headers
+fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
+    if let Some(forwarded) = headers.get("x-forwarded-for") {
+        if let Ok(value) = forwarded.to_str() {
+            if let Some(ip) = value.split(',').next() {
+                let ip = ip.trim();
+                if !ip.is_empty() {
+                    return Some(ip.to_string());
+                }
+            }
+        }
+    }
+    if let Some(real_ip) = headers.get("x-real-ip") {
+        if let Ok(ip) = real_ip.to_str() {
+            return Some(ip.to_string());
+        }
+    }
+    None
+}
 
 /// Create user request payload
 #[derive(Debug, Deserialize, Validate)]
@@ -41,9 +66,18 @@ pub struct CreateUserResponse {
 pub async fn create_user(
     State(state): State<AppState>,
     RoleGuard(user, _): RoleGuard<Admin>,
+    headers: HeaderMap,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let claims = user.0;
+
+    // Extract audit context from request
+    let audit_ctx = AuditContext::new(
+        Some(claims.sub),
+        Some(claims.org_id),
+        extract_client_ip(&headers),
+        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+    );
 
     // Validate payload
     payload
@@ -71,6 +105,10 @@ pub async fn create_user(
     };
 
     let user = user_repo.create(new_user).await?;
+
+    // Log audit event (fire and forget)
+    let audit_service = AuditService::new(state.db_pool.clone());
+    let _ = audit_service.log_create(&audit_ctx, "users", user.id, &UserResponse::from_user(&user)).await;
 
     // Generate invite token
     let jwt_service = JwtService::new(&state.config.jwt_secret);
