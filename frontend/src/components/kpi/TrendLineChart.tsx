@@ -18,7 +18,7 @@ import {
   Area,
   ComposedChart,
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, getWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -47,8 +47,14 @@ function formatDate(dateStr: string, granularity: Granularity): string {
     switch (granularity) {
       case 'day':
         return format(date, 'dd MMM');
-      case 'week':
-        return format(date, "'W'w MMM");
+      case 'week': {
+        // Week starts on Monday
+        const weekNum = getWeek(date, { weekStartsOn: 1 });
+        const monday = startOfWeek(date, { weekStartsOn: 1 });
+        const sunday = endOfWeek(date, { weekStartsOn: 1 });
+        const formatShort = (d: Date) => format(d, 'dd/MM');
+        return `W${weekNum} (${formatShort(monday)}-${formatShort(sunday)})`;
+      }
       case 'month':
         return format(date, 'MMM yy');
       default:
