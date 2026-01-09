@@ -97,5 +97,26 @@ export type {
   DateRange,
 } from './kpi';
 
+// Absence types
+export type {
+  AbsenceType,
+  Absence,
+  LeaveBalance,
+  Holiday,
+  PaginatedAbsences,
+  CreateAbsenceTypeRequest,
+  UpdateAbsenceTypeRequest,
+  CreateAbsenceRequest,
+  RejectAbsenceRequest,
+  SetBalanceRequest,
+  AdjustBalanceRequest,
+  CreateHolidayRequest,
+  UpdateHolidayRequest,
+  AbsenceFilter,
+  HolidayFilter,
+  BalanceFilter,
+} from './absence';
+export { AbsenceStatus, STATUS_COLORS, STATUS_LABELS } from './absence';
+
 // Re-export enums
 export { UserRole } from './auth';

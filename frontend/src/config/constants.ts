@@ -104,6 +104,53 @@ export const KPI_ENDPOINTS = {
 } as const;
 
 /**
+ * Absence type endpoints
+ */
+export const ABSENCE_TYPE_ENDPOINTS = {
+  LIST: '/absence-types',
+  CREATE: '/absence-types',
+  GET: (id: string) => `/absence-types/${id}`,
+  UPDATE: (id: string) => `/absence-types/${id}`,
+  DELETE: (id: string) => `/absence-types/${id}`,
+  SEED: '/absence-types/seed',
+} as const;
+
+/**
+ * Absence endpoints
+ */
+export const ABSENCE_ENDPOINTS = {
+  LIST: '/absences',
+  CREATE: '/absences',
+  PENDING: '/absences/pending',
+  GET: (id: string) => `/absences/${id}`,
+  APPROVE: (id: string) => `/absences/${id}/approve`,
+  REJECT: (id: string) => `/absences/${id}/reject`,
+  CANCEL: (id: string) => `/absences/${id}/cancel`,
+} as const;
+
+/**
+ * Balance endpoints
+ */
+export const BALANCE_ENDPOINTS = {
+  LIST: '/balances',
+  MY_BALANCES: '/balances/me',
+  ADJUST: (id: string) => `/balances/${id}/adjust`,
+  SET: (userId: string) => `/users/${userId}/balances`,
+} as const;
+
+/**
+ * Holiday endpoints
+ */
+export const HOLIDAY_ENDPOINTS = {
+  LIST: '/holidays',
+  CREATE: '/holidays',
+  GET: (id: string) => `/holidays/${id}`,
+  UPDATE: (id: string) => `/holidays/${id}`,
+  DELETE: (id: string) => `/holidays/${id}`,
+  SEED: '/holidays/seed',
+} as const;
+
+/**
  * Local storage keys
  * Note: Access tokens stored in memory only, refresh tokens in HttpOnly cookies
  */
