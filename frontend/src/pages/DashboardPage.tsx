@@ -183,8 +183,11 @@ export function DashboardPage() {
 
       {/* User Info Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Your Profile</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+            Edit Profile
+          </Button>
         </CardHeader>
         <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <div>

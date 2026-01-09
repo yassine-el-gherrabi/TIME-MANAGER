@@ -13,7 +13,7 @@ import { PasswordResetPage } from '../pages/PasswordResetPage';
 import { AcceptInvitePage } from '../pages/AcceptInvitePage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
 import { UsersPage, TeamsPage, SchedulesPage, AbsenceTypesPage, ClosedDaysPage } from '../pages/admin';
-import { ChangePasswordPage, SessionsPage } from '../pages/settings';
+import { ChangePasswordPage, SessionsPage, ProfilePage } from '../pages/settings';
 import { UserRole } from '../types/auth';
 
 export const router = createBrowserRouter([
@@ -23,6 +23,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <MainLayout>
           <DashboardPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/profile',
+    element: (
+      <ProtectedRoute>
+        <MainLayout>
+          <ProfilePage />
         </MainLayout>
       </ProtectedRoute>
     ),

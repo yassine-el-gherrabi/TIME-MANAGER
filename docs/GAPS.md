@@ -15,7 +15,7 @@
 |---|-------|--------|--------|
 | 1.1 | Charts Recharts (Dashboard) | 2h | [x] |
 | 1.2 | Phone field (migration) | 0.5h | [x] |
-| 1.3 | Profile Page (frontend) | 1h | [ ] |
+| 1.3 | Profile Page (frontend) | 1h | [x] |
 
 **Personas débloqués**: Manager 90% → 100%
 
@@ -70,7 +70,7 @@
 
 | Sprint | Durée | Personas Impactés | Status |
 |--------|-------|-------------------|--------|
-| Sprint 1 | 3.5h | Manager ✅ | [ ] |
+| Sprint 1 | 3.5h | Manager ✅ | [x] |
 | Sprint 2 | 5h | Tous (notifications) | [ ] |
 | Sprint 3 | 5h | Super Admin | [ ] |
 | Sprint 4 | 6h | Admin + Super Admin ✅ | [ ] |
