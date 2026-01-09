@@ -1,7 +1,11 @@
 // Repository layer for database access logic
 // Provides data access abstractions for all entities
 
+pub mod absence_repository;
+pub mod absence_type_repository;
 pub mod clock_repository;
+pub mod holiday_repository;
+pub mod leave_balance_repository;
 pub mod invite_token_repository;
 pub mod login_attempt_repository;
 pub mod password_history_repository;
@@ -13,7 +17,11 @@ pub mod user_session_repository;
 pub mod work_schedule_repository;
 
 // Re-export repository types for convenience
+pub use absence_repository::AbsenceRepository;
+pub use absence_type_repository::AbsenceTypeRepository;
 pub use clock_repository::ClockRepository;
+pub use holiday_repository::HolidayRepository;
+pub use leave_balance_repository::LeaveBalanceRepository;
 pub use invite_token_repository::InviteTokenRepository;
 pub use login_attempt_repository::LoginAttemptRepository;
 pub use password_history_repository::PasswordHistoryRepository;

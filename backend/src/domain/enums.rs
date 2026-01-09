@@ -5,6 +5,7 @@ use diesel::{AsExpression, FromSqlRow};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
+use crate::schema::sql_types::AbsenceStatus as AbsenceStatusSqlType;
 use crate::schema::sql_types::ClockEntryStatus as ClockEntryStatusSqlType;
 use crate::schema::sql_types::UserRole as UserRoleSqlType;
 
@@ -104,6 +105,45 @@ impl FromSql<ClockEntryStatusSqlType, Pg> for ClockEntryStatus {
             "approved" => Ok(ClockEntryStatus::Approved),
             "rejected" => Ok(ClockEntryStatus::Rejected),
             _ => Err(format!("Unrecognized clock entry status: {}", status_str).into()),
+        }
+    }
+}
+
+/// Absence status enumeration matching the database absence_status ENUM
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = AbsenceStatusSqlType)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum AbsenceStatus {
+    #[default]
+    Pending,
+    Approved,
+    Rejected,
+    Cancelled,
+}
+
+impl ToSql<AbsenceStatusSqlType, Pg> for AbsenceStatus {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let status_str = match self {
+            AbsenceStatus::Pending => "pending",
+            AbsenceStatus::Approved => "approved",
+            AbsenceStatus::Rejected => "rejected",
+            AbsenceStatus::Cancelled => "cancelled",
+        };
+        out.write_all(status_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<AbsenceStatusSqlType, Pg> for AbsenceStatus {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let status_str = std::str::from_utf8(bytes.as_bytes())?;
+        match status_str {
+            "pending" => Ok(AbsenceStatus::Pending),
+            "approved" => Ok(AbsenceStatus::Approved),
+            "rejected" => Ok(AbsenceStatus::Rejected),
+            "cancelled" => Ok(AbsenceStatus::Cancelled),
+            _ => Err(format!("Unrecognized absence status: {}", status_str).into()),
         }
     }
 }
