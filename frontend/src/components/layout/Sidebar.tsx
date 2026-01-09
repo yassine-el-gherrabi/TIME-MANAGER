@@ -5,12 +5,17 @@ import {
   Users,
   UsersRound,
   Calendar,
+  CalendarDays,
+  CalendarCheck,
   KeyRound,
   MonitorSmartphone,
   LogOut,
   Clock,
   ClipboardCheck,
   Timer,
+  Briefcase,
+  FileType,
+  PartyPopper,
 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
@@ -46,6 +51,9 @@ export const Sidebar: FC = () => {
             <ClockStatusIndicator />
           </span>
         </NavLink>
+        <NavLink to="/absences" icon={<Briefcase className="h-4 w-4" />} end>
+          My Absences
+        </NavLink>
 
         {/* Manager+ Section */}
         {(user?.role === UserRole.Manager || user?.role === UserRole.Admin || user?.role === UserRole.SuperAdmin) && (
@@ -54,7 +62,13 @@ export const Sidebar: FC = () => {
               Management
             </p>
             <NavLink to="/clock/pending" icon={<ClipboardCheck className="h-4 w-4" />}>
-              Pending Approvals
+              Clock Approvals
+            </NavLink>
+            <NavLink to="/absences/pending" icon={<CalendarCheck className="h-4 w-4" />}>
+              Absence Approvals
+            </NavLink>
+            <NavLink to="/absences/calendar" icon={<CalendarDays className="h-4 w-4" />}>
+              Team Calendar
             </NavLink>
           </div>
         )}
@@ -73,6 +87,12 @@ export const Sidebar: FC = () => {
             </NavLink>
             <NavLink to="/admin/schedules" icon={<Calendar className="h-4 w-4" />}>
               Schedules
+            </NavLink>
+            <NavLink to="/admin/absence-types" icon={<FileType className="h-4 w-4" />}>
+              Absence Types
+            </NavLink>
+            <NavLink to="/admin/holidays" icon={<PartyPopper className="h-4 w-4" />}>
+              Holidays
             </NavLink>
           </div>
         )}

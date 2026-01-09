@@ -7,3 +7,5 @@
 export { UsersPage } from './UsersPage';
 export { TeamsPage } from './TeamsPage';
 export { SchedulesPage } from './SchedulesPage';
+export { AbsenceTypesPage } from './AbsenceTypesPage';
+export { HolidaysPage } from './HolidaysPage';

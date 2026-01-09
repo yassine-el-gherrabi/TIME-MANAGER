@@ -4,12 +4,15 @@ import { MainLayout } from '../components/layout';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ClockPage } from '../pages/ClockPage';
 import { PendingApprovalsPage } from '../pages/PendingApprovalsPage';
+import { AbsencesPage } from '../pages/AbsencesPage';
+import { PendingAbsencesPage } from '../pages/PendingAbsencesPage';
+import { TeamCalendarPage } from '../pages/TeamCalendarPage';
 import { LoginPage } from '../pages/LoginPage';
 import { PasswordResetRequestPage } from '../pages/PasswordResetRequestPage';
 import { PasswordResetPage } from '../pages/PasswordResetPage';
 import { AcceptInvitePage } from '../pages/AcceptInvitePage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
-import { UsersPage, TeamsPage, SchedulesPage } from '../pages/admin';
+import { UsersPage, TeamsPage, SchedulesPage, AbsenceTypesPage, HolidaysPage } from '../pages/admin';
 import { ChangePasswordPage, SessionsPage } from '../pages/settings';
 import { UserRole } from '../types/auth';
 
@@ -40,6 +43,36 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={UserRole.Manager}>
         <MainLayout>
           <PendingApprovalsPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/absences',
+    element: (
+      <ProtectedRoute>
+        <MainLayout>
+          <AbsencesPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/absences/pending',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Manager}>
+        <MainLayout>
+          <PendingAbsencesPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/absences/calendar',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Manager}>
+        <MainLayout>
+          <TeamCalendarPage />
         </MainLayout>
       </ProtectedRoute>
     ),
@@ -86,6 +119,26 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole={UserRole.Admin}>
         <MainLayout>
           <SchedulesPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/absence-types',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Admin}>
+        <MainLayout>
+          <AbsenceTypesPage />
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/holidays',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Admin}>
+        <MainLayout>
+          <HolidaysPage />
         </MainLayout>
       </ProtectedRoute>
     ),
