@@ -13,12 +13,17 @@ type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Absence repository for database operations
 pub struct AbsenceRepository {
-    pool: DbPool,
+    pub(crate) pool: DbPool,
 }
 
 impl AbsenceRepository {
     pub fn new(pool: DbPool) -> Self {
         Self { pool }
+    }
+
+    /// Get a reference to the pool (for services that need direct access)
+    pub fn pool(&self) -> &DbPool {
+        &self.pool
     }
 
     /// Create a new absence request

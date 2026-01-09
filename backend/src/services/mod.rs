@@ -1,7 +1,11 @@
 // Service layer for business logic
 // This module contains services that orchestrate business operations
 
+pub mod absence_service;
+pub mod absence_type_service;
 pub mod auth_service;
+pub mod holiday_service;
+pub mod leave_balance_service;
 pub mod brute_force_service;
 pub mod clock_service;
 pub mod email_service;
@@ -16,7 +20,13 @@ pub mod team_service;
 pub mod work_schedule_service;
 
 // Re-export commonly used types
+pub use absence_service::{AbsenceService, CreateAbsenceRequest};
+pub use absence_type_service::{
+    AbsenceTypeService, CreateAbsenceTypeRequest, UpdateAbsenceTypeRequest,
+};
 pub use auth_service::AuthService;
+pub use holiday_service::{CreateHolidayRequest, HolidayService, UpdateHolidayRequest};
+pub use leave_balance_service::{AdjustBalanceRequest, LeaveBalanceService, SetBalanceRequest};
 pub use brute_force_service::BruteForceService;
 pub use clock_service::ClockService;
 pub use email_service::EmailService;
