@@ -14,6 +14,7 @@ export { UserFilters } from './UserFilters';
 export { TeamsTable } from './TeamsTable';
 export { TeamFilters } from './TeamFilters';
 export { TeamForm } from './TeamForm';
+export { TeamMembersPanel } from './TeamMembersPanel';
 
 // User component types
 export type { InviteStatusBadgeProps } from './InviteStatusBadge';
@@ -25,3 +26,4 @@ export type { UserFiltersProps } from './UserFilters';
 export type { TeamsTableProps } from './TeamsTable';
 export type { TeamFiltersProps } from './TeamFilters';
 export type { TeamFormProps } from './TeamForm';
+export type { TeamMembersPanelProps } from './TeamMembersPanel';

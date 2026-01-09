@@ -22,6 +22,7 @@ import {
 import { TeamsTable } from '../../components/admin/TeamsTable';
 import { TeamFilters } from '../../components/admin/TeamFilters';
 import { TeamForm } from '../../components/admin/TeamForm';
+import { TeamMembersPanel } from '../../components/admin/TeamMembersPanel';
 import { teamsApi } from '../../api/teams';
 import { usersApi } from '../../api/users';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
@@ -358,18 +359,23 @@ export function TeamsPage() {
             </SheetContent>
           </Sheet>
 
-          {/* Members Drawer - Placeholder for Phase 3 */}
+          {/* Members Drawer */}
           <Sheet open={membersDrawer.open} onOpenChange={(open) => !open && handleMembersClose()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Team Members</SheetTitle>
                 <SheetDescription>
-                  {membersDrawer.team?.name} - {membersDrawer.team?.member_count} members
+                  Manage members of {membersDrawer.team?.name}
                 </SheetDescription>
               </SheetHeader>
-              <div className="py-4 text-center text-muted-foreground">
-                Member management will be implemented in Phase 3
-              </div>
+              <TeamMembersPanel
+                team={membersDrawer.team}
+                onClose={handleMembersClose}
+                onMembersChanged={() => {
+                  setRemovedIds(new Set());
+                  reset();
+                }}
+              />
             </SheetContent>
           </Sheet>
         </CardContent>
