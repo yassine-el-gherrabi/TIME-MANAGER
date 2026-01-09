@@ -14,7 +14,7 @@
 | # | Tâche | Effort | Status |
 |---|-------|--------|--------|
 | 1.1 | Charts Recharts (Dashboard) | 2h | [x] |
-| 1.2 | Phone field (migration) | 0.5h | [ ] |
+| 1.2 | Phone field (migration) | 0.5h | [x] |
 | 1.3 | Profile Page (frontend) | 1h | [ ] |
 
 **Personas débloqués**: Manager 90% → 100%

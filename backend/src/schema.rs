@@ -246,6 +246,8 @@ diesel::table! {
         failed_login_attempts -> Int4,
         locked_until -> Nullable<Timestamp>,
         work_schedule_id -> Nullable<Uuid>,
+        #[max_length = 20]
+        phone -> Nullable<Varchar>,
     }
 }
 

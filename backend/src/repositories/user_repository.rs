@@ -312,4 +312,5 @@ pub struct User {
     pub failed_login_attempts: i32,
     pub locked_until: Option<chrono::NaiveDateTime>,
     pub work_schedule_id: Option<Uuid>,
+    pub phone: Option<String>,
 }

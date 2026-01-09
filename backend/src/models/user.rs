@@ -26,6 +26,7 @@ pub struct UserUpdate {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub role: Option<UserRole>,
+    pub phone: Option<String>,
 }
 
 /// User list filter options
@@ -70,6 +71,7 @@ pub struct UserResponse {
     pub first_name: String,
     pub last_name: String,
     pub role: UserRole,
+    pub phone: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub has_password: bool,
@@ -87,6 +89,7 @@ impl UserResponse {
             first_name: user.first_name.clone(),
             last_name: user.last_name.clone(),
             role: user.role,
+            phone: user.phone.clone(),
             created_at: user.created_at,
             updated_at: user.updated_at,
             has_password,

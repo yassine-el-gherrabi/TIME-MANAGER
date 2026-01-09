@@ -36,6 +36,9 @@ pub struct UpdateUserRequest {
     pub last_name: Option<String>,
 
     pub role: Option<UserRole>,
+
+    #[validate(length(max = 20, message = "Phone number must be at most 20 characters"))]
+    pub phone: Option<String>,
 }
 
 /// Update user response
@@ -99,12 +102,13 @@ pub async fn update_user(
             first_name: payload.first_name.clone(),
             last_name: payload.last_name.clone(),
             role: payload.role,
+            phone: payload.phone.clone(),
         }
     } else {
-        // Non-admin can only update their own name
+        // Non-admin can only update their own name and phone
         if payload.email.is_some() || payload.role.is_some() {
             return Err(AppError::Forbidden(
-                "You can only update your name. Contact an administrator to change your email or role.".to_string(),
+                "You can only update your name and phone. Contact an administrator to change your email or role.".to_string(),
             ));
         }
 
@@ -113,6 +117,7 @@ pub async fn update_user(
             first_name: payload.first_name.clone(),
             last_name: payload.last_name.clone(),
             role: None,
+            phone: payload.phone.clone(),
         }
     };
 
@@ -140,6 +145,7 @@ mod tests {
             first_name: Some("John".to_string()),
             last_name: Some("Doe".to_string()),
             role: Some(UserRole::Manager),
+            phone: Some("+33612345678".to_string()),
         };
         assert!(valid.validate().is_ok());
 
@@ -149,6 +155,7 @@ mod tests {
             first_name: None,
             last_name: None,
             role: None,
+            phone: None,
         };
         assert!(invalid_email.validate().is_err());
 
@@ -158,6 +165,7 @@ mod tests {
             first_name: None,
             last_name: None,
             role: None,
+            phone: None,
         };
         assert!(empty.validate().is_ok());
     }

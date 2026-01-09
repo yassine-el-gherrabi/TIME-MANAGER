@@ -21,6 +21,7 @@ export interface UserResponse {
   first_name: string;
   last_name: string;
   role: UserRole;
+  phone?: string | null;
   organization_id: string;
   has_password: boolean;
   created_at: string;
@@ -54,6 +55,7 @@ export interface UpdateUserRequest {
   first_name?: string;
   last_name?: string;
   role?: UserRole;
+  phone?: string | null;
 }
 
 /**
