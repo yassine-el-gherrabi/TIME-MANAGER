@@ -30,6 +30,9 @@ interface AuditLogFiltersProps {
   hasActiveFilters: boolean;
 }
 
+// Special value for "all" option since Radix Select doesn't allow empty string
+const ALL_VALUE = '__all__';
+
 export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
   entityType,
   action,
@@ -42,6 +45,15 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
   onClearFilters,
   hasActiveFilters,
 }) => {
+  // Convert empty string to ALL_VALUE for Select, and back on change
+  const handleEntityTypeChange = (value: string) => {
+    onEntityTypeChange(value === ALL_VALUE ? '' : value);
+  };
+
+  const handleActionChange = (value: string) => {
+    onActionChange(value === ALL_VALUE ? '' : (value as AuditAction));
+  };
+
   return (
     <div className="mb-6 space-y-4">
       <div className="flex items-center gap-2">
@@ -63,14 +75,14 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Entity Type Filter */}
         <Select
-          value={entityType}
-          onValueChange={onEntityTypeChange}
+          value={entityType || ALL_VALUE}
+          onValueChange={handleEntityTypeChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="All entity types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All entity types</SelectItem>
+            <SelectItem value={ALL_VALUE}>All entity types</SelectItem>
             {Object.entries(ENTITY_TYPE_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
@@ -81,14 +93,14 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
 
         {/* Action Filter */}
         <Select
-          value={action}
-          onValueChange={(v) => onActionChange(v as AuditAction | '')}
+          value={action || ALL_VALUE}
+          onValueChange={handleActionChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="All actions" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All actions</SelectItem>
+            <SelectItem value={ALL_VALUE}>All actions</SelectItem>
             {Object.entries(ACTION_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
