@@ -2,12 +2,56 @@
 
 pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "absence_status"))]
+    pub struct AbsenceStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "clock_entry_status"))]
     pub struct ClockEntryStatus;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "user_role"))]
     pub struct UserRole;
+}
+
+diesel::table! {
+    absence_types (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        #[max_length = 100]
+        name -> Varchar,
+        #[max_length = 20]
+        code -> Varchar,
+        #[max_length = 7]
+        color -> Nullable<Varchar>,
+        requires_approval -> Bool,
+        affects_balance -> Bool,
+        is_paid -> Bool,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::AbsenceStatus;
+
+    absences (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        user_id -> Uuid,
+        type_id -> Uuid,
+        start_date -> Date,
+        end_date -> Date,
+        days_count -> Numeric,
+        status -> AbsenceStatus,
+        reason -> Nullable<Text>,
+        rejection_reason -> Nullable<Text>,
+        approved_by -> Nullable<Uuid>,
+        approved_at -> Nullable<Timestamptz>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
 }
 
 diesel::table! {
@@ -30,6 +74,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    holidays (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        #[max_length = 100]
+        name -> Varchar,
+        date -> Date,
+        is_recurring -> Bool,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     invite_tokens (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -38,6 +94,21 @@ diesel::table! {
         expires_at -> Timestamptz,
         used_at -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    leave_balances (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        user_id -> Uuid,
+        absence_type_id -> Uuid,
+        year -> Int4,
+        initial_balance -> Numeric,
+        used -> Numeric,
+        adjustment -> Numeric,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -190,8 +261,15 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(absence_types -> organizations (organization_id));
+diesel::joinable!(absences -> absence_types (type_id));
+diesel::joinable!(absences -> organizations (organization_id));
 diesel::joinable!(clock_entries -> organizations (organization_id));
+diesel::joinable!(holidays -> organizations (organization_id));
 diesel::joinable!(invite_tokens -> users (user_id));
+diesel::joinable!(leave_balances -> absence_types (absence_type_id));
+diesel::joinable!(leave_balances -> organizations (organization_id));
+diesel::joinable!(leave_balances -> users (user_id));
 diesel::joinable!(password_history -> users (user_id));
 diesel::joinable!(password_reset_tokens -> users (user_id));
 diesel::joinable!(refresh_tokens -> users (user_id));
@@ -208,8 +286,12 @@ diesel::joinable!(work_schedule_days -> work_schedules (work_schedule_id));
 diesel::joinable!(work_schedules -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    absence_types,
+    absences,
     clock_entries,
+    holidays,
     invite_tokens,
+    leave_balances,
     login_attempts,
     organizations,
     password_history,
