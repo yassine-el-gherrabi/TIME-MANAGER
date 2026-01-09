@@ -131,6 +131,7 @@ pub fn create_router(state: AppState) -> Router {
             "/",
             get(absence_types::list_absence_types).post(absence_types::create_absence_type),
         )
+        .route("/seed", post(absence_types::seed_absence_types))
         .route(
             "/:id",
             get(absence_types::get_absence_type)
@@ -162,6 +163,7 @@ pub fn create_router(state: AppState) -> Router {
             "/",
             get(holidays::list_holidays).post(holidays::create_holiday),
         )
+        .route("/seed", post(holidays::seed_holidays))
         .route(
             "/:id",
             get(holidays::get_holiday)
