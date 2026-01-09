@@ -16,8 +16,6 @@ export interface TeamsTableProps {
   isLoading?: boolean;
   /** Optional: Map of manager IDs to names for display */
   managerNames?: Record<string, string>;
-  /** Optional: Map of schedule IDs to names for display */
-  scheduleNames?: Record<string, string>;
 }
 
 export const TeamsTable: React.FC<TeamsTableProps> = ({
@@ -27,7 +25,6 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
   onDelete,
   isLoading,
   managerNames = {},
-  scheduleNames = {},
 }) => {
   if (isLoading) {
     return (
