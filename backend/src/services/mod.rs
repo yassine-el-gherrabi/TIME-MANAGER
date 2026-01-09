@@ -13,6 +13,7 @@ pub mod email_templates;
 pub mod hibp_service;
 pub mod invite_service;
 pub mod kpi_service;
+pub mod notification_service;
 pub mod password_expiry_service;
 pub mod password_reset_service;
 pub mod session_service;
@@ -36,6 +37,7 @@ pub use kpi_service::{
     ChartData, DateRange, Granularity, KPIService, MemberKPISummary, OrgKPIs, PresenceOverview,
     TeamKPIs, UserKPIs,
 };
+pub use notification_service::NotificationService;
 pub use password_expiry_service::{
     PasswordExpiryPolicy, PasswordExpiryService, PasswordExpiryStatus,
 };

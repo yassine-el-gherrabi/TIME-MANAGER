@@ -20,6 +20,11 @@ impl ClockRepository {
         Self { pool }
     }
 
+    /// Get reference to the pool
+    pub fn pool(&self) -> &DbPool {
+        &self.pool
+    }
+
     /// Create a new clock entry (clock in)
     pub async fn clock_in(
         &self,

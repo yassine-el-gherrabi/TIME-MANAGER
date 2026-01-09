@@ -178,33 +178,109 @@ export const initializeKPIStore = async (): Promise<void> => {
 };
 
 /**
- * Helper to get date range for common periods
+ * Get Monday of the week containing the given date
+ */
+export const getMonday = (date: Date): Date => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+/**
+ * Get Sunday of the week containing the given date
+ */
+export const getSunday = (date: Date): Date => {
+  const monday = getMonday(date);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return sunday;
+};
+
+/**
+ * Get the week range (Monday to Sunday) for a given date
+ */
+export const getWeekRange = (date: Date = new Date()): KPIQueryParams => {
+  const monday = getMonday(date);
+  const sunday = getSunday(date);
+  return {
+    start_date: monday.toISOString(),
+    end_date: sunday.toISOString(),
+  };
+};
+
+/**
+ * Get the month range for a given date
+ */
+export const getMonthRange = (date: Date = new Date()): KPIQueryParams => {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+  return {
+    start_date: start.toISOString(),
+    end_date: end.toISOString(),
+  };
+};
+
+/**
+ * Navigate to previous/next period
+ */
+export const navigatePeriod = (
+  currentDate: Date,
+  period: 'week' | 'month',
+  direction: 'prev' | 'next'
+): Date => {
+  const newDate = new Date(currentDate);
+  if (period === 'week') {
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+  } else {
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+  }
+  return newDate;
+};
+
+/**
+ * Format period label
+ */
+export const formatPeriodLabel = (date: Date, period: 'week' | 'month'): string => {
+  if (period === 'week') {
+    const monday = getMonday(date);
+    const sunday = getSunday(date);
+    const formatDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${formatDate(monday)} - ${formatDate(sunday)}`;
+  } else {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+};
+
+/**
+ * Helper to get date range for common periods (legacy, kept for backwards compatibility)
  */
 export const getDateRange = (period: 'week' | 'month' | 'quarter' | 'year'): KPIQueryParams => {
   const now = new Date();
-  let start: Date;
 
   switch (period) {
     case 'week':
-      start = new Date(now);
-      start.setDate(now.getDate() - 7);
-      break;
+      return getWeekRange(now);
     case 'month':
-      start = new Date(now);
-      start.setMonth(now.getMonth() - 1);
-      break;
-    case 'quarter':
-      start = new Date(now);
+      return getMonthRange(now);
+    case 'quarter': {
+      const start = new Date(now);
       start.setMonth(now.getMonth() - 3);
-      break;
-    case 'year':
-      start = new Date(now);
+      return {
+        start_date: start.toISOString(),
+        end_date: now.toISOString(),
+      };
+    }
+    case 'year': {
+      const start = new Date(now);
       start.setFullYear(now.getFullYear() - 1);
-      break;
+      return {
+        start_date: start.toISOString(),
+        end_date: now.toISOString(),
+      };
+    }
   }
-
-  return {
-    start_date: start.toISOString(),
-    end_date: now.toISOString(),
-  };
 };

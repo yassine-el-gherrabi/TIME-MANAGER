@@ -7,6 +7,7 @@ use std::io::Write;
 
 use crate::schema::sql_types::AbsenceStatus as AbsenceStatusSqlType;
 use crate::schema::sql_types::ClockEntryStatus as ClockEntryStatusSqlType;
+use crate::schema::sql_types::NotificationType as NotificationTypeSqlType;
 use crate::schema::sql_types::UserRole as UserRoleSqlType;
 
 /// User role enumeration matching the database user_role ENUM
@@ -144,6 +145,49 @@ impl FromSql<AbsenceStatusSqlType, Pg> for AbsenceStatus {
             "rejected" => Ok(AbsenceStatus::Rejected),
             "cancelled" => Ok(AbsenceStatus::Cancelled),
             _ => Err(format!("Unrecognized absence status: {}", status_str).into()),
+        }
+    }
+}
+
+/// Notification type enumeration matching the database notification_type ENUM
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = NotificationTypeSqlType)]
+#[serde(rename_all = "snake_case")]
+pub enum NotificationType {
+    AbsenceApproved,
+    AbsenceRejected,
+    AbsencePending,
+    ClockCorrection,
+    ClockApproved,
+    ClockRejected,
+}
+
+impl ToSql<NotificationTypeSqlType, Pg> for NotificationType {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let type_str = match self {
+            NotificationType::AbsenceApproved => "absence_approved",
+            NotificationType::AbsenceRejected => "absence_rejected",
+            NotificationType::AbsencePending => "absence_pending",
+            NotificationType::ClockCorrection => "clock_correction",
+            NotificationType::ClockApproved => "clock_approved",
+            NotificationType::ClockRejected => "clock_rejected",
+        };
+        out.write_all(type_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<NotificationTypeSqlType, Pg> for NotificationType {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let type_str = std::str::from_utf8(bytes.as_bytes())?;
+        match type_str {
+            "absence_approved" => Ok(NotificationType::AbsenceApproved),
+            "absence_rejected" => Ok(NotificationType::AbsenceRejected),
+            "absence_pending" => Ok(NotificationType::AbsencePending),
+            "clock_correction" => Ok(NotificationType::ClockCorrection),
+            "clock_approved" => Ok(NotificationType::ClockApproved),
+            "clock_rejected" => Ok(NotificationType::ClockRejected),
+            _ => Err(format!("Unrecognized notification type: {}", type_str).into()),
         }
     }
 }

@@ -149,6 +149,16 @@ export const CLOSED_DAY_ENDPOINTS = {
 } as const;
 
 /**
+ * Notification endpoints
+ */
+export const NOTIFICATION_ENDPOINTS = {
+  LIST: '/notifications',
+  UNREAD_COUNT: '/notifications/unread-count',
+  MARK_READ: (id: string) => `/notifications/${id}/read`,
+  MARK_ALL_READ: '/notifications/read-all',
+} as const;
+
+/**
  * Local storage keys
  * Note: Access tokens stored in memory only, refresh tokens in HttpOnly cookies
  */

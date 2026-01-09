@@ -9,6 +9,7 @@ pub mod clocks;
 pub mod closed_days;
 pub mod health;
 pub mod kpis;
+pub mod notifications;
 pub mod password;
 pub mod schedules;
 pub mod sessions;

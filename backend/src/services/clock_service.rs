@@ -3,8 +3,9 @@ use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use uuid::Uuid;
 
-use crate::domain::enums::UserRole;
+use crate::domain::enums::{NotificationType, UserRole};
 use crate::error::AppError;
+use crate::services::NotificationService;
 use crate::models::{
     ClockEntry, ClockEntryResponse, ClockFilter, ClockStatus, PaginatedClockEntries, Pagination,
 };
@@ -184,7 +185,23 @@ impl ClockService {
             }
         }
 
-        self.clock_repo.approve(org_id, entry_id, approver_id).await
+        let approved = self.clock_repo.approve(org_id, entry_id, approver_id).await?;
+
+        // Create notification for the employee
+        let notification_service = NotificationService::new(self.clock_repo.pool().clone());
+        let clock_in_str = entry.clock_in.format("%Y-%m-%d %H:%M").to_string();
+        let _ = notification_service
+            .create_notification(
+                org_id,
+                entry.user_id,
+                NotificationType::ClockApproved,
+                "Clock Entry Approved".to_string(),
+                format!("Your clock entry from {} has been approved.", clock_in_str),
+                None,
+            )
+            .await;
+
+        Ok(approved)
     }
 
     /// Reject a clock entry (Manager+ only)
@@ -230,9 +247,32 @@ impl ClockService {
             }
         }
 
-        self.clock_repo
+        // Keep reason for notification before moving
+        let reason_text = reason.as_deref().unwrap_or("Not specified").to_string();
+
+        let rejected = self
+            .clock_repo
             .reject(org_id, entry_id, approver_id, reason)
-            .await
+            .await?;
+
+        // Create notification for the employee
+        let notification_service = NotificationService::new(self.clock_repo.pool().clone());
+        let clock_in_str = entry.clock_in.format("%Y-%m-%d %H:%M").to_string();
+        let _ = notification_service
+            .create_notification(
+                org_id,
+                entry.user_id,
+                NotificationType::ClockRejected,
+                "Clock Entry Rejected".to_string(),
+                format!(
+                    "Your clock entry from {} has been rejected. Reason: {}",
+                    clock_in_str, reason_text
+                ),
+                None,
+            )
+            .await;
+
+        Ok(rejected)
     }
 
     /// List pending entries (for approval)

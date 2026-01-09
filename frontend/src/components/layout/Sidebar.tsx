@@ -21,6 +21,7 @@ import {
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
 import { ClockStatusIndicator } from '../clock/ClockStatusIndicator';
+import { NotificationBell } from '../notifications';
 import { useAuthStore } from '../../stores/authStore';
 import { UserRole } from '../../types/auth';
 
@@ -35,10 +36,13 @@ export const Sidebar: FC = () => {
 
   return (
     <aside className="sticky top-0 flex h-screen w-64 flex-col border-r bg-background">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <Clock className="h-6 w-6 text-primary" />
-        <span className="text-lg font-semibold">Time Manager</span>
+      {/* Logo and Notifications */}
+      <div className="flex h-16 items-center justify-between border-b px-6">
+        <div className="flex items-center gap-2">
+          <Clock className="h-6 w-6 text-primary" />
+          <span className="text-lg font-semibold">Time Manager</span>
+        </div>
+        <NotificationBell />
       </div>
 
       {/* Navigation */}

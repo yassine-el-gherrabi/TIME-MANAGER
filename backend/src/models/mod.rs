@@ -9,6 +9,7 @@ pub mod closed_day;
 pub mod invite_token;
 pub mod leave_balance;
 pub mod login_attempt;
+pub mod notification;
 pub mod password_history;
 pub mod password_reset_token;
 pub mod refresh_token;
@@ -32,6 +33,10 @@ pub use clock_entry::{
 pub use closed_day::{ClosedDay, ClosedDayFilter, ClosedDayResponse, ClosedDayUpdate, NewClosedDay};
 pub use invite_token::{InviteToken, NewInviteToken};
 pub use login_attempt::{LoginAttempt, NewLoginAttempt};
+pub use notification::{
+    NewNotification, Notification, NotificationResponse, NotificationUpdate,
+    PaginatedNotifications, UnreadCountResponse,
+};
 pub use password_history::{NewPasswordHistory, PasswordHistory};
 pub use password_reset_token::{NewPasswordResetToken, PasswordResetToken};
 pub use refresh_token::{NewRefreshToken, RefreshToken};

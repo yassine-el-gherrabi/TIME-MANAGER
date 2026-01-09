@@ -13,6 +13,7 @@ use super::handlers::clocks;
 use super::handlers::health::health_check;
 use super::handlers::closed_days;
 use super::handlers::kpis;
+use super::handlers::notifications;
 use super::handlers::password;
 use super::handlers::schedules;
 use super::handlers::teams;
@@ -169,6 +170,13 @@ pub fn create_router(state: AppState) -> Router {
                 .delete(closed_days::delete_closed_day),
         );
 
+    // Notification routes
+    let notification_routes = Router::new()
+        .route("/", get(notifications::list_notifications))
+        .route("/unread-count", get(notifications::unread_count))
+        .route("/:id/read", put(notifications::mark_read))
+        .route("/read-all", put(notifications::mark_all_read));
+
     // Main router
     Router::new()
         .route("/health", get(health_check))
@@ -183,6 +191,7 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/absences", absence_routes)
         .nest("/v1/balances", balance_routes)
         .nest("/v1/closed-days", closed_day_routes)
+        .nest("/v1/notifications", notification_routes)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)

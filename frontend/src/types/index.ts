@@ -118,5 +118,20 @@ export type {
 } from './absence';
 export { AbsenceStatus, STATUS_COLORS, STATUS_LABELS } from './absence';
 
+// Notification types
+export type {
+  Notification,
+  PaginatedNotifications,
+  UnreadCountResponse,
+  MarkAllReadResponse,
+  NotificationListParams,
+} from './notification';
+export {
+  NotificationType,
+  NOTIFICATION_TYPE_LABELS,
+  NOTIFICATION_TYPE_ICONS,
+  NOTIFICATION_TYPE_COLORS,
+} from './notification';
+
 // Re-export enums
 export { UserRole } from './auth';

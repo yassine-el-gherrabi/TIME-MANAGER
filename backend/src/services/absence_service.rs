@@ -5,8 +5,9 @@ use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::domain::enums::{AbsenceStatus, UserRole};
+use crate::domain::enums::{AbsenceStatus, NotificationType, UserRole};
 use crate::error::AppError;
+use crate::services::NotificationService;
 use crate::models::{
     Absence, AbsenceFilter, AbsenceResponse, AbsenceUpdate, NewAbsence, Pagination,
     PaginatedAbsences,
@@ -217,6 +218,24 @@ impl AbsenceService {
                 .await?;
         }
 
+        // Create notification for the employee
+        let notification_service = NotificationService::new(self.absence_repo.pool().clone());
+        let _ = notification_service
+            .create_notification(
+                org_id,
+                absence.user_id,
+                NotificationType::AbsenceApproved,
+                "Absence Approved".to_string(),
+                format!(
+                    "Your {} request from {} to {} has been approved.",
+                    absence_type.name,
+                    absence.start_date.format("%Y-%m-%d"),
+                    absence.end_date.format("%Y-%m-%d")
+                ),
+                None,
+            )
+            .await;
+
         self.build_response(&updated).await
     }
 
@@ -251,6 +270,9 @@ impl AbsenceService {
                 .await?;
         }
 
+        // Keep reason for notification before moving
+        let reason_text = reason.as_deref().unwrap_or("Not specified").to_string();
+
         // Update status
         let update = AbsenceUpdate {
             status: Some(AbsenceStatus::Rejected),
@@ -261,6 +283,27 @@ impl AbsenceService {
         };
 
         let updated = self.absence_repo.update(org_id, absence_id, update).await?;
+
+        // Create notification for the employee
+        let absence_type = self.absence_type_repo.find_by_id(org_id, absence.type_id).await?;
+        let notification_service = NotificationService::new(self.absence_repo.pool().clone());
+        let _ = notification_service
+            .create_notification(
+                org_id,
+                absence.user_id,
+                NotificationType::AbsenceRejected,
+                "Absence Rejected".to_string(),
+                format!(
+                    "Your {} request from {} to {} has been rejected. Reason: {}",
+                    absence_type.name,
+                    absence.start_date.format("%Y-%m-%d"),
+                    absence.end_date.format("%Y-%m-%d"),
+                    reason_text
+                ),
+                None,
+            )
+            .await;
+
         self.build_response(&updated).await
     }
 

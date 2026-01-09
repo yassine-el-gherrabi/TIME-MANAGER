@@ -17,7 +17,7 @@ hyper = "1.0"
 tokio = { version = "1.35", features = ["full"] }
 
 # Database
-diesel = { version = "2.1", features = ["postgres", "uuid", "chrono", "r2d2", "numeric"] }
+diesel = { version = "2.1", features = ["postgres", "uuid", "chrono", "r2d2", "numeric", "serde_json"] }
 diesel_migrations = "2.1"
 
 # Serialization
