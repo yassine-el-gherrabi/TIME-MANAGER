@@ -1,0 +1,125 @@
+/**
+ * Teams Table Component
+ *
+ * Displays a list of teams in a table format with actions.
+ */
+
+import React from 'react';
+import { Button } from '../ui/button';
+import type { TeamResponse } from '../../types/team';
+
+export interface TeamsTableProps {
+  teams: TeamResponse[];
+  onEdit: (team: TeamResponse) => void;
+  onManageMembers: (team: TeamResponse) => void;
+  onDelete: (team: TeamResponse) => void;
+  isLoading?: boolean;
+  /** Optional: Map of manager IDs to names for display */
+  managerNames?: Record<string, string>;
+  /** Optional: Map of schedule IDs to names for display */
+  scheduleNames?: Record<string, string>;
+}
+
+export const TeamsTable: React.FC<TeamsTableProps> = ({
+  teams,
+  onEdit,
+  onManageMembers,
+  onDelete,
+  isLoading,
+  managerNames = {},
+  scheduleNames = {},
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-muted-foreground">Loading teams...</div>
+      </div>
+    );
+  }
+
+  if (teams.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-muted-foreground">No teams found</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="border-b bg-muted/50">
+            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+              Name
+            </th>
+            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+              Description
+            </th>
+            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+              Manager
+            </th>
+            <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
+              Members
+            </th>
+            <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {teams.map((team) => (
+            <tr key={team.id} className="border-b hover:bg-muted/25 transition-colors">
+              <td className="px-4 py-3 text-sm">
+                <div className="font-medium">{team.name}</div>
+              </td>
+              <td className="px-4 py-3 text-sm text-muted-foreground">
+                {team.description || <span className="italic">No description</span>}
+              </td>
+              <td className="px-4 py-3 text-sm text-muted-foreground">
+                {team.manager_id ? (
+                  managerNames[team.manager_id] || (
+                    <span className="text-xs text-muted-foreground/70">Loading...</span>
+                  )
+                ) : (
+                  <span className="italic">No manager</span>
+                )}
+              </td>
+              <td className="px-4 py-3 text-sm text-center">
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
+                    team.member_count > 0
+                      ? 'bg-blue-100 text-blue-800 border-blue-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                  }`}
+                >
+                  {team.member_count}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-sm text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => onEdit(team)}>
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => onManageMembers(team)}>
+                    Members
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/50"
+                    onClick={() => onDelete(team)}
+                    disabled={team.member_count > 0}
+                    title={team.member_count > 0 ? 'Remove all members first' : 'Delete team'}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
