@@ -16,6 +16,7 @@ import {
   Briefcase,
   FileType,
   PartyPopper,
+  User,
 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
@@ -102,6 +103,9 @@ export const Sidebar: FC = () => {
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Settings
           </p>
+          <NavLink to="/profile" icon={<User className="h-4 w-4" />}>
+            Profile
+          </NavLink>
           <NavLink to="/settings/password" icon={<KeyRound className="h-4 w-4" />}>
             Change Password
           </NavLink>

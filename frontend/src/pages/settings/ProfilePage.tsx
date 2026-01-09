@@ -8,10 +8,11 @@
 
 import { useState, useEffect, type FC, type FormEvent } from 'react';
 import { toast } from 'sonner';
-import { User, Mail, Phone, Shield, Loader2 } from 'lucide-react';
+import { User, Mail, Shield, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { PhoneInput } from '../../components/ui/phone-input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { useAuth } from '../../hooks/useAuth';
 import { usersApi } from '../../api/users';
@@ -186,17 +187,17 @@ export const ProfilePage: FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={handleChange('phone')}
-                    className={`pl-10 ${errors.phone ? 'border-destructive' : ''}`}
-                    placeholder="+33 6 12 34 56 78"
-                    disabled={isSubmitting}
-                  />
-                </div>
+                <PhoneInput
+                  value={formData.phone}
+                  onChange={(value) => {
+                    setFormData((prev) => ({ ...prev, phone: value }));
+                    if (errors.phone) {
+                      setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  error={!!errors.phone}
+                />
                 {errors.phone && (
                   <p className="text-sm text-destructive">{errors.phone}</p>
                 )}

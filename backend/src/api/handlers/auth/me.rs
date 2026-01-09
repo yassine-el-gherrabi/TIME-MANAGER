@@ -16,6 +16,7 @@ pub struct MeResponse {
     pub first_name: String,
     pub last_name: String,
     pub role: UserRole,
+    pub phone: Option<String>,
     pub organization_id: Uuid,
     pub created_at: chrono::NaiveDateTime,
 }
@@ -40,6 +41,7 @@ pub async fn me(
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
+        phone: user.phone,
         organization_id: user.organization_id,
         created_at: user.created_at,
     };
@@ -60,6 +62,7 @@ mod tests {
             first_name: "John".to_string(),
             last_name: "Doe".to_string(),
             role: UserRole::Employee,
+            phone: Some("+33612345678".to_string()),
             organization_id: Uuid::new_v4(),
             created_at: now,
         };

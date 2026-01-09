@@ -19,6 +19,23 @@
 
 **Personas débloqués**: Manager 90% → 100%
 
+#### Sprint 1.x - Corrections Post-Test
+
+| # | Correction | Effort | Status |
+|---|-----------|--------|--------|
+| 1.4 | Fix /me endpoint (phone field manquant) | 5min | [x] |
+| 1.5 | Profile link dans Sidebar | 5min | [x] |
+| 1.6 | Chart navigation + mode selector | 1h | [x] |
+| 1.7 | PhoneInput avec country selector | 15min | [x] |
+| 1.8 | Audit form validations | 15min | [x] |
+
+**Détails des corrections**:
+- 1.4: `backend/src/api/handlers/auth/me.rs` - Ajout `phone: user.phone`
+- 1.5: `Sidebar.tsx` - NavLink Profile dans section Settings
+- 1.6: Charts avec boutons prev/next + tabs Day/Week/Month
+- 1.7: ProfilePage utilise PhoneInput avec drapeaux emoji
+- 1.8: Validations OK sur ProfilePage et ChangePasswordPage
+
 ---
 
 ### Sprint 2: Notifications System (~5h)

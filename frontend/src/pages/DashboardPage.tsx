@@ -4,7 +4,7 @@
  * Main dashboard with clock widget, KPIs, and presence overview.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, TrendingUp, Calendar, CheckCircle, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -12,24 +12,100 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { ClockWidget } from '../components/clock';
 import { KPICard, PresenceWidget, HoursBarChart, TrendLineChart } from '../components/kpi';
-import { useKPIStore, getDateRange } from '../stores/kpiStore';
+import {
+  useKPIStore,
+  getDateRange,
+  getWeekRange,
+  getMonthRange,
+  navigatePeriod,
+  formatPeriodLabel,
+} from '../stores/kpiStore';
 import { UserRole } from '../types/auth';
+
+type Granularity = 'day' | 'week' | 'month';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { myKpis, fetchMyKpis, charts, fetchCharts } = useKPIStore();
 
-  // Load user KPIs and chart data on mount
+  // Chart state management
+  const [chartDate, setChartDate] = useState(new Date());
+  const [chartGranularity, setChartGranularity] = useState<Granularity>('day');
+
+  // Get date range based on granularity
+  const getChartDateRange = useCallback((date: Date, granularity: Granularity) => {
+    switch (granularity) {
+      case 'day':
+        return getWeekRange(date);
+      case 'week':
+        return getMonthRange(date);
+      case 'month': {
+        // Last 6 months
+        const start = new Date(date);
+        start.setMonth(start.getMonth() - 5);
+        start.setDate(1);
+        const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+        return {
+          start_date: start.toISOString(),
+          end_date: end.toISOString(),
+        };
+      }
+      default:
+        return getWeekRange(date);
+    }
+  }, []);
+
+  // Get period label based on granularity
+  const getPeriodLabel = useCallback((date: Date, granularity: Granularity): string => {
+    switch (granularity) {
+      case 'day':
+        return formatPeriodLabel(date, 'week');
+      case 'week':
+        return formatPeriodLabel(date, 'month');
+      case 'month': {
+        const start = new Date(date);
+        start.setMonth(start.getMonth() - 5);
+        const formatMonth = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        return `${formatMonth(start)} - ${formatMonth(date)}`;
+      }
+      default:
+        return '';
+    }
+  }, []);
+
+  // Fetch charts with current settings
+  const refreshCharts = useCallback((date: Date, granularity: Granularity) => {
+    const range = getChartDateRange(date, granularity);
+    fetchCharts({
+      ...range,
+      granularity,
+    });
+  }, [fetchCharts, getChartDateRange]);
+
+  // Load user KPIs on mount
   useEffect(() => {
     const params = getDateRange('month');
     fetchMyKpis(params);
-    // Fetch weekly chart data (last 7 days, daily granularity)
-    fetchCharts({
-      ...getDateRange('week'),
-      granularity: 'day',
-    });
-  }, [fetchMyKpis, fetchCharts]);
+  }, [fetchMyKpis]);
+
+  // Load chart data when settings change
+  useEffect(() => {
+    refreshCharts(chartDate, chartGranularity);
+  }, [chartDate, chartGranularity, refreshCharts]);
+
+  // Handle chart navigation
+  const handleChartNavigate = useCallback((direction: 'prev' | 'next') => {
+    const period = chartGranularity === 'day' ? 'week' : 'month';
+    const newDate = navigatePeriod(chartDate, period, direction);
+    setChartDate(newDate);
+  }, [chartDate, chartGranularity]);
+
+  // Handle granularity change
+  const handleGranularityChange = useCallback((granularity: Granularity) => {
+    setChartGranularity(granularity);
+    setChartDate(new Date()); // Reset to current date on granularity change
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -45,6 +121,9 @@ export function DashboardPage() {
 
   // Check if user has meaningful clock data (days_worked > 0)
   const hasClockData = myKpis && myKpis.days_worked > 0;
+
+  // Period label for charts
+  const periodLabel = getPeriodLabel(chartDate, chartGranularity);
 
   return (
     <div className="space-y-6">
@@ -115,15 +194,19 @@ export function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <HoursBarChart
           data={charts?.data ?? []}
-          title="Weekly Hours"
-          description="Hours worked this week"
-          granularity={charts?.granularity ?? 'day'}
+          title="Hours Worked"
+          periodLabel={periodLabel}
+          granularity={chartGranularity}
+          onNavigate={handleChartNavigate}
+          onGranularityChange={handleGranularityChange}
         />
         <TrendLineChart
           data={charts?.data ?? []}
           title="Hours Trend"
-          description="Daily progression"
-          granularity={charts?.granularity ?? 'day'}
+          periodLabel={periodLabel}
+          granularity={chartGranularity}
+          onNavigate={handleChartNavigate}
+          onGranularityChange={handleGranularityChange}
         />
       </div>
 
