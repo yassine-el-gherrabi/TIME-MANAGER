@@ -1,4 +1,9 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -26,18 +31,45 @@ pub struct AcceptInviteResponse {
     pub expires_in: u64,
 }
 
+/// Extract client IP from request headers
+fn extract_client_ip(headers: &HeaderMap) -> String {
+    if let Some(forwarded) = headers.get("x-forwarded-for") {
+        if let Ok(value) = forwarded.to_str() {
+            if let Some(ip) = value.split(',').next() {
+                let ip = ip.trim();
+                if !ip.is_empty() {
+                    return ip.to_string();
+                }
+            }
+        }
+    }
+    if let Some(real_ip) = headers.get("x-real-ip") {
+        if let Ok(ip) = real_ip.to_str() {
+            return ip.to_string();
+        }
+    }
+    "unknown".to_string()
+}
+
 /// POST /api/v1/auth/accept-invite
 ///
 /// Accept an invitation and set password for a new user account
 /// Returns JWT tokens for auto-login
 pub async fn accept_invite(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<AcceptInviteRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
     payload
         .validate()
         .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
+
+    // Check rate limit (5 requests per 5 minutes per IP)
+    let ip_address = extract_client_ip(&headers);
+    state
+        .rate_limiter
+        .check_rate_limit("accept_invite", &ip_address)?;
 
     // Check password against HIBP breach database
     state
@@ -46,7 +78,7 @@ pub async fn accept_invite(
         .await?;
 
     // Create invite service
-    let jwt_service = JwtService::new(&state.config.jwt_secret);
+    let jwt_service = JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let invite_service = InviteService::new(state.db_pool.clone(), jwt_service);
 
     // Accept the invite and get tokens
@@ -114,6 +146,7 @@ pub struct VerifyInviteResponse {
 /// Verify if an invite token is valid (without using it)
 pub async fn verify_invite(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<VerifyInviteRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
@@ -121,8 +154,14 @@ pub async fn verify_invite(
         .validate()
         .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
+    // Check rate limit (10 requests per 5 minutes per IP)
+    let ip_address = extract_client_ip(&headers);
+    state
+        .rate_limiter
+        .check_rate_limit("verify_invite", &ip_address)?;
+
     // Create invite service
-    let jwt_service = JwtService::new(&state.config.jwt_secret);
+    let jwt_service = JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let invite_service = InviteService::new(state.db_pool.clone(), jwt_service);
 
     // Verify the token

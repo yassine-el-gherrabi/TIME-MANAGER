@@ -1,4 +1,9 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -22,17 +27,44 @@ pub struct ResetPasswordResponse {
     pub message: String,
 }
 
+/// Extract client IP from request headers
+fn extract_client_ip(headers: &HeaderMap) -> String {
+    if let Some(forwarded) = headers.get("x-forwarded-for") {
+        if let Ok(value) = forwarded.to_str() {
+            if let Some(ip) = value.split(',').next() {
+                let ip = ip.trim();
+                if !ip.is_empty() {
+                    return ip.to_string();
+                }
+            }
+        }
+    }
+    if let Some(real_ip) = headers.get("x-real-ip") {
+        if let Ok(ip) = real_ip.to_str() {
+            return ip.to_string();
+        }
+    }
+    "unknown".to_string()
+}
+
 /// POST /api/v1/auth/password/reset
 ///
 /// Reset password using reset token
 pub async fn reset_password(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<ResetPasswordRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     // Validate payload
     payload
         .validate()
         .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
+
+    // Check rate limit (5 requests per 5 minutes per IP)
+    let ip_address = extract_client_ip(&headers);
+    state
+        .rate_limiter
+        .check_rate_limit("password_reset", &ip_address)?;
 
     // Check password against HIBP breach database
     state
