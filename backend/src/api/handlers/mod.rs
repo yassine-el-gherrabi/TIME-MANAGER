@@ -18,3 +18,4 @@ pub mod schedules;
 pub mod sessions;
 pub mod teams;
 pub mod users;
+pub mod metrics;
