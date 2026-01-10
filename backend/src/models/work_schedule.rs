@@ -73,7 +73,7 @@ pub struct WorkScheduleDayUpdate {
 }
 
 /// WorkSchedule with its days for complete view
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct WorkScheduleWithDays {
     #[serde(flatten)]
     pub schedule: WorkSchedule,

@@ -1,5 +1,5 @@
-/// Email templates for Time Manager application
-/// All templates return HTML content for rich email formatting
+//! Email templates for Time Manager application.
+//! All templates return HTML content for rich email formatting.
 
 /// Generate HTML email for user invitation
 pub fn invite_template(first_name: &str, invite_url: &str) -> String {

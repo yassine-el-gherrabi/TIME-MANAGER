@@ -35,7 +35,7 @@ impl ClockService {
         notes: Option<String>,
     ) -> Result<ClockEntry, AppError> {
         // Check if user already has an open clock entry
-        if let Some(_) = self.clock_repo.find_open_entry(org_id, user_id).await? {
+        if self.clock_repo.find_open_entry(org_id, user_id).await?.is_some() {
             return Err(AppError::ValidationError(
                 "You are already clocked in. Please clock out first.".to_string(),
             ));

@@ -49,7 +49,7 @@ pub struct AbsenceTypeUpdate {
 }
 
 /// AbsenceType response for API
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct AbsenceTypeResponse {
     pub id: Uuid,
     pub name: String,

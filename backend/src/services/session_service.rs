@@ -113,8 +113,6 @@ impl SessionService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_max_sessions_constant() {
         // Verify max sessions limit is reasonable

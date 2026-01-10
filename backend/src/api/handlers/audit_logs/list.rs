@@ -48,7 +48,7 @@ pub async fn list_audit_logs(
 
     let pagination = Pagination {
         page: query.page.unwrap_or(1).max(1),
-        per_page: query.per_page.unwrap_or(20).min(100).max(1),
+        per_page: query.per_page.unwrap_or(20).clamp(1, 100),
     };
 
     let filter = AuditLogFilter {

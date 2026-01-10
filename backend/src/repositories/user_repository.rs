@@ -323,7 +323,7 @@ impl UserRepository {
                 users::updated_at.eq(now),
             ))
             .get_result(&mut conn)
-            .map_err(|e| AppError::DatabaseError(e))
+            .map_err(AppError::DatabaseError)
     }
 
     /// Hard delete a user (permanent deletion - use with caution)

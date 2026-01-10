@@ -289,12 +289,13 @@ async fn export_users(state: &AppState, org_id: Uuid) -> Result<String, AppError
             "Active"
         };
 
+        let role_str = format!("{:?}", user.role);
         csv.push_str(&format!(
             "{},{},{},{},{},{},{}\n",
             escape_csv(&user.email),
             escape_csv(&user.first_name),
             escape_csv(&user.last_name),
-            format!("{:?}", user.role),
+            role_str,
             escape_csv(&user.phone.unwrap_or_default()),
             user.created_at.format("%Y-%m-%d %H:%M:%S"),
             status

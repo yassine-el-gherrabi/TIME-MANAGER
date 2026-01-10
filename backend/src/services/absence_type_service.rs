@@ -58,7 +58,7 @@ impl AbsenceTypeService {
         }
 
         // Check for duplicate code
-        if let Some(_) = self.absence_type_repo.find_by_code(org_id, &code).await? {
+        if self.absence_type_repo.find_by_code(org_id, &code).await?.is_some() {
             return Err(AppError::Conflict(
                 "An absence type with this code already exists".to_string(),
             ));

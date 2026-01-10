@@ -67,7 +67,7 @@ pub async fn create_organization(
     let org_repo = OrganizationRepository::new(state.db_pool.clone());
 
     // Check if slug already exists
-    if let Some(_) = org_repo.find_by_slug(&request.slug).await? {
+    if org_repo.find_by_slug(&request.slug).await?.is_some() {
         return Err(AppError::ValidationError(
             "Organization with this slug already exists".to_string(),
         ));

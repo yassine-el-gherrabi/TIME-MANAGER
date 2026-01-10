@@ -113,9 +113,13 @@ impl PasswordService {
         Ok(())
     }
 
-    /// Check if password has been compromised (placeholder for future HIBP integration)
+    /// Check if password has been compromised.
+    /// Note: For actual HIBP validation, use HibpService.validate_not_compromised()
+    /// which is already integrated in auth handlers (accept_invite, change_password, reset_password).
+    #[deprecated(note = "Use HibpService.validate_not_compromised() instead")]
     pub fn is_password_compromised(&self, _password: &str) -> Result<bool, AppError> {
-        // TODO: Integrate with Have I Been Pwned API
+        // This is a deprecated method - HIBP validation is done via HibpService
+        // See: api/handlers/auth/accept_invite.rs, change_password.rs, password/reset.rs
         Ok(false)
     }
 }
@@ -293,11 +297,13 @@ mod tests {
     }
 
     #[test]
-    fn test_is_password_compromised_placeholder() {
+    #[allow(deprecated)]
+    fn test_is_password_compromised_deprecated() {
         let service = create_test_service();
         let result = service.is_password_compromised("TestPassword123!");
 
-        // Should return Ok(false) until HIBP integration
-        assert_eq!(result.unwrap(), false);
+        // This deprecated method always returns Ok(false)
+        // Real HIBP validation is done via HibpService.validate_not_compromised()
+        assert!(!result.unwrap());
     }
 }

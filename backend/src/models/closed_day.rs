@@ -38,7 +38,7 @@ pub struct ClosedDayUpdate {
 }
 
 /// ClosedDay response for API
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ClosedDayResponse {
     pub id: Uuid,
     pub name: String,
