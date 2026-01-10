@@ -30,8 +30,8 @@ dotenvy = "0.15"
 # Observability
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-metrics = "0.21"
-metrics-exporter-prometheus = "0.13"
+metrics = "0.22"
+metrics-exporter-prometheus = "0.14"
 
 # Authentication (for Epic 2, defined now)
 jsonwebtoken = "9.2"
@@ -53,6 +53,10 @@ anyhow = "1.0"
 
 # Types
 uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Caching
+cached = { version = "0.46", features = ["async"] }
+lazy_static = "1.4"
 once_cell = "1.19"
 regex = "1.10"
 chrono = { version = "0.4", features = ["serde"] }
