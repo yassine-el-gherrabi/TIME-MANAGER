@@ -20,6 +20,9 @@ pub mod password_reset_service;
 pub mod session_service;
 pub mod team_service;
 pub mod work_schedule_service;
+pub mod endpoint_rate_limiter;
+pub mod metrics_service;
+pub mod cache_service;
 
 // Re-export commonly used types
 pub use absence_service::{AbsenceService, CreateAbsenceRequest};
@@ -50,3 +53,6 @@ pub use work_schedule_service::{
     WorkScheduleService,
 };
 pub use audit_service::AuditService;
+pub use endpoint_rate_limiter::EndpointRateLimiter;
+pub use metrics_service::{MetricsService, SqlQueryTimer, record_http_request, record_login_attempt};
+pub use cache_service::CacheService;

@@ -9,7 +9,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::ClosedDayService;
+use crate::services::{CacheService, ClosedDayService};
 
 /// DELETE /api/v1/closed-days/:id
 ///
@@ -28,6 +28,9 @@ pub async fn delete_closed_day(
 
     let service = ClosedDayService::new(state.db_pool.clone());
     service.delete(claims.org_id, closed_day_id).await?;
+
+    // Invalidate cache
+    CacheService::invalidate_closed_days();
 
     Ok(StatusCode::NO_CONTENT)
 }

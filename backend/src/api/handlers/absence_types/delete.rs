@@ -9,7 +9,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::AbsenceTypeService;
+use crate::services::{AbsenceTypeService, CacheService};
 
 /// DELETE /api/v1/absence-types/:id
 ///
@@ -28,6 +28,9 @@ pub async fn delete_absence_type(
 
     let service = AbsenceTypeService::new(state.db_pool.clone());
     service.delete(claims.org_id, type_id).await?;
+
+    // Invalidate cache
+    CacheService::invalidate_absence_types(claims.org_id);
 
     Ok(StatusCode::NO_CONTENT)
 }

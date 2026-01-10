@@ -4,7 +4,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::{CreateScheduleRequest, WorkScheduleService};
+use crate::services::{CacheService, CreateScheduleRequest, WorkScheduleService};
 
 /// POST /api/v1/schedules
 ///
@@ -23,6 +23,9 @@ pub async fn create_schedule(
 
     let schedule_service = WorkScheduleService::new(state.db_pool.clone());
     let schedule = schedule_service.create_schedule(claims.org_id, body).await?;
+
+    // Invalidate cache
+    CacheService::invalidate_schedules(claims.org_id);
 
     Ok((StatusCode::CREATED, Json(schedule)))
 }

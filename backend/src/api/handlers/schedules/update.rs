@@ -10,7 +10,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::{UpdateScheduleRequest, WorkScheduleService};
+use crate::services::{CacheService, UpdateScheduleRequest, WorkScheduleService};
 
 /// PUT /api/v1/schedules/:id
 ///
@@ -32,6 +32,9 @@ pub async fn update_schedule(
     let schedule = schedule_service
         .update_schedule(claims.org_id, schedule_id, body)
         .await?;
+
+    // Invalidate cache
+    CacheService::invalidate_schedules(claims.org_id);
 
     Ok((StatusCode::OK, Json(schedule)))
 }

@@ -9,7 +9,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::WorkScheduleService;
+use crate::services::{CacheService, WorkScheduleService};
 
 /// DELETE /api/v1/schedules/:id
 ///
@@ -30,6 +30,9 @@ pub async fn delete_schedule(
     schedule_service
         .delete_schedule(claims.org_id, schedule_id)
         .await?;
+
+    // Invalidate cache
+    CacheService::invalidate_schedules(claims.org_id);
 
     Ok(StatusCode::NO_CONTENT)
 }

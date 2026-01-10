@@ -4,7 +4,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::{AbsenceTypeService, CreateAbsenceTypeRequest};
+use crate::services::{AbsenceTypeService, CacheService, CreateAbsenceTypeRequest};
 
 /// POST /api/v1/absence-types
 ///
@@ -23,6 +23,9 @@ pub async fn create_absence_type(
 
     let service = AbsenceTypeService::new(state.db_pool.clone());
     let absence_type = service.create(claims.org_id, body).await?;
+
+    // Invalidate cache
+    CacheService::invalidate_absence_types(claims.org_id);
 
     Ok((StatusCode::CREATED, Json(absence_type)))
 }

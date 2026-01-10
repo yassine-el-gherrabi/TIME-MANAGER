@@ -10,7 +10,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::services::{ClosedDayService, UpdateClosedDayRequest};
+use crate::services::{CacheService, ClosedDayService, UpdateClosedDayRequest};
 
 /// PUT /api/v1/closed-days/:id
 ///
@@ -30,6 +30,9 @@ pub async fn update_closed_day(
 
     let service = ClosedDayService::new(state.db_pool.clone());
     let closed_day = service.update(claims.org_id, closed_day_id, body).await?;
+
+    // Invalidate cache
+    CacheService::invalidate_closed_days();
 
     Ok((StatusCode::OK, Json(closed_day)))
 }
