@@ -54,7 +54,7 @@ pub async fn resend_invite(
     }
 
     // Create new invite token (this invalidates old ones)
-    let jwt_service = JwtService::new(&state.config.jwt_secret);
+    let jwt_service = JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let invite_service = InviteService::new(state.db_pool.clone(), jwt_service);
     let invite_token = invite_service.resend_invite(user_id).await?;
 

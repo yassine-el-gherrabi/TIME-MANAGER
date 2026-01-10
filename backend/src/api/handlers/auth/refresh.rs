@@ -56,7 +56,7 @@ pub async fn refresh(
         .ok_or_else(|| AppError::Unauthorized("No refresh token provided".to_string()))?;
 
     // Create JWT service and auth service
-    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_secret);
+    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let auth_service = AuthService::new(state.db_pool.clone(), jwt_service);
 
     // Extract User-Agent from headers for session tracking

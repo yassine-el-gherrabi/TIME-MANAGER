@@ -29,11 +29,13 @@ pub async fn auth_middleware(
         .strip_prefix("Bearer ")
         .ok_or(AuthMiddlewareError::InvalidFormat)?;
 
-    // Get JWT secret from environment
-    let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| AuthMiddlewareError::ConfigError)?;
+    // Get JWT keys from environment
+    let jwt_private_key = std::env::var("JWT_PRIVATE_KEY").map_err(|_| AuthMiddlewareError::ConfigError)?;
+    let jwt_public_key = std::env::var("JWT_PUBLIC_KEY").map_err(|_| AuthMiddlewareError::ConfigError)?;
 
     // Validate token
-    let jwt_service = JwtService::new(&jwt_secret);
+    let jwt_service = JwtService::new(&jwt_private_key, &jwt_public_key)
+        .map_err(|_| AuthMiddlewareError::ConfigError)?;
     let claims = jwt_service
         .validate_token(token)
         .map_err(|_| AuthMiddlewareError::InvalidToken)?;
@@ -53,10 +55,14 @@ pub async fn optional_auth_middleware(mut req: Request<Body>, next: Next) -> Res
     if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                if let Ok(jwt_secret) = std::env::var("JWT_SECRET") {
-                    let jwt_service = JwtService::new(&jwt_secret);
-                    if let Ok(claims) = jwt_service.validate_token(token) {
-                        req.extensions_mut().insert(claims);
+                if let (Ok(jwt_private_key), Ok(jwt_public_key)) = (
+                    std::env::var("JWT_PRIVATE_KEY"),
+                    std::env::var("JWT_PUBLIC_KEY"),
+                ) {
+                    if let Ok(jwt_service) = JwtService::new(&jwt_private_key, &jwt_public_key) {
+                        if let Ok(claims) = jwt_service.validate_token(token) {
+                            req.extensions_mut().insert(claims);
+                        }
                     }
                 }
             }

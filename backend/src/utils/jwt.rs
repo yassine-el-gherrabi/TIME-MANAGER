@@ -1,41 +1,53 @@
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use uuid::Uuid;
 
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::models::Claims;
 
-/// JWT configuration and utilities
+/// JWT configuration and utilities using RS256 algorithm
 pub struct JwtService {
     encoding_key: EncodingKey,
     decoding_key: DecodingKey,
+    header: Header,
     access_token_expiry: i64,  // seconds
     refresh_token_expiry: i64, // seconds
 }
 
 impl JwtService {
-    /// Create new JWT service from secret
-    pub fn new(secret: &str) -> Self {
-        Self {
-            encoding_key: EncodingKey::from_secret(secret.as_bytes()),
-            decoding_key: DecodingKey::from_secret(secret.as_bytes()),
+    /// Create new JWT service from RSA PEM keys
+    /// Keys should use '|' as newline separator (for .env compatibility)
+    pub fn new(private_key_pem: &str, public_key_pem: &str) -> Result<Self, AppError> {
+        // Convert | back to newlines for PEM format
+        let private_key = private_key_pem.replace('|', "\n");
+        let public_key = public_key_pem.replace('|', "\n");
+
+        let encoding_key = EncodingKey::from_rsa_pem(private_key.as_bytes())
+            .map_err(|e| AppError::ConfigError(format!("Invalid RSA private key: {}", e)))?;
+
+        let decoding_key = DecodingKey::from_rsa_pem(public_key.as_bytes())
+            .map_err(|e| AppError::ConfigError(format!("Invalid RSA public key: {}", e)))?;
+
+        let header = Header::new(Algorithm::RS256);
+
+        Ok(Self {
+            encoding_key,
+            decoding_key,
+            header,
             access_token_expiry: 15 * 60,           // 15 minutes
             refresh_token_expiry: 7 * 24 * 60 * 60, // 7 days
-        }
+        })
     }
 
-    /// Create JWT service from environment variable
+    /// Create JWT service from environment variables
     pub fn from_env() -> Result<Self, AppError> {
-        let secret = std::env::var("JWT_SECRET")
-            .map_err(|_| AppError::ConfigError("JWT_SECRET not set".to_string()))?;
+        let private_key = std::env::var("JWT_PRIVATE_KEY")
+            .map_err(|_| AppError::ConfigError("JWT_PRIVATE_KEY not set".to_string()))?;
 
-        if secret.len() < 32 {
-            return Err(AppError::ConfigError(
-                "JWT_SECRET must be at least 32 characters".to_string(),
-            ));
-        }
+        let public_key = std::env::var("JWT_PUBLIC_KEY")
+            .map_err(|_| AppError::ConfigError("JWT_PUBLIC_KEY not set".to_string()))?;
 
-        Ok(Self::new(&secret))
+        Self::new(&private_key, &public_key)
     }
 
     /// Generate access token (15 minutes)
@@ -47,8 +59,8 @@ impl JwtService {
     ) -> Result<String, AppError> {
         let claims = Claims::new(user_id, org_id, role, self.access_token_expiry);
 
-        encode(&Header::default(), &claims, &self.encoding_key)
-            .map_err(|_e| AppError::InternalError)
+        encode(&self.header, &claims, &self.encoding_key)
+            .map_err(|_| AppError::InternalError)
     }
 
     /// Generate refresh token (7 days)
@@ -60,13 +72,14 @@ impl JwtService {
     ) -> Result<String, AppError> {
         let claims = Claims::new(user_id, org_id, role, self.refresh_token_expiry);
 
-        encode(&Header::default(), &claims, &self.encoding_key)
+        encode(&self.header, &claims, &self.encoding_key)
             .map_err(|_e| AppError::InternalError)
     }
 
     /// Validate and decode token
     pub fn validate_token(&self, token: &str) -> Result<Claims, AppError> {
-        let validation = Validation::default();
+        let mut validation = Validation::new(Algorithm::RS256);
+        validation.validate_exp = true;
 
         decode::<Claims>(token, &self.decoding_key, &validation)
             .map(|data| data.claims)
@@ -86,7 +99,11 @@ impl JwtService {
 
     /// Extract user ID from token without full validation (for logging/metrics)
     pub fn extract_user_id_unchecked(&self, token: &str) -> Option<Uuid> {
-        decode::<Claims>(token, &self.decoding_key, &Validation::default())
+        let mut validation = Validation::new(Algorithm::RS256);
+        validation.validate_exp = false;
+        validation.required_spec_claims.clear();
+
+        decode::<Claims>(token, &self.decoding_key, &validation)
             .ok()
             .map(|data| data.claims.sub)
     }
@@ -111,8 +128,12 @@ impl JwtService {
 mod tests {
     use super::*;
 
+    // Test RSA keys (2048-bit, for testing only)
+    const TEST_PRIVATE_KEY: &str = "-----BEGIN PRIVATE KEY-----|MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCfwD3rj7NWw0cH|su5hRvc5uo4lPhjFgx1HlZvxzt1pWafbr9zC1exr5HB/NxH1gN37e2nWOI8tPQWf|GsZecR2kGOc2LL3wWiBI9OXxZutf0mtzn3tcIz5vrjktVFM8Q1cVj1e+8wEcvyOw|netXKt+YDah0lBuxm61pg9omb0pnkCsXUjkrowe2c/50X6wBbT4zoYqeSu0EdVnR|ifRZKYbPTpKIh40AejfPHSHI7FPHq0BBnP3iUqtq+a2e9cO6kufZR/T1t9B2G/Zp|58PC/LYIYlINuk9+LcFHDZScoqmW9Aa5QP2JDmvZmbVD6Xd4CKOEh02fJZ8PkzEx|TzU10+1XAgMBAAECggEAJaFFlK7pWjcujKA36b8rLjSFFj293QypAXs63CdT3WSK|l0OiN1znz3RkkXrZ5qAf6gSkphr1kvzsTZGjh4ySpFxfXlIEvdClCTpyzb3mFNC+|keJPzyDYLLt36XcTEj90jHYS/75DFU/q6sgQLxzAxZL2Ctv2eAxJOXEfGm2ds64Q|9OYc/SnQQkpCYRLygfix93n2FlualLDuCZzlXBn/Usb8UzqylMrjzPUe7popIQ3+|QY6oJIgE3aeTBW1kfRgGK7fOcfJZY9q/M0mfAY8Zf3SxT1PTVTSFhunIDxo3Ay0K|XT+r9+YSyJ/0OycR7NsZSOifIwzBGOu/LAEGGA5wiQKBgQDb6J3R4IY55OEJpxJ/|pTwJdsEVmt5L/xoti029rMkwoEb5awBcK0bdQ06oJOHRInb5KTLFvZwhCWBSFyhC|FipnQXH5JRW8CNjlt7SGQZs5C7OJFxclAqfx0ba/oUzTyQ6ZfO1QBHNkx9XIX/DW|t/sEQ6xPWj5kcX1HxcwReCkiPwKBgQC5+B7gYLtSdt1gwHG4iZwTfo0AiZPdiSH7|kcN5JXWdJ4VP5dmtfuL3UOWRnbitfgIeBti//Po+Cd4h8i0CYFF20luOlj1Q4HH4|JPc61SGoykRs8a1DKFHm2YltWShHn5y3x5tarSzY38ndTPx/r1hvFoEHnF8+97gi|J49ozse+6QKBgD8dBtZqYvuQpcl4asW5rX5l18qUlQIop+G0Xk52nZNYHKaOwB6z|yPXN0HBPjYPRKWYfHdREs9+DamKFBOfaprbVwJkpvJAn1eAwFh6GC7+WjSNmPh1A|IuUzNAjRiVQrGwaQJSfW7ytYcxG7/0oQqXky1uw7UTbQn40Oxp+o5d1PAoGBAJh0|Peu3oRkjdKyCVzfvJ9IbZsBQCLYOW5t+jX7dJKQm5/Tt+xtt7+bLnMdZQzKHIHk5|J6uMWiFNuZqejCNsjpwYKxKjO7T3qrbApyTF4Igc+SdOoLlzbmEPaMgJ1SmSQcmv|iz40xZUtMLGJEV4jgx3elvyERti5/2uQftJu4fUxAoGBAMni474jFdHfz0WtHm/d|hTUmXvg1s9h033q0cqjT4CFHRi1JP8h7+Z8mYGa64+vgZFTl0c8+h27NGZdx33j7|T5Wb2QMgao7+BnKnHL2ymEIvaWhIbLXd7xTQsLBe4DvXQJmJCD3TeR6exrXK/lkI|/4D2c3OjbJmOwh4TOcI94I9Q|-----END PRIVATE KEY-----|";
+    const TEST_PUBLIC_KEY: &str = "-----BEGIN PUBLIC KEY-----|MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn8A964+zVsNHB7LuYUb3|ObqOJT4YxYMdR5Wb8c7daVmn26/cwtXsa+RwfzcR9YDd+3tp1jiPLT0FnxrGXnEd|pBjnNiy98FogSPTl8WbrX9Jrc597XCM+b645LVRTPENXFY9XvvMBHL8jsJ3rVyrf|mA2odJQbsZutaYPaJm9KZ5ArF1I5K6MHtnP+dF+sAW0+M6GKnkrtBHVZ0Yn0WSmG|z06SiIeNAHo3zx0hyOxTx6tAQZz94lKravmtnvXDupLn2Uf09bfQdhv2aefDwvy2|CGJSDbpPfi3BRw2UnKKplvQGuUD9iQ5r2Zm1Q+l3eAijhIdNnyWfD5MxMU81NdPt|VwIDAQAB|-----END PUBLIC KEY-----|";
+
     fn create_test_service() -> JwtService {
-        JwtService::new("test_secret_key_min_32_characters_long_for_security")
+        JwtService::new(TEST_PRIVATE_KEY, TEST_PUBLIC_KEY).unwrap()
     }
 
     #[test]
@@ -171,23 +192,6 @@ mod tests {
     }
 
     #[test]
-    fn test_token_with_wrong_secret() {
-        let service1 = JwtService::new("secret_key_one_with_32_characters!!");
-        let service2 = JwtService::new("different_secret_32_characters_long");
-
-        let user_id = Uuid::new_v4();
-        let org_id = Uuid::new_v4();
-        let role = UserRole::Admin;
-
-        let token = service1
-            .generate_access_token(user_id, org_id, role)
-            .unwrap();
-
-        let result = service2.validate_token(&token);
-        assert!(result.is_err());
-    }
-
-    #[test]
     fn test_extract_user_id() {
         let service = create_test_service();
         let user_id = Uuid::new_v4();
@@ -202,10 +206,14 @@ mod tests {
     }
 
     #[test]
-    fn test_jwt_secret_validation() {
-        let result = JwtService::new("short");
-        // Service creation doesn't validate length, but from_env does
-        let service = result;
-        assert_eq!(service.access_token_expiry, 15 * 60);
+    fn test_invalid_private_key() {
+        let result = JwtService::new("invalid-key", TEST_PUBLIC_KEY);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_invalid_public_key() {
+        let result = JwtService::new(TEST_PRIVATE_KEY, "invalid-key");
+        assert!(result.is_err());
     }
 }

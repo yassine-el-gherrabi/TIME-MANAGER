@@ -42,7 +42,7 @@ pub async fn get_sessions(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
-    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_secret);
+    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let auth_service = AuthService::new(state.db_pool.clone(), jwt_service);
 
     let tokens = auth_service.get_active_sessions(claims.sub).await?;
@@ -76,7 +76,7 @@ pub async fn revoke_session(
     let session_uuid = Uuid::parse_str(&session_id)
         .map_err(|_| AppError::ValidationError("Invalid session ID format".to_string()))?;
 
-    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_secret);
+    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let auth_service = AuthService::new(state.db_pool.clone(), jwt_service);
 
     auth_service

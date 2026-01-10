@@ -111,7 +111,7 @@ pub async fn create_user(
     let _ = audit_service.log_create(&audit_ctx, "users", user.id, &UserResponse::from_user(&user)).await;
 
     // Generate invite token
-    let jwt_service = JwtService::new(&state.config.jwt_secret);
+    let jwt_service = JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let invite_service = InviteService::new(state.db_pool.clone(), jwt_service);
     let invite_token = invite_service.create_invite_token(user.id).await?;
 

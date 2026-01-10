@@ -21,6 +21,7 @@ use super::handlers::reports;
 use super::handlers::schedules;
 use super::handlers::teams;
 use super::handlers::users;
+use super::handlers::metrics;
 use crate::config::AppState;
 
 /// Creates the main application router with all endpoints
@@ -206,6 +207,7 @@ pub fn create_router(state: AppState) -> Router {
     // Main router
     Router::new()
         .route("/health", get(health_check))
+        .route("/metrics", get(metrics::get_metrics))
         .nest("/v1/auth", auth_routes)
         .nest("/v1/auth/password", password_routes)
         .nest("/v1/users", user_routes)
@@ -242,17 +244,17 @@ mod tests {
     use crate::config::app::{AppConfig, AppState};
     use crate::config::email::EmailConfig;
     use crate::config::hibp::HibpConfig;
-    use crate::services::{EmailService, HibpService};
+    use crate::services::{EmailService, EndpointRateLimiter, HibpService, MetricsService};
 
     const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
     /// Creates a PostgreSQL container for integration testing
-    fn setup_postgres_container(docker: &Cli) -> Container<Postgres> {
+    fn setup_postgres_container(docker: &Cli) -> Container<'_, Postgres> {
         docker.run(Postgres::default())
     }
 
     /// Gets the database URL from a running container
-    fn get_container_db_url(container: &Container<Postgres>) -> String {
+    fn get_container_db_url(container: &Container<'_, Postgres>) -> String {
         let port = container.get_host_port_ipv4(5432);
         format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port)
     }
@@ -264,7 +266,8 @@ mod tests {
             app_port: 8080,
             database_url: database_url.to_string(),
             rust_log: "info".to_string(),
-            jwt_secret: "test-secret-key-for-integration-tests-minimum-32-chars".to_string(),
+            jwt_private_key: "-----BEGIN PRIVATE KEY-----|MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCfwD3rj7NWw0cH|su5hRvc5uo4lPhjFgx1HlZvxzt1pWafbr9zC1exr5HB/NxH1gN37e2nWOI8tPQWf|GsZecR2kGOc2LL3wWiBI9OXxZutf0mtzn3tcIz5vrjktVFM8Q1cVj1e+8wEcvyOw|netXKt+YDah0lBuxm61pg9omb0pnkCsXUjkrowe2c/50X6wBbT4zoYqeSu0EdVnR|ifRZKYbPTpKIh40AejfPHSHI7FPHq0BBnP3iUqtq+a2e9cO6kufZR/T1t9B2G/Zp|58PC/LYIYlINuk9+LcFHDZScoqmW9Aa5QP2JDmvZmbVD6Xd4CKOEh02fJZ8PkzEx|TzU10+1XAgMBAAECggEAJaFFlK7pWjcujKA36b8rLjSFFj293QypAXs63CdT3WSK|l0OiN1znz3RkkXrZ5qAf6gSkphr1kvzsTZGjh4ySpFxfXlIEvdClCTpyzb3mFNC+|keJPzyDYLLt36XcTEj90jHYS/75DFU/q6sgQLxzAxZL2Ctv2eAxJOXEfGm2ds64Q|9OYc/SnQQkpCYRLygfix93n2FlualLDuCZzlXBn/Usb8UzqylMrjzPUe7popIQ3+|QY6oJIgE3aeTBW1kfRgGK7fOcfJZY9q/M0mfAY8Zf3SxT1PTVTSFhunIDxo3Ay0K|XT+r9+YSyJ/0OycR7NsZSOifIwzBGOu/LAEGGA5wiQKBgQDb6J3R4IY55OEJpxJ/|pTwJdsEVmt5L/xoti029rMkwoEb5awBcK0bdQ06oJOHRInb5KTLFvZwhCWBSFyhC|FipnQXH5JRW8CNjlt7SGQZs5C7OJFxclAqfx0ba/oUzTyQ6ZfO1QBHNkx9XIX/DW|t/sEQ6xPWj5kcX1HxcwReCkiPwKBgQC5+B7gYLtSdt1gwHG4iZwTfo0AiZPdiSH7|kcN5JXWdJ4VP5dmtfuL3UOWRnbitfgIeBti//Po+Cd4h8i0CYFF20luOlj1Q4HH4|JPc61SGoykRs8a1DKFHm2YltWShHn5y3x5tarSzY38ndTPx/r1hvFoEHnF8+97gi|J49ozse+6QKBgD8dBtZqYvuQpcl4asW5rX5l18qUlQIop+G0Xk52nZNYHKaOwB6z|yPXN0HBPjYPRKWYfHdREs9+DamKFBOfaprbVwJkpvJAn1eAwFh6GC7+WjSNmPh1A|IuUzNAjRiVQrGwaQJSfW7ytYcxG7/0oQqXky1uw7UTbQn40Oxp+o5d1PAoGBAJh0|Peu3oRkjdKyCVzfvJ9IbZsBQCLYOW5t+jX7dJKQm5/Tt+xtt7+bLnMdZQzKHIHk5|J6uMWiFNuZqejCNsjpwYKxKjO7T3qrbApyTF4Igc+SdOoLlzbmEPaMgJ1SmSQcmv|iz40xZUtMLGJEV4jgx3elvyERti5/2uQftJu4fUxAoGBAMni474jFdHfz0WtHm/d|hTUmXvg1s9h033q0cqjT4CFHRi1JP8h7+Z8mYGa64+vgZFTl0c8+h27NGZdx33j7|T5Wb2QMgao7+BnKnHL2ymEIvaWhIbLXd7xTQsLBe4DvXQJmJCD3TeR6exrXK/lkI|/4D2c3OjbJmOwh4TOcI94I9Q|-----END PRIVATE KEY-----|".to_string(),
+            jwt_public_key: "-----BEGIN PUBLIC KEY-----|MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn8A964+zVsNHB7LuYUb3|ObqOJT4YxYMdR5Wb8c7daVmn26/cwtXsa+RwfzcR9YDd+3tp1jiPLT0FnxrGXnEd|pBjnNiy98FogSPTl8WbrX9Jrc597XCM+b645LVRTPENXFY9XvvMBHL8jsJ3rVyrf|mA2odJQbsZutaYPaJm9KZ5ArF1I5K6MHtnP+dF+sAW0+M6GKnkrtBHVZ0Yn0WSmG|z06SiIeNAHo3zx0hyOxTx6tAQZz94lKravmtnvXDupLn2Uf09bfQdhv2aefDwvy2|CGJSDbpPfi3BRw2UnKKplvQGuUD9iQ5r2Zm1Q+l3eAijhIdNnyWfD5MxMU81NdPt|VwIDAQAB|-----END PUBLIC KEY-----|".to_string(),
             jwt_access_token_expiry_seconds: 900,
             jwt_refresh_token_expiry_seconds: 604800,
             cors_allowed_origins: vec!["http://localhost:3000".to_string()],
@@ -301,12 +304,16 @@ mod tests {
         let email_service = EmailService::new(config.email.clone())
             .expect("Failed to create email service");
         let hibp_service = HibpService::new(config.hibp.clone());
+        let rate_limiter = EndpointRateLimiter::new();
+        let metrics_service = MetricsService::new();
 
         AppState {
             config,
             db_pool,
             email_service: Arc::new(email_service),
             hibp_service: Arc::new(hibp_service),
+            rate_limiter: Arc::new(rate_limiter),
+            metrics_service: Arc::new(metrics_service),
         }
     }
 

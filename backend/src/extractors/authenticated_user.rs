@@ -34,11 +34,13 @@ where
             .await
             .map_err(|_| AuthError::MissingToken)?;
 
-        // Get JWT secret from environment
-        let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| AuthError::InvalidToken)?;
+        // Get JWT keys from environment
+        let jwt_private_key = std::env::var("JWT_PRIVATE_KEY").map_err(|_| AuthError::InvalidToken)?;
+        let jwt_public_key = std::env::var("JWT_PUBLIC_KEY").map_err(|_| AuthError::InvalidToken)?;
 
         // Create JWT service and validate token
-        let jwt_service = JwtService::new(&jwt_secret);
+        let jwt_service = JwtService::new(&jwt_private_key, &jwt_public_key)
+            .map_err(|_| AuthError::InvalidToken)?;
         let claims = jwt_service
             .validate_token(bearer.token())
             .map_err(|_| AuthError::InvalidToken)?;
