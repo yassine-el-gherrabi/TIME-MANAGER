@@ -13,7 +13,7 @@ use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
 use crate::models::{AuditContext, UserResponse, UserUpdate};
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 use crate::services::AuditService;
 
 /// Extract client IP from request headers
@@ -111,7 +111,13 @@ pub async fn update_user(
 
     // Get existing user (also serves as old values for audit)
     let existing_user = user_repo.find_by_id(user_id).await?;
-    let old_user_response = UserResponse::from_user(&existing_user);
+
+    // Fetch organization name
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
+    let organization = org_repo.find_by_id(existing_user.organization_id).await?;
+    let org_name = organization.name;
+
+    let old_user_response = UserResponse::from_user(&existing_user, org_name.clone());
 
     // Determine what updates are allowed based on role
     // Admin+ (Admin or SuperAdmin) can update any user in their organization
@@ -166,7 +172,7 @@ pub async fn update_user(
 
     // Update user
     let updated_user = user_repo.update(user_id, update).await?;
-    let new_user_response = UserResponse::from_user(&updated_user);
+    let new_user_response = UserResponse::from_user(&updated_user, org_name);
 
     // Log audit event (fire and forget)
     let audit_service = AuditService::new(state.db_pool.clone());

@@ -11,7 +11,7 @@ use crate::config::AppState;
 use crate::error::AppError;
 use crate::extractors::{Admin, RoleGuard};
 use crate::models::{AuditContext, UserResponse};
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 use crate::services::AuditService;
 
 /// Extract client IP from request headers
@@ -95,8 +95,12 @@ pub async fn delete_user(
         ));
     }
 
+    // Fetch organization name
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
+    let organization = org_repo.find_by_id(claims.org_id).await?;
+
     // Capture user data for audit before deletion
-    let old_user_response = UserResponse::from_user(&user_to_delete);
+    let old_user_response = UserResponse::from_user(&user_to_delete, organization.name);
 
     // Soft delete user (sets deleted_at timestamp)
     user_repo.soft_delete(user_id).await?;

@@ -23,6 +23,7 @@ export interface UserResponse {
   role: UserRole;
   phone?: string | null;
   organization_id: string;
+  organization_name: string;
   has_password: boolean;
   created_at: string;
   updated_at: string;

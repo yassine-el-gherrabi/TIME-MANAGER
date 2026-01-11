@@ -12,7 +12,7 @@ use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::{Admin, RoleGuard};
 use crate::models::{AuditContext, NewUser, UserResponse};
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 use crate::services::{AuditService, InviteService};
 use crate::utils::JwtService;
 
@@ -119,6 +119,11 @@ pub async fn create_user(
 
     let user = user_repo.create(new_user).await?;
 
+    // Fetch organization name
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
+    let organization = org_repo.find_by_id(claims.org_id).await?;
+    let org_name = organization.name;
+
     // Log audit event (fire and forget)
     let audit_service = AuditService::new(state.db_pool.clone());
     let _ = audit_service
@@ -126,7 +131,7 @@ pub async fn create_user(
             &audit_ctx,
             "users",
             user.id,
-            &UserResponse::from_user(&user),
+            &UserResponse::from_user(&user, org_name.clone()),
         )
         .await;
 
@@ -148,7 +153,7 @@ pub async fn create_user(
     // Build response (don't include token since it's sent via email)
     let response = CreateUserResponse {
         message: "User created successfully. Invitation email sent.".to_string(),
-        user: UserResponse::from_user(&user),
+        user: UserResponse::from_user(&user, org_name),
         invite_token: if state.email_service.is_enabled() {
             "[sent via email]".to_string()
         } else {

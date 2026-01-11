@@ -12,7 +12,7 @@ use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::{Admin, RoleGuard};
 use crate::models::{PaginatedUsers, Pagination, UserFilter, UserResponse};
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 
 /// Query parameters for listing users
 #[derive(Debug, Deserialize, Default)]
@@ -87,10 +87,18 @@ pub async fn list_users(
         .list_with_deleted(org_id, &filter, &pagination, include_deleted)
         .await?;
 
+    // Fetch organization name
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
+    let organization = org_repo.find_by_id(org_id).await?;
+    let org_name = organization.name;
+
     // Build response
     let total_pages = (total as f64 / pagination.per_page as f64).ceil() as i64;
     let response = PaginatedUsers {
-        data: users.iter().map(UserResponse::from_user).collect(),
+        data: users
+            .iter()
+            .map(|u| UserResponse::from_user(u, org_name.clone()))
+            .collect(),
         total,
         page: pagination.page,
         per_page: pagination.per_page,

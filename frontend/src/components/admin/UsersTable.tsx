@@ -77,6 +77,9 @@ export const UsersTable: React.FC<UsersTableProps> = ({
               Email
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+              Organization
+            </th>
+            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               Role
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
@@ -106,6 +109,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                   </div>
                 </td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">{user.organization_name}</td>
                 <td className="px-4 py-3 text-sm">
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${getRoleBadgeClass(user.role)}`}

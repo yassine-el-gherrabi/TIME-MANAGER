@@ -144,7 +144,7 @@ pub async fn bootstrap(
     let response = BootstrapResponse {
         message: "Setup completed successfully. You are now logged in.".to_string(),
         organization: OrganizationResponse::from_organization(&organization),
-        user: UserResponse::from_user(&user),
+        user: UserResponse::from_user(&user, organization.name.clone()),
         access_token,
         token_type: "Bearer".to_string(),
         expires_in: state.config.jwt_access_token_expiry_seconds as i64,

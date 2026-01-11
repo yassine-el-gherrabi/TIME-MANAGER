@@ -11,7 +11,7 @@ use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
 use crate::models::UserResponse;
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 
 /// GET /api/v1/users/:id
 ///
@@ -52,8 +52,12 @@ pub async fn get_user(
         }
     }
 
+    // Fetch organization name
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
+    let organization = org_repo.find_by_id(user.organization_id).await?;
+
     // Build response
-    let response = UserResponse::from_user(&user);
+    let response = UserResponse::from_user(&user, organization.name);
 
     Ok((StatusCode::OK, Json(response)))
 }

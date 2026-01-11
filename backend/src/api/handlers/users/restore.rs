@@ -11,7 +11,7 @@ use crate::config::AppState;
 use crate::error::AppError;
 use crate::extractors::{Admin, RoleGuard};
 use crate::models::{AuditContext, UserResponse};
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 use crate::services::AuditService;
 
 /// Extract client IP from request headers
@@ -82,12 +82,17 @@ pub async fn restore_user(
         ));
     }
 
+    // Fetch organization name
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
+    let organization = org_repo.find_by_id(claims.org_id).await?;
+    let org_name = organization.name;
+
     // Capture old state for audit
-    let old_user_response = UserResponse::from_user(&user_to_restore);
+    let old_user_response = UserResponse::from_user(&user_to_restore, org_name.clone());
 
     // Restore the user
     let restored_user = user_repo.restore(user_id).await?;
-    let new_user_response = UserResponse::from_user(&restored_user);
+    let new_user_response = UserResponse::from_user(&restored_user, org_name);
 
     // Log audit event (fire and forget) - log as update since we're changing deleted_at
     let audit_service = AuditService::new(state.db_pool.clone());

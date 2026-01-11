@@ -68,6 +68,7 @@ pub struct PaginatedUsers {
 pub struct UserResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub organization_name: String,
     pub email: String,
     pub first_name: String,
     pub last_name: String,
@@ -81,13 +82,14 @@ pub struct UserResponse {
 }
 
 impl UserResponse {
-    pub fn from_user(user: &crate::repositories::User) -> Self {
+    pub fn from_user(user: &crate::repositories::User, organization_name: String) -> Self {
         // User has password if password_hash is not empty/placeholder
         let has_password = !user.password_hash.is_empty() && user.password_hash != "PENDING_INVITE";
 
         Self {
             id: user.id,
             organization_id: user.organization_id,
+            organization_name,
             email: user.email.clone(),
             first_name: user.first_name.clone(),
             last_name: user.last_name.clone(),
