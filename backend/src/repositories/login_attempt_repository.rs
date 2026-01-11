@@ -1,11 +1,10 @@
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{LoginAttempt, NewLoginAttempt};
 use crate::schema::login_attempts;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Login attempt repository for tracking and rate limiting
 pub struct LoginAttemptRepository {
@@ -19,11 +18,16 @@ impl LoginAttemptRepository {
 
     /// Record a login attempt
     pub async fn record(&self, new_attempt: NewLoginAttempt) -> Result<LoginAttempt, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(login_attempts::table)
             .values(&new_attempt)
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -33,7 +37,11 @@ impl LoginAttemptRepository {
         email: &str,
         within_minutes: i64,
     ) -> Result<i64, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
         let cutoff_time =
             chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
 
@@ -43,6 +51,7 @@ impl LoginAttemptRepository {
             .filter(login_attempts::attempted_at.gt(cutoff_time))
             .count()
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -52,7 +61,11 @@ impl LoginAttemptRepository {
         ip_address: &str,
         within_minutes: i64,
     ) -> Result<i64, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
         let cutoff_time =
             chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
 
@@ -62,6 +75,7 @@ impl LoginAttemptRepository {
             .filter(login_attempts::attempted_at.gt(cutoff_time))
             .count()
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -71,23 +85,33 @@ impl LoginAttemptRepository {
         email: &str,
         limit: i64,
     ) -> Result<Vec<LoginAttempt>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         login_attempts::table
             .filter(login_attempts::email.eq(email))
             .order(login_attempts::attempted_at.desc())
             .limit(limit)
             .load::<LoginAttempt>(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
     /// Delete old login attempts (cleanup operation)
     pub async fn delete_older_than(&self, days: i64) -> Result<usize, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
         let cutoff_time = chrono::Utc::now().naive_utc() - chrono::Duration::days(days);
 
         diesel::delete(login_attempts::table.filter(login_attempts::attempted_at.lt(cutoff_time)))
             .execute(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 }

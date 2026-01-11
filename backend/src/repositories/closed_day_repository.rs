@@ -1,13 +1,12 @@
 use chrono::{Datelike, NaiveDate};
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{ClosedDay, ClosedDayFilter, ClosedDayUpdate, NewClosedDay};
 use crate::schema::closed_days;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// ClosedDay repository for database operations
 pub struct ClosedDayRepository {
@@ -21,11 +20,16 @@ impl ClosedDayRepository {
 
     /// Create a new closed day
     pub async fn create(&self, new_closed_day: NewClosedDay) -> Result<ClosedDay, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(closed_days::table)
             .values(&new_closed_day)
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -35,12 +39,17 @@ impl ClosedDayRepository {
         org_id: Uuid,
         closed_day_id: Uuid,
     ) -> Result<ClosedDay, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         closed_days::table
             .filter(closed_days::organization_id.eq(org_id))
             .find(closed_day_id)
             .first::<ClosedDay>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("Closed day not found".to_string()))
     }
 
@@ -50,7 +59,11 @@ impl ClosedDayRepository {
         org_id: Uuid,
         filter: &ClosedDayFilter,
     ) -> Result<Vec<ClosedDay>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let mut query = closed_days::table
             .filter(closed_days::organization_id.eq(org_id))
@@ -68,7 +81,9 @@ impl ClosedDayRepository {
 
         let results = query
             .order(closed_days::date.asc())
-            .load::<ClosedDay>(&mut conn)?;
+            .load::<ClosedDay>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(results)
     }
@@ -79,7 +94,11 @@ impl ClosedDayRepository {
         org_id: Uuid,
         year: i32,
     ) -> Result<Vec<ClosedDay>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let start = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(year, 12, 31).unwrap();
@@ -90,13 +109,17 @@ impl ClosedDayRepository {
             .filter(closed_days::is_recurring.eq(false))
             .filter(closed_days::date.ge(start))
             .filter(closed_days::date.le(end))
-            .load::<ClosedDay>(&mut conn)?;
+            .load::<ClosedDay>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         // Get all recurring closed days
         let recurring: Vec<ClosedDay> = closed_days::table
             .filter(closed_days::organization_id.eq(org_id))
             .filter(closed_days::is_recurring.eq(true))
-            .load::<ClosedDay>(&mut conn)?;
+            .load::<ClosedDay>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         closed_days_list.extend(recurring);
         closed_days_list.sort_by_key(|cd| cd.date);
@@ -111,7 +134,11 @@ impl ClosedDayRepository {
         start_date: NaiveDate,
         end_date: NaiveDate,
     ) -> Result<Vec<NaiveDate>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Get non-recurring closed days in range
         let non_recurring: Vec<NaiveDate> = closed_days::table
@@ -120,13 +147,17 @@ impl ClosedDayRepository {
             .filter(closed_days::date.ge(start_date))
             .filter(closed_days::date.le(end_date))
             .select(closed_days::date)
-            .load(&mut conn)?;
+            .load(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         // Get recurring closed days
         let recurring: Vec<ClosedDay> = closed_days::table
             .filter(closed_days::organization_id.eq(org_id))
             .filter(closed_days::is_recurring.eq(true))
-            .load::<ClosedDay>(&mut conn)?;
+            .load::<ClosedDay>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         // Calculate recurring dates for each year in range
         let mut all_dates: Vec<NaiveDate> = non_recurring;
@@ -159,7 +190,11 @@ impl ClosedDayRepository {
         org_id: Uuid,
         date: NaiveDate,
     ) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Check exact date (non-recurring)
         let exact_count: i64 = closed_days::table
@@ -167,7 +202,9 @@ impl ClosedDayRepository {
             .filter(closed_days::is_recurring.eq(false))
             .filter(closed_days::date.eq(date))
             .count()
-            .get_result(&mut conn)?;
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         if exact_count > 0 {
             return Ok(true);
@@ -180,7 +217,9 @@ impl ClosedDayRepository {
         let recurring: Vec<ClosedDay> = closed_days::table
             .filter(closed_days::organization_id.eq(org_id))
             .filter(closed_days::is_recurring.eq(true))
-            .load::<ClosedDay>(&mut conn)?;
+            .load::<ClosedDay>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         for closed_day in recurring {
             if closed_day.date.month() as i32 == month && closed_day.date.day() as i32 == day {
@@ -198,7 +237,11 @@ impl ClosedDayRepository {
         closed_day_id: Uuid,
         update: ClosedDayUpdate,
     ) -> Result<ClosedDay, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let affected = diesel::update(
             closed_days::table
@@ -206,7 +249,9 @@ impl ClosedDayRepository {
                 .filter(closed_days::id.eq(closed_day_id)),
         )
         .set(&update)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Closed day not found".to_string()));
@@ -217,14 +262,20 @@ impl ClosedDayRepository {
 
     /// Delete a closed day
     pub async fn delete(&self, org_id: Uuid, closed_day_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let deleted = diesel::delete(
             closed_days::table
                 .filter(closed_days::organization_id.eq(org_id))
                 .filter(closed_days::id.eq(closed_day_id)),
         )
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Closed day not found".to_string()));

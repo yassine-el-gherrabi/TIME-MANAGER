@@ -1,16 +1,13 @@
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use rand::Rng;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{NewInviteToken, NewPasswordHistory, TokenPair};
 use crate::repositories::password_history_repository::PasswordHistoryRepository;
 use crate::repositories::{InviteTokenRepository, UserRepository};
 use crate::utils::{JwtService, PasswordService};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Service for handling user invitation workflow
 pub struct InviteService {

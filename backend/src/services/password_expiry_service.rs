@@ -1,11 +1,8 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::repositories::user_repository::UserRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Constants for password expiry
 const PASSWORD_EXPIRY_DAYS: i64 = 90;

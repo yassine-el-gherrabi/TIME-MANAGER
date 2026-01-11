@@ -1,9 +1,8 @@
+use crate::config::database::DbPool;
 use crate::config::email::EmailConfig;
 use crate::config::hibp::HibpConfig;
 use crate::services::{EmailService, EndpointRateLimiter, HibpService, MetricsService};
 use anyhow::{Context, Result};
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use dotenvy::dotenv;
 use std::env;
 use std::sync::Arc;
@@ -12,7 +11,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct AppState {
     pub config: AppConfig,
-    pub db_pool: Pool<ConnectionManager<PgConnection>>,
+    pub db_pool: DbPool,
     pub email_service: Arc<EmailService>,
     pub hibp_service: Arc<HibpService>,
     pub rate_limiter: Arc<EndpointRateLimiter>,

@@ -1,14 +1,13 @@
 use bigdecimal::BigDecimal;
 use chrono::Utc;
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{LeaveBalance, LeaveBalanceFilter, LeaveBalanceUpdate, NewLeaveBalance};
 use crate::schema::leave_balances;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Leave balance repository for database operations
 pub struct LeaveBalanceRepository {
@@ -22,11 +21,16 @@ impl LeaveBalanceRepository {
 
     /// Create a new leave balance
     pub async fn create(&self, new_balance: NewLeaveBalance) -> Result<LeaveBalance, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(leave_balances::table)
             .values(&new_balance)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -44,12 +48,17 @@ impl LeaveBalanceRepository {
         org_id: Uuid,
         balance_id: Uuid,
     ) -> Result<LeaveBalance, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         leave_balances::table
             .filter(leave_balances::organization_id.eq(org_id))
             .find(balance_id)
             .first::<LeaveBalance>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("Leave balance not found".to_string()))
     }
 
@@ -61,7 +70,11 @@ impl LeaveBalanceRepository {
         absence_type_id: Uuid,
         year: i32,
     ) -> Result<Option<LeaveBalance>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let result = leave_balances::table
             .filter(leave_balances::organization_id.eq(org_id))
@@ -69,7 +82,9 @@ impl LeaveBalanceRepository {
             .filter(leave_balances::absence_type_id.eq(absence_type_id))
             .filter(leave_balances::year.eq(year))
             .first::<LeaveBalance>(&mut conn)
-            .optional()?;
+            .await
+            .optional()
+            .map_err(AppError::DatabaseError)?;
 
         Ok(result)
     }
@@ -104,7 +119,11 @@ impl LeaveBalanceRepository {
         org_id: Uuid,
         filter: &LeaveBalanceFilter,
     ) -> Result<Vec<LeaveBalance>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let mut query = leave_balances::table
             .filter(leave_balances::organization_id.eq(org_id))
@@ -122,7 +141,9 @@ impl LeaveBalanceRepository {
 
         let balances = query
             .order((leave_balances::year.desc(), leave_balances::absence_type_id.asc()))
-            .load::<LeaveBalance>(&mut conn)?;
+            .load::<LeaveBalance>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(balances)
     }
@@ -134,14 +155,20 @@ impl LeaveBalanceRepository {
         user_id: Uuid,
         year: i32,
     ) -> Result<Vec<LeaveBalance>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let balances = leave_balances::table
             .filter(leave_balances::organization_id.eq(org_id))
             .filter(leave_balances::user_id.eq(user_id))
             .filter(leave_balances::year.eq(year))
             .order(leave_balances::absence_type_id.asc())
-            .load::<LeaveBalance>(&mut conn)?;
+            .load::<LeaveBalance>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(balances)
     }
@@ -153,7 +180,11 @@ impl LeaveBalanceRepository {
         balance_id: Uuid,
         mut update: LeaveBalanceUpdate,
     ) -> Result<LeaveBalance, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         update.updated_at = Some(Utc::now());
 
@@ -163,7 +194,9 @@ impl LeaveBalanceRepository {
                 .filter(leave_balances::id.eq(balance_id)),
         )
         .set(&update)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Leave balance not found".to_string()));
@@ -181,7 +214,11 @@ impl LeaveBalanceRepository {
         year: i32,
         amount: BigDecimal,
     ) -> Result<LeaveBalance, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let affected = diesel::update(
             leave_balances::table
@@ -194,7 +231,9 @@ impl LeaveBalanceRepository {
             leave_balances::used.eq(leave_balances::used + &amount),
             leave_balances::updated_at.eq(Utc::now()),
         ))
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Leave balance not found".to_string()));
@@ -214,7 +253,11 @@ impl LeaveBalanceRepository {
         year: i32,
         amount: BigDecimal,
     ) -> Result<LeaveBalance, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let affected = diesel::update(
             leave_balances::table
@@ -227,7 +270,9 @@ impl LeaveBalanceRepository {
             leave_balances::used.eq(leave_balances::used - &amount),
             leave_balances::updated_at.eq(Utc::now()),
         ))
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Leave balance not found".to_string()));
@@ -240,14 +285,20 @@ impl LeaveBalanceRepository {
 
     /// Delete a leave balance
     pub async fn delete(&self, org_id: Uuid, balance_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let deleted = diesel::delete(
             leave_balances::table
                 .filter(leave_balances::organization_id.eq(org_id))
                 .filter(leave_balances::id.eq(balance_id)),
         )
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Leave balance not found".to_string()));

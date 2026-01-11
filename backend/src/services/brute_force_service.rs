@@ -1,13 +1,10 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::NewLoginAttempt;
 use crate::repositories::login_attempt_repository::LoginAttemptRepository;
 use crate::repositories::user_repository::UserRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Constants for brute force protection
 const MAX_FAILED_ATTEMPTS: i32 = 5;

@@ -1,13 +1,12 @@
 use chrono::{NaiveTime, TimeZone, Utc};
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{AuditLog, AuditLogFilter, AuditUserInfo, NewAuditLog, Pagination};
 use crate::schema::{audit_logs, users};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Maximum number of records for CSV export
 const MAX_EXPORT_RECORDS: i64 = 10_000;
@@ -24,11 +23,16 @@ impl AuditRepository {
 
     /// Create a new audit log entry
     pub async fn create(&self, new_audit_log: NewAuditLog) -> Result<AuditLog, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(audit_logs::table)
             .values(&new_audit_log)
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -40,7 +44,11 @@ impl AuditRepository {
         filter: &AuditLogFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<AuditLog>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Build base query
         let mut query = audit_logs::table.into_boxed();
@@ -94,7 +102,11 @@ impl AuditRepository {
         }
 
         // Get total count
-        let total: i64 = count_query.count().get_result(&mut conn)?;
+        let total: i64 = count_query
+            .count()
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         // Apply pagination and ordering
         let offset = (pagination.page - 1) * pagination.per_page;
@@ -102,7 +114,9 @@ impl AuditRepository {
             .order(audit_logs::created_at.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<AuditLog>(&mut conn)?;
+            .load::<AuditLog>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((results, total))
     }
@@ -113,7 +127,11 @@ impl AuditRepository {
         org_id: Option<Uuid>,
         filter: &AuditLogFilter,
     ) -> Result<Vec<AuditLog>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Build base query
         let mut query = audit_logs::table.into_boxed();
@@ -162,7 +180,9 @@ impl AuditRepository {
         let results = query
             .order(audit_logs::created_at.desc())
             .limit(MAX_EXPORT_RECORDS)
-            .load::<AuditLog>(&mut conn)?;
+            .load::<AuditLog>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(results)
     }
@@ -173,12 +193,18 @@ impl AuditRepository {
             return Ok(vec![]);
         }
 
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let results: Vec<(Uuid, String, String, String)> = users::table
             .filter(users::id.eq_any(&user_ids))
             .select((users::id, users::email, users::first_name, users::last_name))
-            .load(&mut conn)?;
+            .load(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(results
             .into_iter()

@@ -1,8 +1,7 @@
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde_json::Value as JsonValue;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::NotificationType;
 use crate::error::AppError;
 use crate::models::{
@@ -10,8 +9,6 @@ use crate::models::{
     UnreadCountResponse,
 };
 use crate::repositories::NotificationRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Notification service for business logic
 pub struct NotificationService {

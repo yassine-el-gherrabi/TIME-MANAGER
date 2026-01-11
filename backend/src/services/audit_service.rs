@@ -1,9 +1,8 @@
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde::Serialize;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::AuditAction;
 use crate::error::AppError;
 use crate::models::{
@@ -11,8 +10,6 @@ use crate::models::{
     PaginatedAuditLogs, Pagination,
 };
 use crate::repositories::AuditRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Audit service for logging and querying audit trail
 pub struct AuditService {

@@ -1,14 +1,13 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::ClockEntryStatus;
 use crate::error::AppError;
 use crate::models::{ClockEntry, ClockEntryUpdate, ClockFilter, NewClockEntry, Pagination};
 use crate::schema::{clock_entries, team_members, users};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Clock repository for database operations
 pub struct ClockRepository {
@@ -32,7 +31,11 @@ impl ClockRepository {
         user_id: Uuid,
         notes: Option<String>,
     ) -> Result<ClockEntry, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let new_entry = NewClockEntry {
             organization_id: org_id,
@@ -44,12 +47,17 @@ impl ClockRepository {
         diesel::insert_into(clock_entries::table)
             .values(&new_entry)
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
     /// Clock out an entry
     pub async fn clock_out(&self, org_id: Uuid, entry_id: Uuid) -> Result<ClockEntry, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(
             clock_entries::table
@@ -61,6 +69,7 @@ impl ClockRepository {
             clock_entries::updated_at.eq(Utc::now()),
         ))
         .get_result(&mut conn)
+        .await
         .map_err(|e| match e {
             diesel::result::Error::NotFound => {
                 AppError::NotFound("Clock entry not found".to_string())
@@ -75,26 +84,37 @@ impl ClockRepository {
         org_id: Uuid,
         user_id: Uuid,
     ) -> Result<Option<ClockEntry>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let entry = clock_entries::table
             .filter(clock_entries::organization_id.eq(org_id))
             .filter(clock_entries::user_id.eq(user_id))
             .filter(clock_entries::clock_out.is_null())
             .first::<ClockEntry>(&mut conn)
-            .optional()?;
+            .await
+            .optional()
+            .map_err(AppError::DatabaseError)?;
 
         Ok(entry)
     }
 
     /// Find clock entry by ID
     pub async fn find_by_id(&self, org_id: Uuid, entry_id: Uuid) -> Result<ClockEntry, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         clock_entries::table
             .filter(clock_entries::organization_id.eq(org_id))
             .find(entry_id)
             .first::<ClockEntry>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("Clock entry not found".to_string()))
     }
 
@@ -106,7 +126,11 @@ impl ClockRepository {
         filter: &ClockFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<ClockEntry>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Get total count
         let total: i64 = {
@@ -125,7 +149,11 @@ impl ClockRepository {
                 count_query = count_query.filter(clock_entries::status.eq(status));
             }
 
-            count_query.count().get_result(&mut conn)?
+            count_query
+                .count()
+                .get_result(&mut conn)
+                .await
+                .map_err(AppError::DatabaseError)?
         };
 
         // Build data query
@@ -149,7 +177,9 @@ impl ClockRepository {
             .order(clock_entries::clock_in.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<ClockEntry>(&mut conn)?;
+            .load::<ClockEntry>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((entries, total))
     }
@@ -162,13 +192,19 @@ impl ClockRepository {
         filter: &ClockFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<ClockEntry>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Get team member user IDs
         let member_ids: Vec<Uuid> = team_members::table
             .filter(team_members::team_id.eq(team_id))
             .select(team_members::user_id)
-            .load(&mut conn)?;
+            .load(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         if member_ids.is_empty() {
             return Ok((vec![], 0));
@@ -191,7 +227,11 @@ impl ClockRepository {
                 count_query = count_query.filter(clock_entries::status.eq(status));
             }
 
-            count_query.count().get_result(&mut conn)?
+            count_query
+                .count()
+                .get_result(&mut conn)
+                .await
+                .map_err(AppError::DatabaseError)?
         };
 
         // Build data query
@@ -215,7 +255,9 @@ impl ClockRepository {
             .order(clock_entries::clock_in.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<ClockEntry>(&mut conn)?;
+            .load::<ClockEntry>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((entries, total))
     }
@@ -226,14 +268,20 @@ impl ClockRepository {
         org_id: Uuid,
         pagination: &Pagination,
     ) -> Result<(Vec<ClockEntry>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let total: i64 = clock_entries::table
             .filter(clock_entries::organization_id.eq(org_id))
             .filter(clock_entries::status.eq(ClockEntryStatus::Pending))
             .filter(clock_entries::clock_out.is_not_null())
             .count()
-            .get_result(&mut conn)?;
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         let offset = (pagination.page - 1) * pagination.per_page;
         let entries = clock_entries::table
@@ -243,7 +291,9 @@ impl ClockRepository {
             .order(clock_entries::clock_in.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<ClockEntry>(&mut conn)?;
+            .load::<ClockEntry>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((entries, total))
     }
@@ -255,7 +305,11 @@ impl ClockRepository {
         entry_id: Uuid,
         approver_id: Uuid,
     ) -> Result<ClockEntry, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(
             clock_entries::table
@@ -269,6 +323,7 @@ impl ClockRepository {
             clock_entries::updated_at.eq(Utc::now()),
         ))
         .get_result(&mut conn)
+        .await
         .map_err(|e| match e {
             diesel::result::Error::NotFound => {
                 AppError::NotFound("Clock entry not found".to_string())
@@ -285,7 +340,11 @@ impl ClockRepository {
         approver_id: Uuid,
         reason: Option<String>,
     ) -> Result<ClockEntry, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(
             clock_entries::table
@@ -300,6 +359,7 @@ impl ClockRepository {
             clock_entries::updated_at.eq(Utc::now()),
         ))
         .get_result(&mut conn)
+        .await
         .map_err(|e| match e {
             diesel::result::Error::NotFound => {
                 AppError::NotFound("Clock entry not found".to_string())
@@ -316,7 +376,11 @@ impl ClockRepository {
         start: DateTime<Utc>,
         end: DateTime<Utc>,
     ) -> Result<Vec<ClockEntry>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let entries = clock_entries::table
             .filter(clock_entries::organization_id.eq(org_id))
@@ -325,19 +389,27 @@ impl ClockRepository {
             .filter(clock_entries::clock_in.le(end))
             .filter(clock_entries::clock_out.is_not_null())
             .order(clock_entries::clock_in.asc())
-            .load::<ClockEntry>(&mut conn)?;
+            .load::<ClockEntry>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(entries)
     }
 
     /// Get all currently clocked in users for organization
     pub async fn get_currently_clocked_in(&self, org_id: Uuid) -> Result<Vec<ClockEntry>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let entries = clock_entries::table
             .filter(clock_entries::organization_id.eq(org_id))
             .filter(clock_entries::clock_out.is_null())
-            .load::<ClockEntry>(&mut conn)?;
+            .load::<ClockEntry>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(entries)
     }
@@ -349,7 +421,11 @@ impl ClockRepository {
         entry_id: Uuid,
         update: ClockEntryUpdate,
     ) -> Result<ClockEntry, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(
             clock_entries::table
@@ -358,6 +434,7 @@ impl ClockRepository {
         )
         .set(&update)
         .get_result(&mut conn)
+        .await
         .map_err(|e| match e {
             diesel::result::Error::NotFound => {
                 AppError::NotFound("Clock entry not found".to_string())
@@ -371,12 +448,18 @@ impl ClockRepository {
         &self,
         user_id: Uuid,
     ) -> Result<(String, String), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let (first_name, last_name, email): (String, String, String) = users::table
             .filter(users::id.eq(user_id))
             .select((users::first_name, users::last_name, users::email))
-            .first(&mut conn)?;
+            .first(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((format!("{} {}", first_name, last_name), email))
     }
@@ -388,7 +471,11 @@ impl ClockRepository {
         filter: &ClockFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<ClockEntry>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Get total count
         let total: i64 = {
@@ -409,7 +496,11 @@ impl ClockRepository {
                 count_query = count_query.filter(clock_entries::status.eq(status));
             }
 
-            count_query.count().get_result(&mut conn)?
+            count_query
+                .count()
+                .get_result(&mut conn)
+                .await
+                .map_err(AppError::DatabaseError)?
         };
 
         // Build data query
@@ -435,7 +526,9 @@ impl ClockRepository {
             .order(clock_entries::clock_in.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<ClockEntry>(&mut conn)?;
+            .load::<ClockEntry>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((entries, total))
     }

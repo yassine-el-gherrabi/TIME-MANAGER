@@ -1,8 +1,7 @@
 use chrono::Utc;
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::{NotificationType, UserRole};
 use crate::error::AppError;
 use crate::services::NotificationService;
@@ -10,8 +9,6 @@ use crate::models::{
     ClockEntry, ClockEntryResponse, ClockFilter, ClockStatus, PaginatedClockEntries, Pagination,
 };
 use crate::repositories::{ClockRepository, TeamRepository};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Service for clock in/out operations
 pub struct ClockService {

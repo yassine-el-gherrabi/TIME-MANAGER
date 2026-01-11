@@ -1,14 +1,11 @@
 use chrono::NaiveDate;
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{ClosedDayFilter, ClosedDayResponse, ClosedDayUpdate, NewClosedDay};
 use crate::repositories::ClosedDayRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Request to create a closed day
 #[derive(Debug, Deserialize)]

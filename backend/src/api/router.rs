@@ -238,8 +238,11 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use diesel::r2d2::{ConnectionManager, Pool};
+    use diesel::prelude::*;
     use diesel::PgConnection;
+    use diesel_async::pooled_connection::deadpool::Pool;
+    use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::AsyncPgConnection;
     use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
     use std::sync::Arc;
     use testcontainers::{clients::Cli, Container};
@@ -292,19 +295,23 @@ mod tests {
     }
 
     /// Creates a test AppState with real database connection
-    fn create_test_state(database_url: &str) -> AppState {
+    async fn create_test_state(database_url: &str) -> AppState {
         let config = create_test_config(database_url);
 
-        let manager = ConnectionManager::<PgConnection>::new(&config.database_url);
-        let db_pool = Pool::builder()
-            .max_size(5)
-            .build(manager)
-            .expect("Failed to create test pool");
+        // Run migrations with sync connection first
+        {
+            let mut conn = PgConnection::establish(&config.database_url)
+                .expect("Failed to establish sync connection for migrations");
+            conn.run_pending_migrations(MIGRATIONS)
+                .expect("Failed to run migrations");
+        }
 
-        // Run migrations
-        let mut conn = db_pool.get().expect("Failed to get connection");
-        conn.run_pending_migrations(MIGRATIONS)
-            .expect("Failed to run migrations");
+        // Create async pool
+        let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(&config.database_url);
+        let db_pool = Pool::builder(manager)
+            .max_size(5)
+            .build()
+            .expect("Failed to create test pool");
 
         let email_service = EmailService::new(config.email.clone())
             .expect("Failed to create email service");
@@ -329,7 +336,7 @@ mod tests {
         let container = setup_postgres_container(&docker);
         let db_url = get_container_db_url(&container);
 
-        let state = create_test_state(&db_url);
+        let state = create_test_state(&db_url).await;
         let app = create_router(state);
 
         let response = app
@@ -352,7 +359,7 @@ mod tests {
         let container = setup_postgres_container(&docker);
         let db_url = get_container_db_url(&container);
 
-        let state = create_test_state(&db_url);
+        let state = create_test_state(&db_url).await;
         let app = create_router(state);
 
         // Test with invalid JSON
@@ -379,7 +386,7 @@ mod tests {
         let container = setup_postgres_container(&docker);
         let db_url = get_container_db_url(&container);
 
-        let state = create_test_state(&db_url);
+        let state = create_test_state(&db_url).await;
         let app = create_router(state);
 
         // Try to access /me without auth

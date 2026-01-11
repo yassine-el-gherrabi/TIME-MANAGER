@@ -1,15 +1,14 @@
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{
     NewTeam, NewTeamMember, Pagination, Team, TeamFilter, TeamMember, TeamUpdate,
 };
 use crate::repositories::User;
 use crate::schema::{team_members, teams, users};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Team repository for database operations
 pub struct TeamRepository {
@@ -23,11 +22,16 @@ impl TeamRepository {
 
     /// Create a new team
     pub async fn create(&self, new_team: NewTeam) -> Result<Team, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(teams::table)
             .values(&new_team)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -39,12 +43,17 @@ impl TeamRepository {
 
     /// Find team by ID within organization
     pub async fn find_by_id(&self, org_id: Uuid, team_id: Uuid) -> Result<Team, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         teams::table
             .filter(teams::organization_id.eq(org_id))
             .find(team_id)
             .first::<Team>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("Team not found".to_string()))
     }
 
@@ -55,7 +64,11 @@ impl TeamRepository {
         filter: &TeamFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<Team>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let search_pattern = filter
             .search
@@ -76,7 +89,11 @@ impl TeamRepository {
                 count_query = count_query.filter(teams::name.ilike(pattern));
             }
 
-            count_query.count().get_result(&mut conn)?
+            count_query
+                .count()
+                .get_result(&mut conn)
+                .await
+                .map_err(AppError::DatabaseError)?
         };
 
         // Build data query
@@ -97,7 +114,9 @@ impl TeamRepository {
             .order(teams::name.asc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<Team>(&mut conn)?;
+            .load::<Team>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((results, total))
     }
@@ -109,7 +128,11 @@ impl TeamRepository {
         team_id: Uuid,
         update: TeamUpdate,
     ) -> Result<Team, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let affected = diesel::update(
             teams::table
@@ -117,7 +140,9 @@ impl TeamRepository {
                 .filter(teams::id.eq(team_id)),
         )
         .set(&update)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Team not found".to_string()));
@@ -128,14 +153,20 @@ impl TeamRepository {
 
     /// Delete a team
     pub async fn delete(&self, org_id: Uuid, team_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let deleted = diesel::delete(
             teams::table
                 .filter(teams::organization_id.eq(org_id))
                 .filter(teams::id.eq(team_id)),
         )
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Team not found".to_string()));
@@ -146,13 +177,18 @@ impl TeamRepository {
 
     /// Add a member to a team
     pub async fn add_member(&self, team_id: Uuid, user_id: Uuid) -> Result<TeamMember, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let new_member = NewTeamMember { team_id, user_id };
 
         diesel::insert_into(team_members::table)
             .values(&new_member)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -168,14 +204,20 @@ impl TeamRepository {
 
     /// Remove a member from a team
     pub async fn remove_member(&self, team_id: Uuid, user_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let deleted = diesel::delete(
             team_members::table
                 .filter(team_members::team_id.eq(team_id))
                 .filter(team_members::user_id.eq(user_id)),
         )
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Team member not found".to_string()));
@@ -186,13 +228,19 @@ impl TeamRepository {
 
     /// List all members of a team
     pub async fn list_members(&self, team_id: Uuid) -> Result<Vec<User>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let members = team_members::table
             .filter(team_members::team_id.eq(team_id))
             .inner_join(users::table)
             .select(User::as_select())
-            .load::<User>(&mut conn)?;
+            .load::<User>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(members)
     }
@@ -202,64 +250,94 @@ impl TeamRepository {
         &self,
         team_id: Uuid,
     ) -> Result<Vec<(User, chrono::DateTime<chrono::Utc>)>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let members = team_members::table
             .filter(team_members::team_id.eq(team_id))
             .inner_join(users::table)
             .select((User::as_select(), team_members::joined_at))
-            .load::<(User, chrono::DateTime<chrono::Utc>)>(&mut conn)?;
+            .load::<(User, chrono::DateTime<chrono::Utc>)>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(members)
     }
 
     /// Get all teams for a user
     pub async fn get_user_teams(&self, org_id: Uuid, user_id: Uuid) -> Result<Vec<Team>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let user_teams = team_members::table
             .filter(team_members::user_id.eq(user_id))
             .inner_join(teams::table)
             .filter(teams::organization_id.eq(org_id))
             .select(Team::as_select())
-            .load::<Team>(&mut conn)?;
+            .load::<Team>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(user_teams)
     }
 
     /// Get member count for a team
     pub async fn get_member_count(&self, team_id: Uuid) -> Result<i64, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = team_members::table
             .filter(team_members::team_id.eq(team_id))
             .count()
-            .get_result(&mut conn)?;
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(count)
     }
 
     /// Check if user is member of team
     pub async fn is_member(&self, team_id: Uuid, user_id: Uuid) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = team_members::table
             .filter(team_members::team_id.eq(team_id))
             .filter(team_members::user_id.eq(user_id))
             .count()
-            .get_result::<i64>(&mut conn)?;
+            .get_result::<i64>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(count > 0)
     }
 
     /// Get teams managed by a user
     pub async fn get_managed_teams(&self, org_id: Uuid, manager_id: Uuid) -> Result<Vec<Team>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let managed = teams::table
             .filter(teams::organization_id.eq(org_id))
             .filter(teams::manager_id.eq(manager_id))
-            .load::<Team>(&mut conn)?;
+            .load::<Team>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(managed)
     }

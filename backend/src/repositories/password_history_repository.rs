@@ -1,12 +1,11 @@
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{NewPasswordHistory, PasswordHistory};
 use crate::schema::password_history;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Password history repository for preventing password reuse
 pub struct PasswordHistoryRepository {
@@ -20,11 +19,16 @@ impl PasswordHistoryRepository {
 
     /// Add password to history
     pub async fn add(&self, new_history: NewPasswordHistory) -> Result<PasswordHistory, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(password_history::table)
             .values(&new_history)
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -34,7 +38,11 @@ impl PasswordHistoryRepository {
         user_id: Uuid,
         limit: i64,
     ) -> Result<Vec<String>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         password_history::table
             .filter(password_history::user_id.eq(user_id))
@@ -42,6 +50,7 @@ impl PasswordHistoryRepository {
             .limit(limit)
             .select(password_history::password_hash)
             .load::<String>(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -62,7 +71,11 @@ impl PasswordHistoryRepository {
         user_id: Uuid,
         keep_last_n: i64,
     ) -> Result<usize, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Get IDs of entries to keep
         let ids_to_keep: Vec<Uuid> = password_history::table
@@ -70,7 +83,8 @@ impl PasswordHistoryRepository {
             .order(password_history::created_at.desc())
             .limit(keep_last_n)
             .select(password_history::id)
-            .load(&mut conn)?;
+            .load(&mut conn)
+            .await?;
 
         // Delete entries not in the keep list
         diesel::delete(
@@ -79,17 +93,23 @@ impl PasswordHistoryRepository {
                 .filter(password_history::id.ne_all(ids_to_keep)),
         )
         .execute(&mut conn)
+        .await
         .map_err(AppError::DatabaseError)
     }
 
     /// Get password history count for a user
     pub async fn count_for_user(&self, user_id: Uuid) -> Result<i64, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         password_history::table
             .filter(password_history::user_id.eq(user_id))
             .count()
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 }

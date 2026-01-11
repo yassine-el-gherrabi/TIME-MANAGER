@@ -1,17 +1,14 @@
 use chrono::{DateTime, NaiveTime, Utc};
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{
     DayConfig, NewWorkSchedule, NewWorkScheduleDay, WorkScheduleDay,
     WorkScheduleDayUpdate, WorkScheduleUpdate, WorkScheduleWithDays,
 };
 use crate::repositories::WorkScheduleRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Request to create a work schedule
 #[derive(Debug, Deserialize)]

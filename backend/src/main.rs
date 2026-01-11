@@ -1,6 +1,5 @@
 use anyhow::Context;
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
+use diesel::{Connection, PgConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
@@ -11,7 +10,7 @@ use std::time::Duration;
 use timemanager_backend::{
     api::router::create_router,
     config::app::{AppConfig, AppState},
-    config::database::create_pool,
+    config::database::{create_pool, DbPool},
     repositories::{
         InviteTokenRepository, LoginAttemptRepository, PasswordResetRepository,
         RefreshTokenRepository, UserSessionRepository,
@@ -106,7 +105,7 @@ fn init_tracing() -> anyhow::Result<()> {
 }
 
 /// Background cleanup job for expired/old data
-async fn run_cleanup_jobs(pool: Pool<ConnectionManager<PgConnection>>, rate_limiter: Arc<EndpointRateLimiter>) {
+async fn run_cleanup_jobs(pool: DbPool, rate_limiter: Arc<EndpointRateLimiter>) {
     let mut interval = tokio::time::interval(Duration::from_secs(CLEANUP_INTERVAL_SECS));
 
     // Skip the first immediate tick
@@ -177,20 +176,19 @@ async fn main() -> anyhow::Result<()> {
         config.app_port
     );
 
-    // Create database connection pool
-    let db_pool = create_pool(&config.database_url)?;
-    tracing::info!("Database connection pool created");
-
-    // Run embedded migrations
+    // Run embedded migrations (uses synchronous connection)
     tracing::info!("Running database migrations...");
-    let mut conn = db_pool
-        .get()
-        .context("Failed to get database connection for migrations")?;
-
-    conn.run_pending_migrations(MIGRATIONS)
-        .map_err(|e| anyhow::anyhow!("Failed to run database migrations: {}", e))?;
-
+    {
+        let mut conn = PgConnection::establish(&config.database_url)
+            .context("Failed to connect to database for migrations")?;
+        conn.run_pending_migrations(MIGRATIONS)
+            .map_err(|e| anyhow::anyhow!("Failed to run database migrations: {}", e))?;
+    }
     tracing::info!("Database migrations completed successfully");
+
+    // Create async database connection pool
+    let db_pool = create_pool(&config.database_url).await?;
+    tracing::info!("Async database connection pool created");
 
     // Create email service
     let email_service =

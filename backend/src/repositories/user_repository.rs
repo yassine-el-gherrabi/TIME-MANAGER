@@ -1,13 +1,12 @@
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{NewUser, Pagination, UserFilter, UserUpdate};
 use crate::schema::users;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// User repository for database operations
 pub struct UserRepository {
@@ -21,44 +20,65 @@ impl UserRepository {
 
     /// Find user by ID (excludes deleted users by default)
     pub async fn find_by_id(&self, user_id: Uuid) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         users::table
             .find(user_id)
             .filter(users::deleted_at.is_null())
             .first::<User>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("User not found".to_string()))
     }
 
     /// Find user by ID including deleted users (for restore operations)
     pub async fn find_by_id_including_deleted(&self, user_id: Uuid) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         users::table
             .find(user_id)
             .first::<User>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("User not found".to_string()))
     }
 
     /// Find user by email (excludes deleted users)
     pub async fn find_by_email(&self, email: &str) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         users::table
             .filter(users::email.eq(email))
             .filter(users::deleted_at.is_null())
             .first::<User>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("User not found".to_string()))
     }
 
     /// Check if user account is locked
     pub async fn is_locked(&self, user_id: Uuid) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let user = users::table
             .find(user_id)
             .select(users::locked_until)
-            .first::<Option<chrono::NaiveDateTime>>(&mut conn)?;
+            .first::<Option<chrono::NaiveDateTime>>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         if let Some(locked_until) = user {
             Ok(locked_until > chrono::Utc::now().naive_utc())
@@ -69,27 +89,39 @@ impl UserRepository {
 
     /// Increment failed login attempts
     pub async fn increment_failed_attempts(&self, user_id: Uuid) -> Result<i32, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(users::table.find(user_id))
             .set(users::failed_login_attempts.eq(users::failed_login_attempts + 1))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await?;
 
         let attempts = users::table
             .find(user_id)
             .select(users::failed_login_attempts)
-            .first::<i32>(&mut conn)?;
+            .first::<i32>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(attempts)
     }
 
     /// Reset failed login attempts
     pub async fn reset_failed_attempts(&self, user_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(users::table.find(user_id))
             .set(users::failed_login_attempts.eq(0))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await?;
 
         Ok(())
     }
@@ -100,25 +132,35 @@ impl UserRepository {
         user_id: Uuid,
         locked_until: chrono::NaiveDateTime,
     ) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(users::table.find(user_id))
             .set(users::locked_until.eq(Some(locked_until)))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await?;
 
         Ok(())
     }
 
     /// Unlock user account
     pub async fn unlock_account(&self, user_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(users::table.find(user_id))
             .set((
                 users::locked_until.eq::<Option<chrono::NaiveDateTime>>(None),
                 users::failed_login_attempts.eq(0),
             ))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await?;
 
         Ok(())
     }
@@ -129,7 +171,11 @@ impl UserRepository {
         user_id: Uuid,
         password_hash: &str,
     ) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
         let now = chrono::Utc::now().naive_utc();
         let expires_at = now + chrono::Duration::days(90); // 90 days password expiry
 
@@ -139,19 +185,26 @@ impl UserRepository {
                 users::password_changed_at.eq(Some(now)),
                 users::password_expires_at.eq(Some(expires_at)),
             ))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await?;
 
         Ok(())
     }
 
     /// Check if password is expired
     pub async fn is_password_expired(&self, user_id: Uuid) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let expires_at = users::table
             .find(user_id)
             .select(users::password_expires_at)
-            .first::<Option<chrono::NaiveDateTime>>(&mut conn)?;
+            .first::<Option<chrono::NaiveDateTime>>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         if let Some(expires_at) = expires_at {
             Ok(expires_at < chrono::Utc::now().naive_utc())
@@ -162,11 +215,16 @@ impl UserRepository {
 
     /// Create a new user
     pub async fn create(&self, new_user: NewUser) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(users::table)
             .values(&new_user)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -194,7 +252,11 @@ impl UserRepository {
         pagination: &Pagination,
         include_deleted: bool,
     ) -> Result<(Vec<User>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Prepare search pattern if needed
         let search_pattern = filter
@@ -226,7 +288,11 @@ impl UserRepository {
                 );
             }
 
-            count_query.count().get_result(&mut conn)?
+            count_query
+                .count()
+                .get_result(&mut conn)
+                .await
+                .map_err(AppError::DatabaseError)?
         };
 
         // Build data query
@@ -258,14 +324,20 @@ impl UserRepository {
             .order(users::created_at.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<User>(&mut conn)?;
+            .load::<User>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((users, total))
     }
 
     /// Update a user
     pub async fn update(&self, user_id: Uuid, update: UserUpdate) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(users::table.find(user_id))
             .set((
@@ -273,6 +345,7 @@ impl UserRepository {
                 users::updated_at.eq(chrono::Utc::now().naive_utc()),
             ))
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => AppError::NotFound("User not found".to_string()),
                 diesel::result::Error::DatabaseError(
@@ -285,7 +358,11 @@ impl UserRepository {
 
     /// Soft delete a user (sets deleted_at timestamp)
     pub async fn soft_delete(&self, user_id: Uuid) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
         let now = chrono::Utc::now().naive_utc();
 
         diesel::update(users::table.find(user_id))
@@ -294,6 +371,7 @@ impl UserRepository {
                 users::updated_at.eq(now),
             ))
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
                     AppError::NotFound("User not found".to_string())
@@ -304,13 +382,18 @@ impl UserRepository {
 
     /// Restore a soft-deleted user (clears deleted_at timestamp)
     pub async fn restore(&self, user_id: Uuid) -> Result<User, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
         let now = chrono::Utc::now().naive_utc();
 
         // First check if user exists and is deleted
         let user = users::table
             .find(user_id)
             .first::<User>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("User not found".to_string()))?;
 
         if user.deleted_at.is_none() {
@@ -323,14 +406,22 @@ impl UserRepository {
                 users::updated_at.eq(now),
             ))
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
     /// Hard delete a user (permanent deletion - use with caution)
     pub async fn hard_delete(&self, user_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
-        let deleted = diesel::delete(users::table.find(user_id)).execute(&mut conn)?;
+        let deleted = diesel::delete(users::table.find(user_id))
+            .execute(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("User not found".to_string()));
@@ -341,13 +432,19 @@ impl UserRepository {
 
     /// Check if email exists (among active users only)
     pub async fn email_exists(&self, email: &str) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = users::table
             .filter(users::email.eq(email))
             .filter(users::deleted_at.is_null())
             .count()
-            .get_result::<i64>(&mut conn)?;
+            .get_result::<i64>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(count > 0)
     }
@@ -358,27 +455,39 @@ impl UserRepository {
         email: &str,
         user_id: Uuid,
     ) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = users::table
             .filter(users::email.eq(email))
             .filter(users::id.ne(user_id))
             .filter(users::deleted_at.is_null())
             .count()
-            .get_result::<i64>(&mut conn)?;
+            .get_result::<i64>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(count > 0)
     }
 
     /// Count users in an organization (for organization deletion check)
     pub async fn count_by_organization(&self, organization_id: Uuid) -> Result<i64, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = users::table
             .filter(users::organization_id.eq(organization_id))
             .filter(users::deleted_at.is_null())
             .count()
-            .get_result::<i64>(&mut conn)?;
+            .get_result::<i64>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(count)
     }

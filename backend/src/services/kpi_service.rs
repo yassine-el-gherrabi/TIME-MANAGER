@@ -1,14 +1,11 @@
 use chrono::{DateTime, Datelike, Utc};
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde::Serialize;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::ClockEntryStatus;
 use crate::error::AppError;
 use crate::repositories::{ClockRepository, TeamRepository, UserRepository, WorkScheduleRepository};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Individual user KPIs
 #[derive(Debug, Serialize)]

@@ -1,16 +1,15 @@
 use chrono::{DateTime, Datelike, Utc};
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{
     NewWorkSchedule, NewWorkScheduleDay, WorkSchedule, WorkScheduleDay, WorkScheduleDayUpdate,
     WorkScheduleUpdate,
 };
 use crate::schema::{users, work_schedule_days, work_schedules};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Work schedule repository for database operations
 pub struct WorkScheduleRepository {
@@ -24,7 +23,11 @@ impl WorkScheduleRepository {
 
     /// Create a new work schedule
     pub async fn create(&self, new_schedule: NewWorkSchedule) -> Result<WorkSchedule, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // If this schedule is default, unset any existing default first
         if new_schedule.is_default {
@@ -34,12 +37,15 @@ impl WorkScheduleRepository {
                     .filter(work_schedules::is_default.eq(true)),
             )
             .set(work_schedules::is_default.eq(false))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
         }
 
         diesel::insert_into(work_schedules::table)
             .values(&new_schedule)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -57,23 +63,34 @@ impl WorkScheduleRepository {
         org_id: Uuid,
         schedule_id: Uuid,
     ) -> Result<WorkSchedule, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         work_schedules::table
             .filter(work_schedules::organization_id.eq(org_id))
             .find(schedule_id)
             .first::<WorkSchedule>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("Work schedule not found".to_string()))
     }
 
     /// List all work schedules for organization
     pub async fn list(&self, org_id: Uuid) -> Result<Vec<WorkSchedule>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let schedules = work_schedules::table
             .filter(work_schedules::organization_id.eq(org_id))
             .order(work_schedules::name.asc())
-            .load::<WorkSchedule>(&mut conn)?;
+            .load::<WorkSchedule>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(schedules)
     }
@@ -85,7 +102,11 @@ impl WorkScheduleRepository {
         schedule_id: Uuid,
         mut update: WorkScheduleUpdate,
     ) -> Result<WorkSchedule, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // If setting as default, unset any existing default first
         if update.is_default == Some(true) {
@@ -96,7 +117,9 @@ impl WorkScheduleRepository {
                     .filter(work_schedules::id.ne(schedule_id)),
             )
             .set(work_schedules::is_default.eq(false))
-            .execute(&mut conn)?;
+            .execute(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
         }
 
         update.updated_at = Some(Utc::now());
@@ -107,7 +130,9 @@ impl WorkScheduleRepository {
                 .filter(work_schedules::id.eq(schedule_id)),
         )
         .set(&update)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Work schedule not found".to_string()));
@@ -118,14 +143,20 @@ impl WorkScheduleRepository {
 
     /// Delete a work schedule
     pub async fn delete(&self, org_id: Uuid, schedule_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let deleted = diesel::delete(
             work_schedules::table
                 .filter(work_schedules::organization_id.eq(org_id))
                 .filter(work_schedules::id.eq(schedule_id)),
         )
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Work schedule not found".to_string()));
@@ -136,13 +167,19 @@ impl WorkScheduleRepository {
 
     /// Get default schedule for organization
     pub async fn get_default(&self, org_id: Uuid) -> Result<Option<WorkSchedule>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let schedule = work_schedules::table
             .filter(work_schedules::organization_id.eq(org_id))
             .filter(work_schedules::is_default.eq(true))
             .first::<WorkSchedule>(&mut conn)
-            .optional()?;
+            .await
+            .optional()
+            .map_err(AppError::DatabaseError)?;
 
         Ok(schedule)
     }
@@ -153,7 +190,11 @@ impl WorkScheduleRepository {
         org_id: Uuid,
         schedule_id: Uuid,
     ) -> Result<WorkSchedule, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Unset any existing default
         diesel::update(
@@ -162,7 +203,9 @@ impl WorkScheduleRepository {
                 .filter(work_schedules::is_default.eq(true)),
         )
         .set(work_schedules::is_default.eq(false))
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         // Set new default
         let affected = diesel::update(
@@ -174,7 +217,9 @@ impl WorkScheduleRepository {
             work_schedules::is_default.eq(true),
             work_schedules::updated_at.eq(Utc::now()),
         ))
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Work schedule not found".to_string()));
@@ -185,11 +230,16 @@ impl WorkScheduleRepository {
 
     /// Add a day to a schedule
     pub async fn add_day(&self, new_day: NewWorkScheduleDay) -> Result<WorkScheduleDay, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(work_schedule_days::table)
             .values(&new_day)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
@@ -205,11 +255,16 @@ impl WorkScheduleRepository {
         day_id: Uuid,
         update: WorkScheduleDayUpdate,
     ) -> Result<WorkScheduleDay, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::update(work_schedule_days::table.find(day_id))
             .set(&update)
             .get_result(&mut conn)
+            .await
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
                     AppError::NotFound("Schedule day not found".to_string())
@@ -220,9 +275,16 @@ impl WorkScheduleRepository {
 
     /// Remove a day from a schedule
     pub async fn remove_day(&self, day_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
-        let deleted = diesel::delete(work_schedule_days::table.find(day_id)).execute(&mut conn)?;
+        let deleted = diesel::delete(work_schedule_days::table.find(day_id))
+            .execute(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Schedule day not found".to_string()));
@@ -233,12 +295,18 @@ impl WorkScheduleRepository {
 
     /// Get all days for a schedule
     pub async fn get_days(&self, schedule_id: Uuid) -> Result<Vec<WorkScheduleDay>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let days = work_schedule_days::table
             .filter(work_schedule_days::work_schedule_id.eq(schedule_id))
             .order(work_schedule_days::day_of_week.asc())
-            .load::<WorkScheduleDay>(&mut conn)?;
+            .load::<WorkScheduleDay>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(days)
     }
@@ -250,7 +318,11 @@ impl WorkScheduleRepository {
         user_id: Uuid,
         schedule_id: Uuid,
     ) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Verify schedule belongs to organization
         let _ = self.find_by_id(org_id, schedule_id).await?;
@@ -261,14 +333,20 @@ impl WorkScheduleRepository {
                 .filter(users::organization_id.eq(org_id)),
         )
         .set(users::work_schedule_id.eq(Some(schedule_id)))
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         Ok(())
     }
 
     /// Unassign schedule from user
     pub async fn unassign_from_user(&self, org_id: Uuid, user_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let affected = diesel::update(
             users::table
@@ -276,7 +354,9 @@ impl WorkScheduleRepository {
                 .filter(users::organization_id.eq(org_id)),
         )
         .set(users::work_schedule_id.eq(None::<Uuid>))
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("User not found".to_string()));
@@ -291,13 +371,19 @@ impl WorkScheduleRepository {
         org_id: Uuid,
         user_id: Uuid,
     ) -> Result<Option<WorkSchedule>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let schedule_id: Option<Uuid> = users::table
             .filter(users::id.eq(user_id))
             .filter(users::organization_id.eq(org_id))
             .select(users::work_schedule_id)
-            .first(&mut conn)?;
+            .first(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         match schedule_id {
             Some(id) => {

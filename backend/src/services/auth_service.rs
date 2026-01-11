@@ -1,16 +1,13 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::models::{NewRefreshToken, TokenPair};
 use crate::repositories::refresh_token_repository::RefreshTokenRepository;
 use crate::repositories::user_repository::{User, UserRepository};
 use crate::utils::{JwtService, PasswordService};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Authentication service for user login and token management
 pub struct AuthService {

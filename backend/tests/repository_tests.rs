@@ -1,24 +1,27 @@
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::pooled_connection::deadpool::Pool;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::AsyncPgConnection;
 use uuid::Uuid;
 
-type DbPool = Pool<ConnectionManager<PgConnection>>;
+type DbPool = Pool<AsyncPgConnection>;
 
 // Helper function to create test database pool
 fn create_test_pool() -> DbPool {
     let database_url = std::env::var("TEST_DATABASE_URL")
         .unwrap_or_else(|_| "postgres://postgres:postgres@localhost/timemanager_test".to_string());
 
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    Pool::builder()
+    let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
+    Pool::builder(manager)
         .max_size(5)
-        .build(manager)
+        .build()
         .expect("Failed to create test pool")
 }
 
 #[cfg(test)]
 mod testcontainers_integration {
     use super::*;
+    use diesel_async::RunQueryDsl;
     use testcontainers::{clients::Cli, Container};
     use testcontainers_modules::postgres::Postgres;
 
@@ -34,25 +37,26 @@ mod testcontainers_integration {
         format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port)
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore = "Requires Docker - run with: cargo test -- --ignored"]
-    fn test_postgres_container_starts() {
+    async fn test_postgres_container_starts() {
         let docker = Cli::default();
         let container = setup_postgres_container(&docker);
         let db_url = get_container_db_url(&container);
 
         // Verify we can connect
-        let manager = ConnectionManager::<PgConnection>::new(&db_url);
-        let pool = Pool::builder()
+        let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(&db_url);
+        let pool = Pool::builder(manager)
             .max_size(1)
-            .build(manager)
+            .build()
             .expect("Failed to create pool");
 
-        let mut conn = pool.get().expect("Failed to get connection");
+        let mut conn = pool.get().await.expect("Failed to get connection");
 
         // Run a simple query to verify connection works
         let result: i32 = diesel::sql_query("SELECT 1 as value")
             .get_result::<QueryResult>(&mut conn)
+            .await
             .expect("Query failed")
             .value;
 

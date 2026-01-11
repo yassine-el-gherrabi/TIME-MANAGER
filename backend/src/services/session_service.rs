@@ -1,12 +1,9 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{NewUserSession, UserSession};
 use crate::repositories::user_session_repository::UserSessionRepository;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// User session management service
 pub struct SessionService {

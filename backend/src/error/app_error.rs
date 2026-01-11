@@ -12,7 +12,7 @@ pub enum AppError {
     DatabaseError(#[from] diesel::result::Error),
 
     #[error("Database pool error: {0}")]
-    PoolError(#[from] diesel::r2d2::PoolError),
+    PoolError(String),
 
     #[error("Configuration error: {0}")]
     ConfigError(String),

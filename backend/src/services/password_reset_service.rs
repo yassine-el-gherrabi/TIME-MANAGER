@@ -1,17 +1,14 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
 use rand::Rng;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{NewPasswordHistory, NewPasswordResetToken};
 use crate::repositories::password_history_repository::PasswordHistoryRepository;
 use crate::repositories::password_reset_repository::PasswordResetRepository;
 use crate::repositories::user_repository::UserRepository;
 use crate::utils::PasswordService;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Password reset and change service
 pub struct PasswordResetService {

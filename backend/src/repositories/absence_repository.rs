@@ -1,15 +1,14 @@
 use bigdecimal::BigDecimal;
 use chrono::{NaiveDate, Utc};
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::AbsenceStatus;
 use crate::error::AppError;
 use crate::models::{Absence, AbsenceFilter, AbsenceUpdate, NewAbsence, Pagination};
 use crate::schema::absences;
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Absence repository for database operations
 pub struct AbsenceRepository {
@@ -28,11 +27,16 @@ impl AbsenceRepository {
 
     /// Create a new absence request
     pub async fn create(&self, new_absence: NewAbsence) -> Result<Absence, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         diesel::insert_into(absences::table)
             .values(&new_absence)
             .get_result(&mut conn)
+            .await
             .map_err(AppError::DatabaseError)
     }
 
@@ -42,12 +46,17 @@ impl AbsenceRepository {
         org_id: Uuid,
         absence_id: Uuid,
     ) -> Result<Absence, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         absences::table
             .filter(absences::organization_id.eq(org_id))
             .find(absence_id)
             .first::<Absence>(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("Absence not found".to_string()))
     }
 
@@ -58,7 +67,11 @@ impl AbsenceRepository {
         filter: &AbsenceFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<Absence>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let mut query = absences::table
             .filter(absences::organization_id.eq(org_id))
@@ -103,7 +116,11 @@ impl AbsenceRepository {
             count_q = count_q.filter(absences::start_date.le(end_date));
         }
 
-        let total: i64 = count_q.count().get_result(&mut conn)?;
+        let total: i64 = count_q
+            .count()
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         // Apply pagination
         let offset = (pagination.page - 1) * pagination.per_page;
@@ -111,7 +128,9 @@ impl AbsenceRepository {
             .order(absences::start_date.desc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<Absence>(&mut conn)?;
+            .load::<Absence>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((absences, total))
     }
@@ -123,7 +142,11 @@ impl AbsenceRepository {
         user_ids: Option<Vec<Uuid>>,
         pagination: &Pagination,
     ) -> Result<(Vec<Absence>, i64), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let mut query = absences::table
             .filter(absences::organization_id.eq(org_id))
@@ -144,14 +167,20 @@ impl AbsenceRepository {
             count_q = count_q.filter(absences::user_id.eq_any(ids));
         }
 
-        let total: i64 = count_q.count().get_result(&mut conn)?;
+        let total: i64 = count_q
+            .count()
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         let offset = (pagination.page - 1) * pagination.per_page;
         let absences = query
             .order(absences::created_at.asc())
             .limit(pagination.per_page)
             .offset(offset)
-            .load::<Absence>(&mut conn)?;
+            .load::<Absence>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok((absences, total))
     }
@@ -163,7 +192,11 @@ impl AbsenceRepository {
         absence_id: Uuid,
         mut update: AbsenceUpdate,
     ) -> Result<Absence, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         update.updated_at = Some(Utc::now());
 
@@ -173,7 +206,9 @@ impl AbsenceRepository {
                 .filter(absences::id.eq(absence_id)),
         )
         .set(&update)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if affected == 0 {
             return Err(AppError::NotFound("Absence not found".to_string()));
@@ -191,7 +226,11 @@ impl AbsenceRepository {
         end_date: NaiveDate,
         exclude_id: Option<Uuid>,
     ) -> Result<bool, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let mut query = absences::table
             .filter(absences::organization_id.eq(org_id))
@@ -206,7 +245,11 @@ impl AbsenceRepository {
             query = query.filter(absences::id.ne(id));
         }
 
-        let count: i64 = query.count().get_result(&mut conn)?;
+        let count: i64 = query
+            .count()
+            .get_result(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(count > 0)
     }
@@ -219,7 +262,11 @@ impl AbsenceRepository {
         end_date: NaiveDate,
         user_ids: Option<Vec<Uuid>>,
     ) -> Result<Vec<Absence>, AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let mut query = absences::table
             .filter(absences::organization_id.eq(org_id))
@@ -234,7 +281,9 @@ impl AbsenceRepository {
 
         let absences = query
             .order(absences::start_date.asc())
-            .load::<Absence>(&mut conn)?;
+            .load::<Absence>(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(absences)
     }
@@ -248,7 +297,11 @@ impl AbsenceRepository {
         year: i32,
     ) -> Result<BigDecimal, AppError> {
         use bigdecimal::Zero;
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let start = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(year, 12, 31).unwrap();
@@ -261,21 +314,29 @@ impl AbsenceRepository {
             .filter(absences::start_date.ge(start))
             .filter(absences::start_date.le(end))
             .select(diesel::dsl::sum(absences::days_count))
-            .first(&mut conn)?;
+            .first(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
 
         Ok(total.unwrap_or_else(BigDecimal::zero))
     }
 
     /// Delete an absence (admin only)
     pub async fn delete(&self, org_id: Uuid, absence_id: Uuid) -> Result<(), AppError> {
-        let mut conn = self.pool.get()?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let deleted = diesel::delete(
             absences::table
                 .filter(absences::organization_id.eq(org_id))
                 .filter(absences::id.eq(absence_id)),
         )
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await
+        .map_err(AppError::DatabaseError)?;
 
         if deleted == 0 {
             return Err(AppError::NotFound("Absence not found".to_string()));

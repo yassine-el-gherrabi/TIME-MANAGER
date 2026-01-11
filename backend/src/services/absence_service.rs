@@ -1,10 +1,9 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::{Datelike, NaiveDate, Utc, Weekday};
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::domain::enums::{AbsenceStatus, NotificationType, UserRole};
 use crate::error::AppError;
 use crate::services::NotificationService;
@@ -16,8 +15,6 @@ use crate::repositories::{
     AbsenceRepository, AbsenceTypeRepository, ClosedDayRepository, LeaveBalanceRepository,
     TeamRepository,
 };
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Request to create an absence
 #[derive(Debug, Deserialize)]
@@ -577,15 +574,20 @@ impl AbsenceService {
     /// Get user info (placeholder - should use user repo)
     async fn get_user_info(&self, user_id: Uuid) -> Result<(String, String), AppError> {
         use diesel::prelude::*;
+        use diesel_async::RunQueryDsl;
         use crate::schema::users;
 
         let pool = self.absence_repo.pool();
-        let mut conn = pool.get()?;
+        let mut conn = pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let (first_name, last_name, email): (String, String, String) = users::table
             .filter(users::id.eq(user_id))
             .select((users::first_name, users::last_name, users::email))
             .first(&mut conn)
+            .await
             .map_err(|_| AppError::NotFound("User not found".to_string()))?;
 
         Ok((format!("{} {}", first_name, last_name), email))

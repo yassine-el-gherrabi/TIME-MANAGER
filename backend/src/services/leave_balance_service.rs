@@ -1,17 +1,14 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
 use chrono::Utc;
-use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{
     LeaveBalanceFilter, LeaveBalanceResponse, LeaveBalanceUpdate, NewLeaveBalance,
 };
 use crate::repositories::{AbsenceTypeRepository, LeaveBalanceRepository};
-
-type DbPool = Pool<ConnectionManager<PgConnection>>;
 
 /// Request to create or update a leave balance
 #[derive(Debug, Deserialize)]
