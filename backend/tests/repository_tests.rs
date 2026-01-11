@@ -24,12 +24,12 @@ mod testcontainers_integration {
 
     /// Creates a PostgreSQL container for integration testing.
     /// Note: Requires Docker to be running.
-    fn setup_postgres_container(docker: &Cli) -> Container<Postgres> {
+    fn setup_postgres_container(docker: &Cli) -> Container<'_, Postgres> {
         docker.run(Postgres::default())
     }
 
     /// Gets the database URL from a running container
-    fn get_container_db_url(container: &Container<Postgres>) -> String {
+    fn get_container_db_url(container: &Container<'_, Postgres>) -> String {
         let port = container.get_host_port_ipv4(5432);
         format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port)
     }
