@@ -21,7 +21,6 @@ jobs:
   scan-backend:
     name: "trivy · backend/Dockerfile.prod (security)"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -40,24 +39,28 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy
-        id: trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'timemanager-backend:scan'
           format: 'table'
-          exit-code: '1'
+          output: 'trivy-backend.txt'
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
+      - name: Display results
+        run: cat trivy-backend.txt
+
       - name: Warn if vulnerabilities found
-        if: steps.trivy.outcome == 'failure'
-        run: echo "::warning::Trivy found vulnerabilities in backend image"
+        run: |
+          if [ -s trivy-backend.txt ] && grep -qE "CRITICAL|HIGH" trivy-backend.txt; then
+            echo "::warning::Trivy found CRITICAL/HIGH vulnerabilities in backend image"
+          fi
 
   scan-frontend:
     name: "trivy · frontend/Dockerfile.prod (security)"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -76,24 +79,28 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy
-        id: trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'timemanager-frontend:scan'
           format: 'table'
-          exit-code: '1'
+          output: 'trivy-frontend.txt'
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
+      - name: Display results
+        run: cat trivy-frontend.txt
+
       - name: Warn if vulnerabilities found
-        if: steps.trivy.outcome == 'failure'
-        run: echo "::warning::Trivy found vulnerabilities in frontend image"
+        run: |
+          if [ -s trivy-frontend.txt ] && grep -qE "CRITICAL|HIGH" trivy-frontend.txt; then
+            echo "::warning::Trivy found CRITICAL/HIGH vulnerabilities in frontend image"
+          fi
 
   scan-config:
     name: "trivy config · docker-compose.yml (security)"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

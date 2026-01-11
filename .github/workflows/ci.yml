@@ -33,7 +33,7 @@ jobs:
         run: cargo fmt --check
 
   backend-build:
-    name: "Backend · cargo build (lint + release)"
+    name: "Backend · cargo clippy + nextest (build)"
     runs-on: ubuntu-latest
     needs: [backend-fmt]
     defaults:
