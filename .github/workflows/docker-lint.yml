@@ -8,7 +8,6 @@ on:
       - '**/docker-compose*.yml'
       - '.github/workflows/docker-lint.yml'
   pull_request:
-    branches: [main, develop]
     paths:
       - '**/Dockerfile*'
       - '**/docker-compose*.yml'
