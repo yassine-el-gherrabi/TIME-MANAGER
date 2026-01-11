@@ -21,6 +21,12 @@ export default defineConfig({
         '**/*.config.*',
         '**/dist/**',
       ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
     },
   },
   resolve: {

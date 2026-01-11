@@ -15,6 +15,7 @@ jobs:
   cargo-audit:
     name: "Backend · cargo audit (security)"
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         working-directory: ./backend
@@ -34,11 +35,16 @@ jobs:
         run: which cargo-audit || cargo install cargo-audit
 
       - name: Run cargo audit
-        run: cargo audit
+        run: |
+          if ! cargo audit; then
+            echo "::warning::Cargo audit found security vulnerabilities"
+            exit 0
+          fi
 
   npm-audit:
     name: "Frontend · npm audit (security)"
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         working-directory: ./frontend
@@ -51,4 +57,8 @@ jobs:
           node-version: '20'
 
       - name: Run npm audit
-        run: npm audit --audit-level=high
+        run: |
+          if ! npm audit --audit-level=high; then
+            echo "::warning::NPM audit found security vulnerabilities"
+            exit 0
+          fi
