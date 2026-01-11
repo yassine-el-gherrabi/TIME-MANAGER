@@ -38,6 +38,8 @@ export interface CreateUserRequest {
   first_name: string;
   last_name: string;
   role: UserRole;
+  /** Organization ID for the new user (SuperAdmin only) */
+  organization_id?: string;
 }
 
 /**

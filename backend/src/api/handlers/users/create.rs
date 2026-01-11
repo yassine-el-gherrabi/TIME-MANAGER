@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use validator::Validate;
 
 use crate::config::AppState;
@@ -49,6 +50,10 @@ pub struct CreateUserRequest {
     pub last_name: String,
 
     pub role: UserRole,
+
+    /// Organization ID for the new user (SuperAdmin only)
+    /// If not provided, uses the admin's organization
+    pub organization_id: Option<Uuid>,
 }
 
 /// Create user response
@@ -107,9 +112,23 @@ pub async fn create_user(
         ));
     }
 
+    // Determine target organization
+    // SuperAdmin can specify any organization, others use their own
+    let target_org_id = if claims.role == UserRole::SuperAdmin {
+        payload.organization_id.unwrap_or(claims.org_id)
+    } else {
+        // Non-SuperAdmin cannot create users in other organizations
+        if payload.organization_id.is_some() && payload.organization_id != Some(claims.org_id) {
+            return Err(AppError::Forbidden(
+                "You can only create users in your own organization".to_string(),
+            ));
+        }
+        claims.org_id
+    };
+
     // Create user with placeholder password
     let new_user = NewUser {
-        organization_id: claims.org_id,
+        organization_id: target_org_id,
         email: payload.email.to_lowercase(),
         password_hash: "PENDING_INVITE".to_string(), // Placeholder until user accepts invite
         first_name: payload.first_name.clone(),
@@ -121,7 +140,7 @@ pub async fn create_user(
 
     // Fetch organization name
     let org_repo = OrganizationRepository::new(state.db_pool.clone());
-    let organization = org_repo.find_by_id(claims.org_id).await?;
+    let organization = org_repo.find_by_id(target_org_id).await?;
     let org_name = organization.name;
 
     // Log audit event (fire and forget)
@@ -176,6 +195,7 @@ mod tests {
             first_name: "John".to_string(),
             last_name: "Doe".to_string(),
             role: UserRole::Employee,
+            organization_id: None,
         };
         assert!(valid.validate().is_ok());
 
@@ -185,6 +205,7 @@ mod tests {
             first_name: "John".to_string(),
             last_name: "Doe".to_string(),
             role: UserRole::Employee,
+            organization_id: None,
         };
         assert!(invalid_email.validate().is_err());
 
@@ -194,6 +215,7 @@ mod tests {
             first_name: "".to_string(),
             last_name: "Doe".to_string(),
             role: UserRole::Employee,
+            organization_id: None,
         };
         assert!(empty_name.validate().is_err());
     }

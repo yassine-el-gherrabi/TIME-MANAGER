@@ -133,9 +133,9 @@
 - [x] **Fix "Show deleted" toggle**: Backend now uses include_deleted query param
 
 ### 8.3 User Creation Form
-- [ ] **Add Organization field**: Mandatory, not editable for admin role
-- [ ] **Add Team field**: Optional
-- [ ] **Add Schedule assignment**: Optional, defaults to organization/team schedule
+- [x] **Add Organization field**: SuperAdmin can select org from dropdown; Admin sees read-only badge. Backend accepts optional `organization_id` in CreateUserRequest
+- [x] **Add Team field**: Optional dropdown filtered by selected organization. Team assigned via `onTeamAssign` callback after user creation
+- [x] **Add Schedule assignment**: Now shown in create mode (not just edit mode). Uses `onScheduleAssign` callback with returned user ID
 
 ### 8.4 Superadmin View
 - [x] **Add organization filter for superadmin**: OrgTeamFilter component added to UsersPage

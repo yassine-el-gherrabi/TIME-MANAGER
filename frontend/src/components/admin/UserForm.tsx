@@ -1,29 +1,44 @@
 import { useState, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
+import { Building2, Users } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Badge } from '../ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { UserRole } from '../../types/auth';
 import type { UserResponse, CreateUserRequest } from '../../types/user';
+import type { OrganizationResponse } from '../../types/organization';
+import type { TeamResponse } from '../../types/team';
+import { useCurrentUser } from '../../hooks/useAuth';
+import { organizationsApi } from '../../api/organizations';
+import { teamsApi } from '../../api/teams';
 
 export interface ScheduleOption {
   id: string;
   name: string;
 }
 
+/** Result from onSubmit containing the created user's ID for follow-up operations */
+export interface SubmitResult {
+  userId: string;
+}
+
 export interface UserFormProps {
   user?: UserResponse | null;
-  onSubmit: (data: CreateUserRequest) => Promise<void>;
+  /** Submit handler that can optionally return the created user's ID for team/schedule assignment */
+  onSubmit: (data: CreateUserRequest) => Promise<SubmitResult | void>;
   onCancel: () => void;
   isLoading?: boolean;
   error?: string;
   /** Use 'sheet' variant when rendering inside a Sheet/Drawer */
   variant?: 'card' | 'sheet';
-  /** Available schedules for assignment (Admin only) */
+  /** Available schedules for assignment */
   schedules?: ScheduleOption[];
   /** Callback when schedule should be assigned after user save */
   onScheduleAssign?: (userId: string, scheduleId: string | null) => Promise<void>;
+  /** Callback when team should be assigned after user create */
+  onTeamAssign?: (userId: string, teamId: string) => Promise<void>;
 }
 
 interface FormData {
@@ -31,6 +46,10 @@ interface FormData {
   first_name: string;
   last_name: string;
   role: UserRole;
+  /** Organization ID - for SuperAdmin user creation */
+  organization_id: string;
+  /** Team ID to assign after creation */
+  team_id: string;
   /** Schedule ID to assign - empty string means no change, 'none' means remove */
   schedule_id: string;
 }
@@ -50,18 +69,62 @@ export const UserForm: FC<UserFormProps> = ({
   variant = 'card',
   schedules = [],
   onScheduleAssign,
+  onTeamAssign,
 }) => {
+  const currentUser = useCurrentUser();
   const isEditing = !!user;
+  const isSuperAdmin = currentUser?.role === UserRole.SuperAdmin;
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
     first_name: '',
     last_name: '',
     role: UserRole.Employee,
-    schedule_id: '', // Empty = no change when editing
+    organization_id: '',
+    team_id: '',
+    schedule_id: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Organization and team lists for selectors
+  const [organizations, setOrganizations] = useState<OrganizationResponse[]>([]);
+  const [teams, setTeams] = useState<TeamResponse[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+
+  // Fetch organizations for SuperAdmin
+  useEffect(() => {
+    if (isSuperAdmin && !isEditing) {
+      setLoadingOrgs(true);
+      organizationsApi.list({ per_page: 100 })
+        .then((response) => {
+          setOrganizations(response.data);
+          // Pre-select current user's org if available
+          if (currentUser?.organization_id && !formData.organization_id) {
+            setFormData((prev) => ({ ...prev, organization_id: currentUser.organization_id }));
+          }
+        })
+        .catch(() => setOrganizations([]))
+        .finally(() => setLoadingOrgs(false));
+    }
+  }, [isSuperAdmin, isEditing, currentUser?.organization_id]);
+
+  // Fetch teams when organization changes (for create mode)
+  useEffect(() => {
+    if (!isEditing) {
+      const orgId = isSuperAdmin ? formData.organization_id : currentUser?.organization_id;
+      if (orgId) {
+        setLoadingTeams(true);
+        teamsApi.list({ per_page: 100, organization_id: orgId })
+          .then((response) => setTeams(response.teams))
+          .catch(() => setTeams([]))
+          .finally(() => setLoadingTeams(false));
+      } else {
+        setTeams([]);
+      }
+    }
+  }, [isEditing, formData.organization_id, isSuperAdmin, currentUser?.organization_id]);
 
   useEffect(() => {
     if (user) {
@@ -70,7 +133,9 @@ export const UserForm: FC<UserFormProps> = ({
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
-        schedule_id: '', // Empty = no change when editing
+        organization_id: user.organization_id,
+        team_id: '',
+        schedule_id: '',
       });
     } else {
       // Reset form when user is cleared (e.g., sheet closed)
@@ -79,10 +144,12 @@ export const UserForm: FC<UserFormProps> = ({
         first_name: '',
         last_name: '',
         role: UserRole.Employee,
-        schedule_id: '', // Empty = default when creating
+        organization_id: currentUser?.organization_id || '',
+        team_id: '',
+        schedule_id: '',
       });
     }
-  }, [user]);
+  }, [user, currentUser?.organization_id]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -109,15 +176,31 @@ export const UserForm: FC<UserFormProps> = ({
     e.preventDefault();
     if (!validateForm()) return;
 
-    // Submit user data (without schedule_id which is handled separately)
-    const { schedule_id, ...userData } = formData;
-    await onSubmit(userData);
+    // Build user data for submission
+    const { schedule_id, team_id, organization_id, ...baseUserData } = formData;
 
-    // Handle schedule assignment if callback provided and schedule was selected
-    // schedule_id: '' = no change, 'none' = remove schedule, uuid = assign schedule
-    if (onScheduleAssign && user && schedule_id) {
-      const scheduleToAssign = schedule_id === 'none' ? null : schedule_id;
-      await onScheduleAssign(user.id, scheduleToAssign);
+    // Include organization_id for SuperAdmin creating new users
+    const userData: CreateUserRequest = {
+      ...baseUserData,
+      ...(isSuperAdmin && !isEditing && organization_id ? { organization_id } : {}),
+    };
+
+    const result = await onSubmit(userData);
+
+    // Determine user ID for follow-up operations
+    const targetUserId = isEditing ? user?.id : result?.userId;
+
+    if (targetUserId) {
+      // Handle team assignment for new users
+      if (!isEditing && onTeamAssign && team_id) {
+        await onTeamAssign(targetUserId, team_id);
+      }
+
+      // Handle schedule assignment (both create and edit modes)
+      if (onScheduleAssign && schedule_id) {
+        const scheduleToAssign = schedule_id === 'none' ? null : schedule_id;
+        await onScheduleAssign(targetUserId, scheduleToAssign);
+      }
     }
   };
 
@@ -193,8 +276,67 @@ export const UserForm: FC<UserFormProps> = ({
         </select>
       </div>
 
-      {/* Schedule assignment - only show when editing and schedules are available */}
-      {isEditing && schedules.length > 0 && (
+      {/* Organization field - SuperAdmin can select, Admin sees badge */}
+      {!isEditing && (
+        <div className="space-y-2">
+          <Label htmlFor="organization" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            Organization
+          </Label>
+          {isSuperAdmin ? (
+            <select
+              id="organization"
+              value={formData.organization_id}
+              onChange={(e) => handleChange('organization_id', e.target.value)}
+              disabled={isLoading || loadingOrgs}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Select organization...</option>
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="flex items-center gap-2 h-9">
+              <Badge variant="secondary" className="text-sm">
+                {currentUser?.organization_name || 'Your Organization'}
+              </Badge>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Team assignment - optional, filter by selected organization */}
+      {!isEditing && (
+        <div className="space-y-2">
+          <Label htmlFor="team" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Team (Optional)
+          </Label>
+          <select
+            id="team"
+            value={formData.team_id}
+            onChange={(e) => handleChange('team_id', e.target.value)}
+            disabled={isLoading || loadingTeams || teams.length === 0}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="">No team assignment</option>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            {loadingTeams ? 'Loading teams...' : teams.length === 0 ? 'No teams available' : 'Assign to a team for schedule inheritance'}
+          </p>
+        </div>
+      )}
+
+      {/* Schedule assignment - show in both create and edit modes */}
+      {schedules.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="schedule">Personal Schedule</Label>
           <select
@@ -204,8 +346,8 @@ export const UserForm: FC<UserFormProps> = ({
             disabled={isLoading}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="">— No change —</option>
-            <option value="none">No personal schedule (use default)</option>
+            <option value="">{isEditing ? '— No change —' : 'Use team/org default'}</option>
+            {isEditing && <option value="none">Remove personal schedule</option>}
             {schedules.map((schedule) => (
               <option key={schedule.id} value={schedule.id}>
                 {schedule.name}
@@ -213,7 +355,7 @@ export const UserForm: FC<UserFormProps> = ({
             ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            Personal schedules override team defaults
+            {isEditing ? 'Personal schedules override team defaults' : 'Assign a personal schedule (overrides team default)'}
           </p>
         </div>
       )}
