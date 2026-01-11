@@ -153,6 +153,18 @@ export const schedulesApi = {
       data,
     });
   },
+
+  /**
+   * Remove schedule assignment from a user (Admin+)
+   *
+   * @param userId - User ID
+   */
+  unassignFromUser: async (userId: string): Promise<void> => {
+    return apiRequest<void>({
+      method: 'DELETE',
+      url: USER_ENDPOINTS.ASSIGN_SCHEDULE(userId),
+    });
+  },
 };
 
 /**
@@ -169,4 +181,5 @@ export const {
   updateDay: updateScheduleDay,
   removeDay: removeScheduleDay,
   assignToUser: assignScheduleToUser,
+  unassignFromUser: unassignScheduleFromUser,
 } = schedulesApi;

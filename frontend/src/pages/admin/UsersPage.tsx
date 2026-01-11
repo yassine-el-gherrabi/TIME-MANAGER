@@ -251,14 +251,14 @@ export function UsersPage() {
 
   // Schedule assignment callback
   const handleScheduleAssign = async (userId: string, scheduleId: string | null) => {
-    if (scheduleId === null) {
-      // TODO: Backend doesn't currently support removing schedule assignment
-      // Would need a separate endpoint like DELETE /users/:id/schedule
-      return;
-    }
     try {
-      await schedulesApi.assignToUser(userId, { schedule_id: scheduleId });
-      toast.success('Schedule assigned successfully');
+      if (scheduleId === null) {
+        await schedulesApi.unassignFromUser(userId);
+        toast.success('Schedule removed successfully');
+      } else {
+        await schedulesApi.assignToUser(userId, { schedule_id: scheduleId });
+        toast.success('Schedule assigned successfully');
+      }
     } catch (err) {
       toast.error(mapErrorToMessage(err));
     }

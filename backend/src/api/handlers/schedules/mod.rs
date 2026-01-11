@@ -7,7 +7,7 @@ mod list;
 mod my_schedule;
 mod update;
 
-pub use assign::assign_schedule;
+pub use assign::{assign_schedule, unassign_schedule};
 pub use create::create_schedule;
 pub use days::{add_day, remove_day, update_day};
 pub use delete::delete_schedule;

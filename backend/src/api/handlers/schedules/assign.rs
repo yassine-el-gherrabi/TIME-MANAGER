@@ -41,3 +41,26 @@ pub async fn assign_schedule(
 
     Ok(StatusCode::OK)
 }
+
+/// DELETE /api/v1/users/:user_id/schedule
+///
+/// Remove schedule assignment from a user (Admin+ only)
+pub async fn unassign_schedule(
+    State(state): State<AppState>,
+    AuthenticatedUser(claims): AuthenticatedUser,
+    Path(user_id): Path<Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    // Check authorization - Admin+ only
+    if claims.role < UserRole::Admin {
+        return Err(AppError::Forbidden(
+            "Only admins can remove schedule assignments".to_string(),
+        ));
+    }
+
+    let schedule_service = WorkScheduleService::new(state.db_pool.clone());
+    schedule_service
+        .unassign_from_user(claims.org_id, user_id)
+        .await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}

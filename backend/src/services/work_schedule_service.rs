@@ -229,6 +229,11 @@ impl WorkScheduleService {
             .await
     }
 
+    /// Unassign schedule from a user
+    pub async fn unassign_from_user(&self, org_id: Uuid, user_id: Uuid) -> Result<(), AppError> {
+        self.schedule_repo.unassign_from_user(org_id, user_id).await
+    }
+
     /// Get user's schedule
     pub async fn get_user_schedule(
         &self,

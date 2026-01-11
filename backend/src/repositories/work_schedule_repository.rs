@@ -266,6 +266,25 @@ impl WorkScheduleRepository {
         Ok(())
     }
 
+    /// Unassign schedule from user
+    pub async fn unassign_from_user(&self, org_id: Uuid, user_id: Uuid) -> Result<(), AppError> {
+        let mut conn = self.pool.get()?;
+
+        let affected = diesel::update(
+            users::table
+                .filter(users::id.eq(user_id))
+                .filter(users::organization_id.eq(org_id)),
+        )
+        .set(users::work_schedule_id.eq(None::<Uuid>))
+        .execute(&mut conn)?;
+
+        if affected == 0 {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+
+        Ok(())
+    }
+
     /// Get user's assigned schedule
     pub async fn get_user_schedule(
         &self,

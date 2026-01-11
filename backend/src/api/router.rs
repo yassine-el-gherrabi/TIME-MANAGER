@@ -83,7 +83,10 @@ pub fn create_router(state: AppState) -> Router {
         )
         .route("/:id/resend-invite", post(users::resend_invite))
         .route("/:id/restore", put(users::restore_user))
-        .route("/:id/schedule", put(schedules::assign_schedule));
+        .route(
+            "/:id/schedule",
+            put(schedules::assign_schedule).delete(schedules::unassign_schedule),
+        );
 
     // Clock in/out routes
     let clock_routes = Router::new()
