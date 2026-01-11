@@ -192,6 +192,7 @@ export const REPORTS_ENDPOINTS = {
  */
 export const STORAGE_KEYS = {
   USER: 'timemanager_user',
+  ONBOARDING_SEEN: 'timemanager_onboarding_seen',
 } as const;
 
 /**

@@ -8,11 +8,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, TrendingUp, Calendar, CheckCircle, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useOnboarding } from '../hooks/useOnboarding';
 import { logger } from '../utils/logger';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { ClockWidget } from '../components/clock';
 import { KPICard, PresenceWidget, HoursBarChart, TrendLineChart } from '../components/kpi';
+import { WelcomeModal } from '../components/onboarding';
 import {
   useKPIStore,
   getDateRange,
@@ -29,6 +31,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { myKpis, fetchMyKpis, charts, fetchCharts } = useKPIStore();
+  const { showOnboarding, dismissOnboarding } = useOnboarding(user?.id);
 
   // Chart state management
   const [chartDate, setChartDate] = useState(new Date());
@@ -128,6 +131,16 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Onboarding Welcome Modal */}
+      {user && (
+        <WelcomeModal
+          open={showOnboarding}
+          firstName={user.first_name}
+          role={user.role}
+          onDismiss={dismissOnboarding}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
