@@ -38,6 +38,14 @@ RUN cargo build --release --locked && \
 # ============================================
 FROM debian:bookworm-slim
 
+# OCI Image Labels
+LABEL org.opencontainers.image.title="TimeManager Backend" \
+      org.opencontainers.image.description="Rust backend API for TimeManager application" \
+      org.opencontainers.image.authors="TimeManager Team" \
+      org.opencontainers.image.source="https://github.com/timemanager/timemanager" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="TimeManager"
+
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
     ca-certificates \

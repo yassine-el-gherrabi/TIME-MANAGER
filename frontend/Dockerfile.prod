@@ -22,6 +22,14 @@ RUN npm run build
 # ============================================
 FROM nginx:alpine
 
+# OCI Image Labels
+LABEL org.opencontainers.image.title="TimeManager Frontend" \
+      org.opencontainers.image.description="Vue.js frontend for TimeManager application" \
+      org.opencontainers.image.authors="TimeManager Team" \
+      org.opencontainers.image.source="https://github.com/timemanager/timemanager" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="TimeManager"
+
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
