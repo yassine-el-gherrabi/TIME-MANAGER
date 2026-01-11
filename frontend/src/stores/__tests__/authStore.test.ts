@@ -27,7 +27,9 @@ describe('AuthStore', () => {
     first_name: 'John',
     last_name: 'Doe',
     role: UserRole.Employee,
-    organization_id: 'org-1', organization_name: 'Test Org',
+    organization_id: 'org-1',
+    organization_name: 'Test Org',
+    organization_timezone: 'Europe/Paris',
     created_at: '2024-01-01T00:00:00Z',
   };
 

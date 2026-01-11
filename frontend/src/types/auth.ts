@@ -79,6 +79,7 @@ export interface User {
   phone?: string | null;
   organization_id: string;
   organization_name: string;
+  organization_timezone: string;
   created_at: string;
 }
 
@@ -94,6 +95,7 @@ export interface MeResponse {
   phone?: string | null;
   organization_id: string;
   organization_name: string;
+  organization_timezone: string;
   created_at: string;
 }
 

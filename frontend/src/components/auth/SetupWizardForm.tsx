@@ -174,6 +174,7 @@ export const SetupWizardForm: React.FC = () => {
         role: response.user.role,
         organization_id: response.user.organization_id,
         organization_name: response.organization.name,
+        organization_timezone: response.organization.timezone,
         created_at: response.user.created_at,
       });
 

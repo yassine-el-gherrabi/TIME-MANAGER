@@ -19,7 +19,7 @@
 
 ### 1.4 Internationalization & Localization
 - [ ] **Implement language selector**: Allow users to choose their BO language
-- [ ] **Add timezone indicator**: Show which timezone the organization operates in
+- [x] **Add timezone indicator**: Shows organization timezone in Dashboard header with Globe icon
 
 ### 1.5 UI/UX Global
 - [x] **Move toast notifications**: Display at top-center instead of top-right
@@ -64,10 +64,10 @@
 ### 2.3 Hours Worked Graph
 - [ ] **Fix week mode first week**: Start from 1st of month, not previous month's last week
 - [ ] **Fix week mode last week**: Avoid false values from month overflow
-- [ ] **Put date ranges on separate lines**: Improve readability
+- [x] **Put date ranges on separate lines**: CustomXAxisTick with multi-line labels (W2 + date range)
 
 ### 2.4 Hours Trend
-- [ ] **Verify Hours Trend is correct**: Confirm functionality
+- [x] **Verify Hours Trend is correct**: Fixed ISO date format in backend, chart rendering fixed
 
 ### 2.5 Quick Actions Section
 - [ ] **Evaluate "Your Profile" section**: Replace with quick actions relevant to user role?
@@ -95,8 +95,8 @@
 ## 5. Clock Approval Page
 
 ### 5.1 User Context
-- [ ] **Display user's organization**
-- [ ] **Display user's team**
+- [x] **Display user's organization**: Added org_name in ClockEntryCard
+- [x] **Display user's team**: Added team_name in ClockEntryCard
 
 ### 5.2 Time Comparison
 - [ ] **Show expected vs actual time worked**: If user has a schedule, show +/- difference
@@ -106,8 +106,8 @@
 ## 6. Pending Absences Page
 
 ### 6.1 User Context
-- [ ] **Display user's organization**
-- [ ] **Display user's team**
+- [x] **Display user's organization**: Added org_name in AbsenceRequestCard
+- [x] **Display user's team**: Added team_name in AbsenceRequestCard
 
 ---
 
@@ -138,8 +138,8 @@
 - [ ] **Add Schedule assignment**: Optional, defaults to organization/team schedule
 
 ### 8.4 Superadmin View
-- [ ] **Add organization filter for superadmin**
-- [ ] **Show organization column in user list**
+- [x] **Add organization filter for superadmin**: OrgTeamFilter component added to UsersPage
+- [x] **Show organization column in user list**: showOrganization prop, visible only for SuperAdmin
 
 ### 8.5 Deletion Permissions
 - [x] **Prevent self-deletion**: User cannot delete themselves (backend check already existed)

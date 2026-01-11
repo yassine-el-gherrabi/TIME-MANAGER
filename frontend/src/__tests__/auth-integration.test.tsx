@@ -56,7 +56,9 @@ describe('Auth Integration Tests', () => {
       first_name: 'Test',
       last_name: 'User',
       role: UserRole.Employee,
-      organization_id: 'org-1', organization_name: 'Test Org',
+      organization_id: 'org-1',
+      organization_name: 'Test Org',
+      organization_timezone: 'Europe/Paris',
       created_at: '2024-01-01',
     });
 

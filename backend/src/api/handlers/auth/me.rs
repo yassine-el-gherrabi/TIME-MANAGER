@@ -19,6 +19,7 @@ pub struct MeResponse {
     pub phone: Option<String>,
     pub organization_id: Uuid,
     pub organization_name: String,
+    pub organization_timezone: String,
     pub created_at: chrono::NaiveDateTime,
 }
 
@@ -54,6 +55,7 @@ pub async fn me(
         phone: user.phone,
         organization_id: user.organization_id,
         organization_name: organization.name,
+        organization_timezone: organization.timezone,
         created_at: user.created_at,
     };
 
@@ -76,6 +78,7 @@ mod tests {
             phone: Some("+33612345678".to_string()),
             organization_id: Uuid::new_v4(),
             organization_name: "Test Company".to_string(),
+            organization_timezone: "Europe/Paris".to_string(),
             created_at: now,
         };
 
@@ -84,5 +87,6 @@ mod tests {
         assert_eq!(response.last_name, "Doe");
         assert_eq!(response.role, UserRole::Employee);
         assert_eq!(response.organization_name, "Test Company");
+        assert_eq!(response.organization_timezone, "Europe/Paris");
     }
 }

@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, TrendingUp, Calendar, CheckCircle, Users } from 'lucide-react';
+import { Clock, TrendingUp, Calendar, CheckCircle, Users, Globe } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { logger } from '../utils/logger';
@@ -152,9 +152,15 @@ export function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             Welcome, {user?.first_name}!
           </h1>
-          <p className="text-muted-foreground">
-            Here&apos;s your time tracking overview
-          </p>
+          <div className="flex items-center gap-4 text-muted-foreground">
+            <span>Here&apos;s your time tracking overview</span>
+            {user?.organization_timezone && (
+              <span className="flex items-center gap-1 text-sm">
+                <Globe className="h-3.5 w-3.5" />
+                {user.organization_timezone}
+              </span>
+            )}
+          </div>
         </div>
         <Button onClick={handleLogout} variant="outline">
           Logout
