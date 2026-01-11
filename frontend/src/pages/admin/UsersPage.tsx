@@ -303,6 +303,7 @@ export function UsersPage() {
           <UsersTable
             users={displayedUsers}
             currentUserId={currentUser?.id}
+            currentUserRole={currentUser?.role}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
             onResendInvite={handleResendInvite}

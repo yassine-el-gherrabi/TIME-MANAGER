@@ -8,12 +8,21 @@ import { UserRole } from '../../types/auth';
 export interface UsersTableProps {
   users: UserResponse[];
   currentUserId?: string;
+  currentUserRole?: UserRole;
   onEdit: (user: UserResponse) => void;
   onDelete: (user: UserResponse) => void;
   onResendInvite: (user: UserResponse) => void;
   onRestore?: (user: UserResponse) => void;
   isLoading?: boolean;
 }
+
+// Role hierarchy for comparison (higher value = more privileged)
+const roleHierarchy: Record<UserRole, number> = {
+  [UserRole.Employee]: 0,
+  [UserRole.Manager]: 1,
+  [UserRole.Admin]: 2,
+  [UserRole.SuperAdmin]: 3,
+};
 
 const getRoleBadgeClass = (role: UserRole): string => {
   switch (role) {
@@ -33,6 +42,7 @@ const getRoleBadgeClass = (role: UserRole): string => {
 export const UsersTable: React.FC<UsersTableProps> = ({
   users,
   currentUserId,
+  currentUserRole,
   onEdit,
   onDelete,
   onResendInvite,
@@ -136,7 +146,9 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                             Resend Invite
                           </Button>
                         )}
-                        {user.id !== currentUserId && (
+                        {user.id !== currentUserId &&
+                          currentUserRole &&
+                          roleHierarchy[user.role] < roleHierarchy[currentUserRole] && (
                           <Button
                             variant="outline"
                             size="sm"

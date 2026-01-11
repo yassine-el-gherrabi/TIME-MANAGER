@@ -22,7 +22,7 @@
 - [ ] **Add timezone indicator**: Show which timezone the organization operates in
 
 ### 1.5 UI/UX Global
-- [ ] **Move toast notifications**: Display at top-center instead of top-right
+- [x] **Move toast notifications**: Display at top-center instead of top-right
 - [ ] **Fix responsive design (mobile-first)**: Currently unusable on mobile, items overflow containers
 
 ### 1.6 Clock Notes Feature
@@ -142,8 +142,8 @@
 - [ ] **Show organization column in user list**
 
 ### 8.5 Deletion Permissions
-- [ ] **Prevent self-deletion**: User cannot delete themselves
-- [ ] **Fix role hierarchy for deletion**: Admin cannot delete Superadmin (frontend + backend)
+- [x] **Prevent self-deletion**: User cannot delete themselves (backend check already existed)
+- [x] **Fix role hierarchy for deletion**: Admin cannot delete Superadmin (frontend + backend)
 
 ---
 

@@ -88,6 +88,13 @@ pub async fn delete_user(
         return Err(AppError::NotFound("User not found".to_string()));
     }
 
+    // Prevent deleting users with equal or higher role
+    if user_to_delete.role >= claims.role {
+        return Err(AppError::ValidationError(
+            "Cannot delete a user with equal or higher role".to_string(),
+        ));
+    }
+
     // Capture user data for audit before deletion
     let old_user_response = UserResponse::from_user(&user_to_delete);
 
