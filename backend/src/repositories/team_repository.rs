@@ -197,6 +197,22 @@ impl TeamRepository {
         Ok(members)
     }
 
+    /// List all members of a team with their joined_at timestamp
+    pub async fn list_members_with_joined_at(
+        &self,
+        team_id: Uuid,
+    ) -> Result<Vec<(User, chrono::DateTime<chrono::Utc>)>, AppError> {
+        let mut conn = self.pool.get()?;
+
+        let members = team_members::table
+            .filter(team_members::team_id.eq(team_id))
+            .inner_join(users::table)
+            .select((User::as_select(), team_members::joined_at))
+            .load::<(User, chrono::DateTime<chrono::Utc>)>(&mut conn)?;
+
+        Ok(members)
+    }
+
     /// Get all teams for a user
     pub async fn get_user_teams(&self, org_id: Uuid, user_id: Uuid) -> Result<Vec<Team>, AppError> {
         let mut conn = self.pool.get()?;

@@ -85,16 +85,16 @@ impl TeamService {
         team_id: Uuid,
     ) -> Result<TeamWithMembers, AppError> {
         let team = self.team_repo.find_by_id(org_id, team_id).await?;
-        let users = self.team_repo.list_members(team_id).await?;
+        let users_with_joined_at = self.team_repo.list_members_with_joined_at(team_id).await?;
 
-        let members = users
-            .iter()
-            .map(|u| TeamMemberInfo {
-                user_id: u.id,
-                email: u.email.clone(),
-                first_name: u.first_name.clone(),
-                last_name: u.last_name.clone(),
-                joined_at: Utc::now(), // TODO: get actual joined_at from team_members
+        let members = users_with_joined_at
+            .into_iter()
+            .map(|(user, joined_at)| TeamMemberInfo {
+                user_id: user.id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                joined_at,
             })
             .collect();
 
