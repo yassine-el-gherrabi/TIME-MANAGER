@@ -44,6 +44,15 @@ pub struct DeleteUserResponse {
 ///
 /// Soft delete a user (Admin+)
 /// Sets deleted_at timestamp, user can be restored later
+#[tracing::instrument(
+    name = "users.delete",
+    skip(state, headers),
+    fields(
+        admin_id = %user.0.sub,
+        org_id = %user.0.org_id,
+        target_user_id = %user_id
+    )
+)]
 pub async fn delete_user(
     State(state): State<AppState>,
     RoleGuard(user, _): RoleGuard<Admin>,

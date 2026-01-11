@@ -49,6 +49,16 @@ struct TeamMemberAuditData {
 /// POST /api/v1/teams/:id/members
 ///
 /// Add a member to a team (Admin+ only)
+#[tracing::instrument(
+    name = "teams.add_member",
+    skip(state, headers),
+    fields(
+        user_id = %claims.sub,
+        org_id = %claims.org_id,
+        team_id = %team_id,
+        member_id = %body.user_id
+    )
+)]
 pub async fn add_member(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,
@@ -87,6 +97,16 @@ pub async fn add_member(
 /// DELETE /api/v1/teams/:team_id/members/:user_id
 ///
 /// Remove a member from a team (Admin+ only)
+#[tracing::instrument(
+    name = "teams.remove_member",
+    skip(state, headers),
+    fields(
+        requester_id = %claims.sub,
+        org_id = %claims.org_id,
+        team_id = %team_id,
+        member_id = %user_id
+    )
+)]
 pub async fn remove_member(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

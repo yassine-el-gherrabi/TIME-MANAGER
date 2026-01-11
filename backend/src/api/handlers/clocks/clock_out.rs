@@ -13,6 +13,11 @@ use crate::services::ClockService;
 /// POST /api/v1/clocks/out
 ///
 /// Clock out - stop tracking time
+#[tracing::instrument(
+    name = "clocks.clock_out",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id)
+)]
 pub async fn clock_out(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

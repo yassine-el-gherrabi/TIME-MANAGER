@@ -1,9 +1,11 @@
 use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::{HeaderName, HeaderValue, Method};
+use axum::middleware;
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use tower_http::cors::{AllowOrigin, CorsLayer};
-use tower_http::trace::TraceLayer;
+
+use crate::middleware::metrics_middleware;
 
 use super::handlers::absence_types;
 use super::handlers::absences;
@@ -223,7 +225,7 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/reports", reports_routes)
         .nest("/v1/organizations", organization_routes)
         .nest("/v1/audit-logs", audit_log_routes)
-        .layer(TraceLayer::new_for_http())
+        .layer(middleware::from_fn(metrics_middleware))
         .layer(cors)
         .with_state(state)
 }

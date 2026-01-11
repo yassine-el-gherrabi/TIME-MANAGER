@@ -71,6 +71,11 @@ fn generate_csrf_token() -> String {
 /// POST /api/v1/auth/login
 ///
 /// Authenticate user and return JWT tokens
+#[tracing::instrument(
+    name = "auth.login",
+    skip(state, headers, payload),
+    fields(email = %payload.email)
+)]
 pub async fn login(
     State(state): State<AppState>,
     headers: HeaderMap,

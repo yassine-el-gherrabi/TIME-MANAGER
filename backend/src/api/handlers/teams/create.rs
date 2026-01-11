@@ -35,6 +35,11 @@ fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
 /// POST /api/v1/teams
 ///
 /// Create a new team (Admin+ only)
+#[tracing::instrument(
+    name = "teams.create",
+    skip(state, headers, body),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, team_name = %body.name)
+)]
 pub async fn create_team(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

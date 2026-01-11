@@ -135,9 +135,24 @@ macro_rules! time_sql {
     }};
 }
 
-/// Record an HTTP request metric
-pub fn record_http_request(method: &'static str, path: &'static str, status: u16, duration_secs: f64) {
-    let status_class: &'static str = match status {
+/// Normalize path by replacing UUIDs and IDs with placeholders
+fn normalize_path(path: &str) -> String {
+    use regex::Regex;
+    use once_cell::sync::Lazy;
+
+    // Regex for UUID format (e.g., 123e4567-e89b-12d3-a456-426614174000)
+    static UUID_RE: Lazy<Regex> = Lazy::new(|| {
+        Regex::new(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+            .unwrap()
+    });
+
+    // Replace UUIDs with :id placeholder
+    UUID_RE.replace_all(path, ":id").to_string()
+}
+
+/// Record an HTTP request metric with dynamic path normalization
+pub fn record_http_request(method: &str, path: &str, status: u16, duration_secs: f64) {
+    let status_class = match status {
         200..=299 => "2xx",
         300..=399 => "3xx",
         400..=499 => "4xx",
@@ -145,14 +160,20 @@ pub fn record_http_request(method: &'static str, path: &'static str, status: u16
         _ => "other",
     };
 
-    let labels = [
-        ("method", method),
-        ("path", path),
-        ("status", status_class),
-    ];
+    // Normalize path to avoid high cardinality
+    let normalized_path = normalize_path(path);
 
-    histogram!("http_request_duration_seconds", &labels).record(duration_secs);
-    counter!("http_requests_total", &labels).increment(1);
+    histogram!("http_request_duration_seconds",
+        "method" => method.to_string(),
+        "path" => normalized_path.clone(),
+        "status" => status_class.to_string()
+    ).record(duration_secs);
+
+    counter!("http_requests_total",
+        "method" => method.to_string(),
+        "path" => normalized_path,
+        "status" => status_class.to_string()
+    ).increment(1);
 }
 
 /// Record authentication metrics

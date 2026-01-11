@@ -31,6 +31,11 @@ pub struct ListTeamsResponse {
 /// GET /api/v1/teams
 ///
 /// List teams with pagination
+#[tracing::instrument(
+    name = "teams.list",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, page = ?query.page)
+)]
 pub async fn list_teams(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

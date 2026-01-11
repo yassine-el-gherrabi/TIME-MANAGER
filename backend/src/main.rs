@@ -2,6 +2,9 @@ use anyhow::Context;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use opentelemetry::trace::TracerProvider;
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::runtime;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,13 +18,92 @@ use timemanager_backend::{
     },
     services::{EmailService, EndpointRateLimiter, HibpService, MetricsService},
 };
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
 // Embed migrations at compile time
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 /// Cleanup interval: 24 hours
 const CLEANUP_INTERVAL_SECS: u64 = 86400;
+
+/// Initialize tracing with OpenTelemetry support for Tempo and JSON logging for Loki
+fn init_tracing() -> anyhow::Result<()> {
+    // Check if OTLP endpoint is configured
+    let otel_endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok();
+
+    // Build the tracing subscriber
+    // Default to INFO level - DEBUG is too verbose for Loki
+    // Filter out noisy dependencies (hyper, h2, tower, etc.)
+    // Override with RUST_LOG env var if needed (e.g., RUST_LOG=timemanager_backend=debug)
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| {
+            "timemanager_backend=info,\
+             hyper=warn,\
+             h2=warn,\
+             tower=warn,\
+             tower_http=warn,\
+             axum=warn,\
+             axum::rejection=warn,\
+             diesel=warn,\
+             r2d2=warn"
+                .into()
+        });
+
+    // JSON format layer for Loki - minimal output
+    // Loki adds: timestamp, level detection, container labels
+    // We only output: message + flattened contextual fields (user_id, method, etc.)
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .json()
+        .without_time()           // Loki adds its own timestamp
+        .with_target(false)       // Don't include module path (too verbose)
+        .with_current_span(false) // Don't include span info (Tempo handles tracing)
+        .flatten_event(true)      // Flatten fields to root level
+        .with_span_events(FmtSpan::NONE); // Don't log span open/close events
+
+    if let Some(endpoint) = otel_endpoint {
+        // OpenTelemetry OTLP exporter for Tempo
+        let otlp_exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_tonic()
+            .with_endpoint(&endpoint)
+            .build()
+            .context("Failed to create OTLP exporter")?;
+
+        let service_name = std::env::var("OTEL_SERVICE_NAME")
+            .unwrap_or_else(|_| "timemanager-backend".to_string());
+
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_batch_exporter(otlp_exporter, runtime::Tokio)
+            .with_resource(opentelemetry_sdk::Resource::new(vec![
+                opentelemetry::KeyValue::new("service.name", service_name),
+            ]))
+            .build();
+
+        let tracer = provider.tracer("timemanager-backend");
+        let otel_layer = OpenTelemetryLayer::new(tracer);
+
+        // Register the provider globally for shutdown
+        opentelemetry::global::set_tracer_provider(provider);
+
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(fmt_layer)
+            .with(otel_layer)
+            .init();
+
+        tracing::info!("OpenTelemetry tracing initialized (endpoint: {})", endpoint);
+    } else {
+        // Fallback: JSON logging only (no OTLP)
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(fmt_layer)
+            .init();
+
+        tracing::info!("Tracing initialized (JSON logging only, no OTLP endpoint configured)");
+    }
+
+    Ok(())
+}
 
 /// Background cleanup job for expired/old data
 async fn run_cleanup_jobs(pool: Pool<ConnectionManager<PgConnection>>, rate_limiter: Arc<EndpointRateLimiter>) {
@@ -81,15 +163,8 @@ async fn run_cleanup_jobs(pool: Pool<ConnectionManager<PgConnection>>, rate_limi
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize tracing
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                "timemanager_backend=debug,tower_http=debug,axum::rejection=trace".into()
-            }),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    // Initialize tracing with OpenTelemetry support
+    init_tracing()?;
 
     // Load configuration
     let config = AppConfig::from_env()?;

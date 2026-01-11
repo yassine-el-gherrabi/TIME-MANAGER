@@ -43,6 +43,9 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-noreply@timemanager.local}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Time Manager}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8000}
+      # OpenTelemetry configuration
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_SERVICE_NAME: timemanager-backend
     volumes:
       - ./backend:/app:${BACKEND_VOLUME_MODE:-rw}
       - cargo_cache:/usr/local/cargo/registry
@@ -86,6 +89,7 @@ services:
     ports:
       - "8000:80"
       - "8081:8080"
+      - "8083:8082"  # Prometheus metrics
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./infrastructure/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
@@ -156,6 +160,52 @@ services:
       - timemanager-network
     restart: unless-stopped
 
+  # ========== PROMTAIL (log collector for Loki) ==========
+  promtail:
+    image: grafana/promtail:latest
+    container_name: timemanager-promtail
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - "./infrastructure/promtail/promtail.yml:/etc/promtail/promtail.yml:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - timemanager-network
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ========== TEMPO (distributed tracing) ==========
+  tempo:
+    image: grafana/tempo:latest
+    container_name: timemanager-tempo
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    user: "0:0"
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - "./infrastructure/tempo/tempo.yml:/etc/tempo/tempo.yml:ro"
+      - tempo_data:/var/tempo
+    networks:
+      - timemanager-network
+    restart: unless-stopped
+
+  # ========== CADVISOR (container metrics) ==========
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: timemanager-cadvisor
+    ports:
+      - "8082:8080"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+    networks:
+      - timemanager-network
+    restart: unless-stopped
+
   # ========== GRAFANA (toujours actif) ==========
   grafana:
     image: grafana/grafana:latest
@@ -175,12 +225,14 @@ services:
     depends_on:
       - prometheus
       - loki
+      - tempo
     restart: unless-stopped
 
 volumes:
   postgres_data:
   prometheus_data:
   loki_data:
+  tempo_data:
   grafana_data:
   pgadmin_data:
   cargo_cache:

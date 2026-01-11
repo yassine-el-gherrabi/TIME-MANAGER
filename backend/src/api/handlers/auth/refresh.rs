@@ -47,6 +47,10 @@ fn generate_csrf_token() -> String {
 /// POST /api/v1/auth/refresh
 ///
 /// Refresh access token using refresh token from HttpOnly cookie
+#[tracing::instrument(
+    name = "auth.refresh",
+    skip(state, headers)
+)]
 pub async fn refresh(
     State(state): State<AppState>,
     headers: HeaderMap,

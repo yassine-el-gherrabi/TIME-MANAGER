@@ -13,6 +13,11 @@ use crate::services::ClockService;
 /// GET /api/v1/clocks/status
 ///
 /// Get current clock status for the authenticated user
+#[tracing::instrument(
+    name = "clocks.status",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id)
+)]
 pub async fn get_status(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

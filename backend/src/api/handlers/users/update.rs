@@ -74,6 +74,15 @@ pub struct UpdateUserResponse {
 /// Update a user
 /// - Admin: can update any user in their organization (including role)
 /// - Non-admin: can only update their own first_name and last_name
+#[tracing::instrument(
+    name = "users.update",
+    skip(state, headers, payload),
+    fields(
+        requester_id = %claims.sub,
+        org_id = %claims.org_id,
+        target_user_id = %user_id
+    )
+)]
 pub async fn update_user(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

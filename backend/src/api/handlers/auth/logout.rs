@@ -36,6 +36,10 @@ fn extract_refresh_token(headers: &HeaderMap) -> Option<String> {
 /// POST /api/v1/auth/logout
 ///
 /// Logout user by revoking refresh token from HttpOnly cookie
+#[tracing::instrument(
+    name = "auth.logout",
+    skip(state, headers)
+)]
 pub async fn logout(
     State(state): State<AppState>,
     headers: HeaderMap,

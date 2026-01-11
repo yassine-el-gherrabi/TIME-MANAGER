@@ -36,6 +36,11 @@ fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
 /// PUT /api/v1/teams/:id
 ///
 /// Update a team (Admin+ only)
+#[tracing::instrument(
+    name = "teams.update",
+    skip(state, headers, body),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, team_id = %team_id)
+)]
 pub async fn update_team(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

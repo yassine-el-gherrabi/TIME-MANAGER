@@ -18,6 +18,15 @@ use crate::repositories::UserRepository;
 /// Get a specific user by ID
 /// - Admin: can get any user in their organization
 /// - Non-admin: can only get their own user data
+#[tracing::instrument(
+    name = "users.get",
+    skip(state),
+    fields(
+        requester_id = %claims.sub,
+        org_id = %claims.org_id,
+        target_user_id = %user_id
+    )
+)]
 pub async fn get_user(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

@@ -14,6 +14,11 @@ use crate::services::ClockService;
 /// POST /api/v1/clocks/:id/approve
 ///
 /// Approve a clock entry (Manager+ only)
+#[tracing::instrument(
+    name = "clocks.approve",
+    skip(state),
+    fields(approver_id = %claims.sub, org_id = %claims.org_id, entry_id = %entry_id)
+)]
 pub async fn approve_entry(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

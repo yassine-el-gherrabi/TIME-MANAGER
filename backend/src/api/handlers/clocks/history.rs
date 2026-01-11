@@ -26,6 +26,11 @@ pub struct HistoryQuery {
 /// GET /api/v1/clocks/history
 ///
 /// Get clock history for the authenticated user
+#[tracing::instrument(
+    name = "clocks.history",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, page = ?query.page)
+)]
 pub async fn get_history(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

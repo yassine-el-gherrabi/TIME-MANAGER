@@ -24,6 +24,11 @@ pub struct MeResponse {
 /// GET /api/v1/auth/me
 ///
 /// Get current authenticated user information
+#[tracing::instrument(
+    name = "auth.me",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id)
+)]
 pub async fn me(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

@@ -19,6 +19,11 @@ pub struct ClockInRequest {
 /// POST /api/v1/clocks/in
 ///
 /// Clock in - start tracking time
+#[tracing::instrument(
+    name = "clocks.clock_in",
+    skip(state, body),
+    fields(user_id = %claims.sub, org_id = %claims.org_id)
+)]
 pub async fn clock_in(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

@@ -63,6 +63,16 @@ pub struct CreateUserResponse {
 ///
 /// Create a new user (Admin+)
 /// This creates a user with a placeholder password and generates an invite token
+#[tracing::instrument(
+    name = "users.create",
+    skip(state, headers, payload),
+    fields(
+        admin_id = %user.0.sub,
+        org_id = %user.0.org_id,
+        new_user_email = %payload.email,
+        new_user_role = ?payload.role
+    )
+)]
 pub async fn create_user(
     State(state): State<AppState>,
     RoleGuard(user, _): RoleGuard<Admin>,

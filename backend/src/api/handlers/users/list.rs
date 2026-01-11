@@ -25,6 +25,16 @@ pub struct ListUsersQuery {
 /// GET /api/v1/users
 ///
 /// List all users in the organization (Admin+)
+#[tracing::instrument(
+    name = "users.list",
+    skip(state),
+    fields(
+        user_id = %user.0.sub,
+        org_id = %user.0.org_id,
+        page = ?query.page,
+        role_filter = ?query.role
+    )
+)]
 pub async fn list_users(
     State(state): State<AppState>,
     RoleGuard(user, _): RoleGuard<Admin>,

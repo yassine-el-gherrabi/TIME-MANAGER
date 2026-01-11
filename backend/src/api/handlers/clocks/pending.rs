@@ -21,6 +21,11 @@ pub struct PendingQuery {
 /// GET /api/v1/clocks/pending
 ///
 /// List pending clock entries for approval (Manager+ only)
+#[tracing::instrument(
+    name = "clocks.pending",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, page = ?query.page)
+)]
 pub async fn list_pending(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

@@ -20,6 +20,11 @@ pub struct GetTeamQuery {
 /// GET /api/v1/teams/:id
 ///
 /// Get a team by ID
+#[tracing::instrument(
+    name = "teams.get",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, team_id = %team_id)
+)]
 pub async fn get_team(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

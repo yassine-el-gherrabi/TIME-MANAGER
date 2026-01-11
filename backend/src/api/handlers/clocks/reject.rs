@@ -20,6 +20,11 @@ pub struct RejectRequest {
 /// POST /api/v1/clocks/:id/reject
 ///
 /// Reject a clock entry (Manager+ only)
+#[tracing::instrument(
+    name = "clocks.reject",
+    skip(state, body),
+    fields(rejecter_id = %claims.sub, org_id = %claims.org_id, entry_id = %entry_id)
+)]
 pub async fn reject_entry(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

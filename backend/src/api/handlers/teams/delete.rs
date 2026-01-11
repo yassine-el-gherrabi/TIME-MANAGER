@@ -35,6 +35,11 @@ fn extract_client_ip(headers: &HeaderMap) -> Option<String> {
 /// DELETE /api/v1/teams/:id
 ///
 /// Delete a team (Admin+ only)
+#[tracing::instrument(
+    name = "teams.delete",
+    skip(state, headers),
+    fields(user_id = %claims.sub, org_id = %claims.org_id, team_id = %team_id)
+)]
 pub async fn delete_team(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

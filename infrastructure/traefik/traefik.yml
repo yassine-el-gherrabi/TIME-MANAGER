@@ -16,6 +16,16 @@ entryPoints:
       # Trust all IPs for forwarded headers (for development)
       # In production, use trustedIPs with specific proxy IPs instead
       insecure: true
+  metrics:
+    address: ":8082"
+
+# Prometheus Metrics
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
 
 # Providers
 providers:

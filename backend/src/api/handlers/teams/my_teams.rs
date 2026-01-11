@@ -8,6 +8,11 @@ use crate::services::TeamService;
 /// GET /api/v1/teams/my
 ///
 /// Get teams for the authenticated user
+#[tracing::instrument(
+    name = "teams.my",
+    skip(state),
+    fields(user_id = %claims.sub, org_id = %claims.org_id)
+)]
 pub async fn get_my_teams(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,

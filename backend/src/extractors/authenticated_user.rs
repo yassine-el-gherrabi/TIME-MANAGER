@@ -19,6 +19,7 @@ use crate::utils::JwtService;
 ///
 /// Extracts and validates JWT from Authorization header
 /// Usage: `async fn handler(AuthenticatedUser(claims): AuthenticatedUser)`
+#[derive(Debug)]
 pub struct AuthenticatedUser(pub Claims);
 
 #[async_trait]
