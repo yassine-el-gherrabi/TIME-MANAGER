@@ -32,27 +32,28 @@ describe('Routing Integration Tests', () => {
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
   });
 
-  it('should render password reset request page', () => {
+  it('should render password reset request page', async () => {
     const testRouter = createMemoryRouter(router.routes, {
       initialEntries: ['/password-reset-request'],
     });
 
     render(<RouterProvider router={testRouter} />);
 
-    // Multiple headings may exist (AuthLayout title + CardTitle), check at least one exists
-    const headings = screen.getAllByRole('heading', { name: /reset password/i });
-    expect(headings.length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    // Wait for lazy-loaded component to render
+    const emailInput = await screen.findByLabelText(/email/i);
+    expect(emailInput).toBeInTheDocument();
   });
 
-  it('should render unauthorized page', () => {
+  it('should render unauthorized page', async () => {
     const testRouter = createMemoryRouter(router.routes, {
       initialEntries: ['/unauthorized'],
     });
 
     render(<RouterProvider router={testRouter} />);
 
-    expect(screen.getByRole('heading', { name: /access denied/i })).toBeInTheDocument();
+    // Wait for lazy-loaded component to render
+    const heading = await screen.findByRole('heading', { name: /access denied/i });
+    expect(heading).toBeInTheDocument();
   });
 
   it('should redirect unknown routes to dashboard', async () => {

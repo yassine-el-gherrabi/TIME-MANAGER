@@ -4,15 +4,31 @@ import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { router } from '../routes';
 import * as authApi from '../api/auth';
+import * as clocksApi from '../api/clocks';
+import * as kpisApi from '../api/kpis';
 import { UserRole } from '../types/auth';
 
 vi.mock('../api/auth');
+vi.mock('../api/clocks');
+vi.mock('../api/kpis');
 
 describe('Auth Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Clear any stored auth state
     localStorage.clear();
+
+    // Mock dashboard API calls to prevent unhandled rejections
+    vi.mocked(clocksApi.getStatus).mockResolvedValue({ is_clocked_in: false });
+    vi.mocked(kpisApi.getMyKpis).mockResolvedValue({
+      hours_worked_today: 0,
+      hours_worked_week: 0,
+      hours_worked_month: 0,
+      overtime_hours_week: 0,
+      overtime_hours_month: 0,
+      attendance_rate: 100,
+    });
+    vi.mocked(kpisApi.getCharts).mockResolvedValue({ daily: [], weekly: [] });
   });
 
   it('should complete login flow', async () => {
@@ -50,7 +66,7 @@ describe('Auth Integration Tests', () => {
 
     // Should navigate to dashboard after successful login
     await waitFor(() => {
-      expect(screen.getByText(/welcome to time manager/i)).toBeInTheDocument();
+      expect(screen.getByText(/welcome, test/i)).toBeInTheDocument();
     });
 
     expect(authApi.login).toHaveBeenCalledWith({
@@ -73,9 +89,11 @@ describe('Auth Integration Tests', () => {
 
     render(<RouterProvider router={testRouter} />);
 
-    // Fill and submit email
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.click(screen.getByRole('button', { name: /send reset link/i }));
+    // Wait for lazy-loaded page and fill form
+    const emailInput = await screen.findByLabelText(/email/i);
+    await user.type(emailInput, 'test@example.com');
+    const submitButton = await screen.findByRole('button', { name: /send reset link/i });
+    await user.click(submitButton);
 
     // Should show success message
     await waitFor(() => {

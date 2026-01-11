@@ -30,7 +30,7 @@ test.describe('Navigation - Page Titles', () => {
 
   test('unauthorized page should display correctly', async ({ page }) => {
     await page.goto('/unauthorized');
-    await expect(page.getByText(/accès refusé|non autorisé|unauthorized/i)).toBeVisible();
+    await expect(page.getByText(/access denied|unauthorized/i)).toBeVisible();
   });
 });
 

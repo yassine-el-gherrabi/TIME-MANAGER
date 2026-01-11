@@ -7,14 +7,14 @@ test.describe('Accessibility - Login Page', () => {
 
   test('should have proper form labels', async ({ page }) => {
     const emailInput = page.getByLabel(/email/i);
-    const passwordInput = page.getByLabel(/mot de passe/i);
+    const passwordInput = page.getByLabel(/password/i);
 
     await expect(emailInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
   });
 
   test('should have accessible button', async ({ page }) => {
-    const submitButton = page.getByRole('button', { name: /se connecter/i });
+    const submitButton = page.getByRole('button', { name: /^login$/i });
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
   });
@@ -26,11 +26,11 @@ test.describe('Accessibility - Login Page', () => {
 
     // Tab to password field
     await page.keyboard.press('Tab');
-    await expect(page.getByLabel(/mot de passe/i)).toBeFocused();
+    await expect(page.getByLabel(/password/i)).toBeFocused();
 
     // Tab to submit button
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: /se connecter/i })).toBeFocused();
+    await expect(page.getByRole('button', { name: /^login$/i })).toBeFocused();
   });
 
   test('should have visible focus indicators', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Accessibility - Login Page', () => {
   });
 
   test('password input should have type password', async ({ page }) => {
-    const passwordInput = page.getByLabel(/mot de passe/i);
+    const passwordInput = page.getByLabel(/password/i);
     await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 });
