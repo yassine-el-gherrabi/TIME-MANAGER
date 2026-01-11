@@ -10,6 +10,10 @@ tasks:
     desc: Start core services (postgres, backend, frontend, traefik)
     cmd: docker compose up -d
 
+  up:noseed:
+    desc: Start core services without database seed (for testing bootstrap)
+    cmd: NO_SEED=1 docker compose up -d
+
   up:dev:
     desc: Start core + dev tools (mailpit, pgadmin)
     cmd: docker compose --profile dev up -d

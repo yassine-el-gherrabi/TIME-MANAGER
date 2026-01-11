@@ -9,6 +9,7 @@ import { DashboardPage } from '../pages/DashboardPage';
 import { ClockPage } from '../pages/ClockPage';
 import { LoginPage } from '../pages/LoginPage';
 import { AbsencesPage } from '../pages/AbsencesPage';
+import { SetupWizardPage } from '../pages/SetupWizardPage';
 
 // Lazy loaded pages (admin)
 const UsersPage = lazy(() => import('../pages/admin/UsersPage').then(m => ({ default: m.UsersPage })));
@@ -132,6 +133,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/setup',
+    element: <SetupWizardPage />,
   },
   {
     path: '/password-reset-request',

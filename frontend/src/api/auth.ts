@@ -26,6 +26,8 @@ import type {
   ChangePasswordRequest,
   ChangePasswordResponse,
   RevokeSessionResponse,
+  BootstrapRequest,
+  BootstrapResponse,
 } from '../types/auth';
 
 /**
@@ -222,6 +224,28 @@ export const authApi = {
       url: AUTH_ENDPOINTS.REVOKE_SESSION(sessionId),
     });
   },
+
+  /**
+   * Bootstrap the first superadmin account
+   * Only works when no users exist in the database
+   *
+   * @param data - Organization and admin details
+   * @returns Access token for auto-login
+   */
+  bootstrap: async (data: BootstrapRequest): Promise<BootstrapResponse> => {
+    const response = await apiRequest<BootstrapResponse>({
+      method: 'POST',
+      url: AUTH_ENDPOINTS.BOOTSTRAP,
+      data,
+    });
+
+    // Store access token after successful bootstrap
+    if (response.access_token) {
+      setTokens({ access_token: response.access_token });
+    }
+
+    return response;
+  },
 };
 
 /**
@@ -240,4 +264,5 @@ export const {
   verifyInvite,
   changePassword,
   revokeSession,
+  bootstrap,
 } = authApi;

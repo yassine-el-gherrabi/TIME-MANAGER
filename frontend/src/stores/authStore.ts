@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '../api/auth';
+import { systemApi } from '../api/system';
 import { clearTokens, hasRefreshToken } from '../api/client';
 import { STORAGE_KEYS } from '../config/constants';
 import { logger } from '../utils/logger';
@@ -22,6 +23,8 @@ import type {
  * Authentication store state and actions
  */
 interface AuthStore extends AuthState {
+  // Additional state
+  needsSetup: boolean;
   // Actions
   login: (data: LoginRequest) => Promise<void>;
   acceptInvite: (data: AcceptInviteRequest) => Promise<void>;
@@ -30,6 +33,7 @@ interface AuthStore extends AuthState {
   refreshUser: () => Promise<void>;
   setUser: (user: User | null) => void;
   setLoading: (isLoading: boolean) => void;
+  setNeedsSetup: (needsSetup: boolean) => void;
   clearAuth: () => void;
 }
 
@@ -48,6 +52,7 @@ export const useAuthStore = create<AuthStore>()(
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      needsSetup: false,
 
       /**
        * Login with email and password
@@ -163,6 +168,13 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       /**
+       * Set needs setup state
+       */
+      setNeedsSetup: (needsSetup: boolean) => {
+        set({ needsSetup });
+      },
+
+      /**
        * Clear authentication state
        */
       clearAuth: () => {
@@ -187,19 +199,34 @@ export const useAuthStore = create<AuthStore>()(
 
 /**
  * Initialize auth store on app startup
- * Checks for existing refresh token (via CSRF cookie proxy) and restores session
+ * First checks if system needs initial setup, then attempts auth restore.
  * Access tokens are stored in memory only (lost on reload), so we use
  * the HttpOnly refresh token cookie to obtain a new access token on page load.
+ *
+ * @returns Object with isAuthenticated and needsSetup states
  */
-export const initializeAuth = async (): Promise<boolean> => {
+export const initializeAuth = async (): Promise<{ isAuthenticated: boolean; needsSetup: boolean }> => {
   const store = useAuthStore.getState();
+  store.setLoading(true);
+
+  try {
+    // First, check if the system needs initial setup
+    const status = await systemApi.getStatus();
+    if (status.needs_setup) {
+      store.setNeedsSetup(true);
+      store.setLoading(false);
+      return { isAuthenticated: false, needsSetup: true };
+    }
+  } catch (error) {
+    // If system status check fails, continue with auth (system might be initializing)
+    logger.warn('System status check failed', error, { component: 'authStore', action: 'initializeAuth' });
+  }
 
   // No refresh token (checked via CSRF token presence) = not authenticated
   if (!hasRefreshToken()) {
-    return false;
+    store.setLoading(false);
+    return { isAuthenticated: false, needsSetup: false };
   }
-
-  store.setLoading(true);
 
   try {
     // Use HttpOnly refresh token cookie to get new access token
@@ -210,10 +237,10 @@ export const initializeAuth = async (): Promise<boolean> => {
     const user = await authApi.me();
     store.setUser(user);
     store.setLoading(false);
-    return true;
+    return { isAuthenticated: true, needsSetup: false };
   } catch (error) {
     // Refresh token invalid or expired, clear auth
     store.clearAuth();
-    return false;
+    return { isAuthenticated: false, needsSetup: false };
   }
 };

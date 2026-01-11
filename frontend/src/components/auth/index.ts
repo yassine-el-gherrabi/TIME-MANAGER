@@ -8,6 +8,7 @@ export { LoginForm } from './LoginForm';
 export { PasswordResetRequestForm } from './PasswordResetRequestForm';
 export { PasswordResetForm } from './PasswordResetForm';
 export { AcceptInviteForm } from './AcceptInviteForm';
+export { SetupWizardForm } from './SetupWizardForm';
 export { AuthLayout } from './AuthLayout';
 export { ProtectedRoute } from './ProtectedRoute';
 

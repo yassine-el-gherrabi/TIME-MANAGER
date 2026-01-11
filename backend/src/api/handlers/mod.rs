@@ -5,6 +5,7 @@ pub mod absence_types;
 pub mod absences;
 pub mod audit_logs;
 pub mod auth;
+pub mod system;
 pub mod balances;
 pub mod clocks;
 pub mod closed_days;

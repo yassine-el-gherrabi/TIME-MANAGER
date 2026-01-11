@@ -41,19 +41,25 @@ else
     echo "⚠️  Migration failed or already up to date"
 fi
 
-# Run seed data
-echo ""
-echo "🌱 Seeding database with demo data..."
-SEED_FILE="/app/scripts/seed.sql"
-
-if [ -f "$SEED_FILE" ]; then
-    if psql "$DATABASE_URL" -f "$SEED_FILE" 2>/dev/null; then
-        echo "✅ Seed data loaded successfully!"
-    else
-        echo "⚠️  Seed data already exists or failed to load (this is normal on restart)"
-    fi
+# Run seed data (skip if NO_SEED is set)
+if [ -n "$NO_SEED" ]; then
+    echo ""
+    echo "⏭️  Skipping seed (NO_SEED is set)"
+    echo "   Use POST /api/v1/auth/bootstrap to create the first superadmin"
 else
-    echo "⚠️  Seed file not found at $SEED_FILE"
+    echo ""
+    echo "🌱 Seeding database with demo data..."
+    SEED_FILE="/app/scripts/seed.sql"
+
+    if [ -f "$SEED_FILE" ]; then
+        if psql "$DATABASE_URL" -f "$SEED_FILE" 2>/dev/null; then
+            echo "✅ Seed data loaded successfully!"
+        else
+            echo "⚠️  Seed data already exists or failed to load (this is normal on restart)"
+        fi
+    else
+        echo "⚠️  Seed file not found at $SEED_FILE"
+    fi
 fi
 
 # Display summary
@@ -61,11 +67,16 @@ echo ""
 echo "=================================================="
 echo "📋 Development Environment Ready!"
 echo "=================================================="
-echo "🔐 Demo Users (password: Password123!):"
-echo "   - superadmin@demo.com (Super Admin)"
-echo "   - admin@demo.com      (Admin)"
-echo "   - manager@demo.com    (Manager)"
-echo "   - employee@demo.com   (Employee)"
+if [ -n "$NO_SEED" ]; then
+    echo "🆕 Fresh database - no seed data"
+    echo "   Bootstrap: POST /api/v1/auth/bootstrap"
+else
+    echo "🔐 Demo Users (password: Password123!):"
+    echo "   - superadmin@demo.com (Super Admin)"
+    echo "   - admin@demo.com      (Admin)"
+    echo "   - manager@demo.com    (Manager)"
+    echo "   - employee@demo.com   (Employee)"
+fi
 echo ""
 echo "🔗 Services:"
 echo "   - API:      http://localhost:8000/api"

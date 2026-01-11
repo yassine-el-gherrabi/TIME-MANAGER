@@ -36,11 +36,11 @@ tasks:
   db:reset:
     desc: Reset database (drop, create, migrate)
     cmds:
-      - task: db:down
-      - task: db:up
-      - sleep 2
-      - diesel database reset --database-url={{.DATABASE_URL}}
-      - diesel migration run --database-url={{.DATABASE_URL}}
+      - cmd: task db:down
+      - cmd: task db:up
+      - cmd: sleep 2
+      - cmd: diesel database reset --database-url={{.DATABASE_URL}}
+      - cmd: diesel migration run --database-url={{.DATABASE_URL}}
 
   db:migrate:
     desc: Run database migrations
@@ -55,17 +55,17 @@ tasks:
   db:setup:
     desc: Setup database for development
     cmds:
-      - task: db:up
-      - sleep 2
-      - diesel database setup --database-url={{.DATABASE_URL}}
+      - cmd: task db:up
+      - cmd: sleep 2
+      - cmd: diesel database setup --database-url={{.DATABASE_URL}}
 
   # Test database tasks
   test:db:setup:
     desc: Setup test database
     cmds:
-      - task: db:up
-      - sleep 2
-      - diesel database setup --database-url={{.TEST_DATABASE_URL}}
+      - cmd: task db:up
+      - cmd: sleep 2
+      - cmd: diesel database setup --database-url={{.TEST_DATABASE_URL}}
 
   test:db:reset:
     desc: Reset test database
@@ -160,70 +160,70 @@ tasks:
   clean:all:
     desc: Clean everything including database
     cmds:
-      - task: clean
-      - task: db:down
-      - rm -rf target/
+      - cmd: task clean
+      - cmd: task db:down
+      - cmd: rm -rf target/
 
   # CI tasks (what runs in continuous integration)
   ci:local:
     desc: Run full CI pipeline locally
     cmds:
-      - echo "🚀 Starting local CI pipeline..."
-      - task: fmt:check
-      - task: clippy
-      - task: test:db:setup
-      - task: build
-      - task: test:unit
-      - task: test:integration
-      - echo "✅ CI pipeline completed successfully!"
+      - cmd: echo "Starting local CI pipeline..."
+      - cmd: task fmt:check
+      - cmd: task clippy
+      - cmd: task test:db:setup
+      - cmd: task build
+      - cmd: task test:unit
+      - cmd: task test:integration
+      - cmd: echo "CI pipeline completed successfully!"
 
   ci:quick:
     desc: Quick CI check (no integration tests)
     cmds:
-      - echo "🚀 Quick CI check..."
-      - task: fmt:check
-      - task: clippy
-      - task: build
-      - task: test:unit
-      - echo "✅ Quick check completed!"
+      - cmd: echo "Quick CI check..."
+      - cmd: task fmt:check
+      - cmd: task clippy
+      - cmd: task build
+      - cmd: task test:unit
+      - cmd: echo "Quick check completed!"
 
   # Phase validation tasks
   validate:phase3:
     desc: Validate Phase 3 (Repositories)
     cmds:
-      - echo "📋 Validating Phase 3: Repository Layer"
-      - task: build
-      - task: test:unit
-      - cargo test --lib repository
-      - echo "✅ Phase 3 validation complete"
+      - cmd: echo "Validating Phase 3: Repository Layer"
+      - cmd: task build
+      - cmd: task test:unit
+      - cmd: cargo test --lib repository
+      - cmd: echo "Phase 3 validation complete"
 
   validate:phase4:
     desc: Validate Phase 4 (JWT & Password Utilities)
     cmds:
-      - echo "📋 Validating Phase 4: JWT & Password Utilities"
-      - task: build
-      - task: clippy
-      - cargo test --lib utils
-      - echo "✅ Phase 4 validation complete"
+      - cmd: echo "Validating Phase 4: JWT & Password Utilities"
+      - cmd: task build
+      - cmd: task clippy
+      - cmd: cargo test --lib utils
+      - cmd: echo "Phase 4 validation complete"
 
   validate:phase5:
     desc: Validate Phase 5 (Service Layer)
     cmds:
-      - echo "📋 Validating Phase 5: Service Layer"
-      - task: build
-      - task: clippy
-      - cargo test --lib services
-      - echo "✅ Phase 5 validation complete"
+      - cmd: echo "Validating Phase 5: Service Layer"
+      - cmd: task build
+      - cmd: task clippy
+      - cmd: cargo test --lib services
+      - cmd: echo "Phase 5 validation complete"
 
   validate:phase6:
     desc: Validate Phase 6 (Middleware & Extractors)
     cmds:
-      - echo "📋 Validating Phase 6: Middleware & Extractors Layer"
-      - task: build
-      - task: clippy
-      - cargo test --lib middleware
-      - cargo test --lib extractors
-      - echo "✅ Phase 6 validation complete"
+      - cmd: echo "Validating Phase 6: Middleware & Extractors Layer"
+      - cmd: task build
+      - cmd: task clippy
+      - cmd: cargo test --lib middleware
+      - cmd: cargo test --lib extractors
+      - cmd: echo "Phase 6 validation complete"
 
   # Docker tasks
   docker:build:
@@ -254,36 +254,36 @@ tasks:
   dev:setup:
     desc: Complete development environment setup
     cmds:
-      - echo "🔧 Setting up development environment..."
-      - task: db:up
-      - sleep 3
-      - task: db:setup
-      - task: build
-      - echo "✅ Development environment ready!"
+      - cmd: echo "Setting up development environment..."
+      - cmd: task db:up
+      - cmd: sleep 3
+      - cmd: task db:setup
+      - cmd: task build
+      - cmd: echo "Development environment ready!"
 
   dev:reset:
     desc: Reset development environment
     cmds:
-      - task: clean:all
-      - task: dev:setup
+      - cmd: task clean:all
+      - cmd: task dev:setup
 
   # Pre-commit hook
   pre-commit:
     desc: Run before committing (formatting, linting, tests)
     cmds:
-      - echo "🔍 Running pre-commit checks..."
-      - task: fmt
-      - task: clippy
-      - task: test:unit
-      - echo "✅ Ready to commit!"
+      - cmd: echo "Running pre-commit checks..."
+      - cmd: task fmt
+      - cmd: task clippy
+      - cmd: task test:unit
+      - cmd: echo "Ready to commit!"
 
   # Release tasks
   release:check:
     desc: Check if ready for release
     cmds:
-      - task: fmt:check
-      - task: clippy
-      - task: test:db:setup
-      - task: test
-      - task: build:release
-      - echo "✅ Release checks passed!"
+      - cmd: task fmt:check
+      - cmd: task clippy
+      - cmd: task test:db:setup
+      - cmd: task test
+      - cmd: task build:release
+      - cmd: echo "Release checks passed!"

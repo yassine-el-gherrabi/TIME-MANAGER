@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
   redirectTo = '/login',
 }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, needsSetup } = useAuth();
   const location = useLocation();
 
   // Show loading state while checking authentication
@@ -39,6 +39,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         </div>
       </div>
     );
+  }
+
+  // Redirect to setup wizard if system needs initial setup
+  if (needsSetup) {
+    return <Navigate to="/setup" replace />;
   }
 
   // Redirect to login if not authenticated

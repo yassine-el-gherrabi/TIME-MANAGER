@@ -19,6 +19,7 @@ export interface UseAuthReturn {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  needsSetup: boolean;
 
   // Actions
   login: (data: LoginRequest) => Promise<void>;
@@ -53,6 +54,7 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isAuthenticated,
     isLoading,
+    needsSetup,
     login,
     logout,
     logoutAll,
@@ -64,6 +66,7 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isAuthenticated,
     isLoading,
+    needsSetup,
 
     // Actions
     login,

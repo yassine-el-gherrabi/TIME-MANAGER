@@ -12,6 +12,7 @@ use super::handlers::absences;
 use super::handlers::audit_logs;
 use super::handlers::auth;
 use super::handlers::balances;
+use super::handlers::system;
 use super::handlers::clocks;
 use super::handlers::closed_days;
 use super::handlers::health::health_check;
@@ -64,6 +65,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/change-password", put(auth::change_password))
         .route("/accept-invite", post(auth::accept_invite))
         .route("/verify-invite", post(auth::verify_invite))
+        .route("/bootstrap", post(auth::bootstrap))
         .route("/sessions", get(auth::get_sessions))
         .route("/sessions/:id", delete(auth::revoke_session));
 
@@ -211,10 +213,14 @@ pub fn create_router(state: AppState) -> Router {
         .route("/", get(audit_logs::list_audit_logs))
         .route("/export", get(audit_logs::export_audit_logs));
 
+    // System routes (public)
+    let system_routes = Router::new().route("/status", get(system::get_status));
+
     // Main router
     Router::new()
         .route("/health", get(health_check))
         .route("/metrics", get(metrics::get_metrics))
+        .nest("/v1/system", system_routes)
         .nest("/v1/auth", auth_routes)
         .nest("/v1/auth/password", password_routes)
         .nest("/v1/users", user_routes)

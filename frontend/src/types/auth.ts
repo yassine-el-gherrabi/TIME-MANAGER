@@ -230,3 +230,56 @@ export interface ApiError {
   message?: string;
   details?: string[];
 }
+
+/**
+ * Bootstrap request payload (first superadmin setup)
+ */
+export interface BootstrapRequest {
+  organization_name: string;
+  organization_slug: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  timezone?: string;
+}
+
+/**
+ * Organization response
+ */
+export interface OrganizationResponse {
+  id: string;
+  name: string;
+  slug: string;
+  timezone: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * User response (from bootstrap)
+ */
+export interface UserResponse {
+  id: string;
+  organization_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: UserRole;
+  phone: string | null;
+  created_at: string;
+  updated_at: string;
+  has_password: boolean;
+}
+
+/**
+ * Bootstrap response
+ */
+export interface BootstrapResponse {
+  message: string;
+  organization: OrganizationResponse;
+  user: UserResponse;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}

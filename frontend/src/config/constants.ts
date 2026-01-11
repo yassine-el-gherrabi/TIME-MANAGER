@@ -34,6 +34,7 @@ export const AUTH_ENDPOINTS = {
   REVOKE_SESSION: (id: string) => `/auth/sessions/${id}`,
   ACCEPT_INVITE: '/auth/accept-invite',
   CHANGE_PASSWORD: '/auth/change-password',
+  BOOTSTRAP: '/auth/bootstrap',
 } as const;
 
 /**
