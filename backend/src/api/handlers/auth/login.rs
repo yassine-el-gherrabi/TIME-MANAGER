@@ -86,6 +86,9 @@ pub async fn login(
         .validate()
         .map_err(|e| AppError::ValidationError(format!("Validation failed: {}", e)))?;
 
+    // Normalize email to lowercase for case-insensitive matching
+    let email = payload.email.to_lowercase();
+
     // Create services
     let brute_force_service = BruteForceService::new(state.db_pool.clone());
     let jwt_service =
@@ -111,7 +114,7 @@ pub async fn login(
     // Check if email is rate limited
     // Use generic message to prevent user enumeration
     if brute_force_service
-        .is_email_rate_limited(&payload.email)
+        .is_email_rate_limited(&email)
         .await?
     {
         return Err(AppError::TooManyRequests(
@@ -121,20 +124,20 @@ pub async fn login(
 
     // Attempt login with session info
     let token_pair = match auth_service
-        .login(&payload.email, &payload.password, user_agent)
+        .login(&email, &payload.password, user_agent)
         .await
     {
         Ok(tokens) => {
             // Record successful login attempt
             brute_force_service
-                .record_attempt(&payload.email, &ip_address, true)
+                .record_attempt(&email, &ip_address, true)
                 .await?;
             tokens
         }
         Err(e) => {
             // Record failed login attempt
             brute_force_service
-                .record_attempt(&payload.email, &ip_address, false)
+                .record_attempt(&email, &ip_address, false)
                 .await?;
             return Err(e);
         }

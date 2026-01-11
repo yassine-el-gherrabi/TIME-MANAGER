@@ -25,7 +25,7 @@ impl BruteForceService {
         }
     }
 
-    /// Record a login attempt
+    /// Record a login attempt (email normalized to lowercase)
     pub async fn record_attempt(
         &self,
         email: &str,
@@ -33,7 +33,7 @@ impl BruteForceService {
         successful: bool,
     ) -> Result<(), AppError> {
         let new_attempt = NewLoginAttempt {
-            email: email.to_string(),
+            email: email.to_lowercase(),
             ip_address: ip_address.to_string(),
             successful,
         };
@@ -52,11 +52,12 @@ impl BruteForceService {
         Ok(attempts >= MAX_FAILED_ATTEMPTS as i64)
     }
 
-    /// Check if email is rate limited
+    /// Check if email is rate limited (case-insensitive)
     pub async fn is_email_rate_limited(&self, email: &str) -> Result<bool, AppError> {
+        let email_lower = email.to_lowercase();
         let attempts = self
             .attempt_repo
-            .count_failed_attempts_for_email(email, ATTEMPT_WINDOW_MINUTES)
+            .count_failed_attempts_for_email(&email_lower, ATTEMPT_WINDOW_MINUTES)
             .await?;
 
         Ok(attempts >= MAX_FAILED_ATTEMPTS as i64)
@@ -85,14 +86,15 @@ impl BruteForceService {
         Ok(())
     }
 
-    /// Validate rate limits before login attempt
+    /// Validate rate limits before login attempt (case-insensitive email)
     pub async fn validate_rate_limits(
         &self,
         email: &str,
         ip_address: Option<&str>,
     ) -> Result<(), AppError> {
+        let email_lower = email.to_lowercase();
         // Check email rate limit
-        if self.is_email_rate_limited(email).await? {
+        if self.is_email_rate_limited(&email_lower).await? {
             return Err(AppError::TooManyRequests(
                 "Too many failed login attempts for this email".to_string(),
             ));
@@ -110,14 +112,15 @@ impl BruteForceService {
         Ok(())
     }
 
-    /// Get recent failed attempts for email
+    /// Get recent failed attempts for email (case-insensitive)
     pub async fn get_failed_attempts_count(
         &self,
         email: &str,
         minutes: i64,
     ) -> Result<i64, AppError> {
+        let email_lower = email.to_lowercase();
         self.attempt_repo
-            .count_failed_attempts_for_email(email, minutes)
+            .count_failed_attempts_for_email(&email_lower, minutes)
             .await
     }
 

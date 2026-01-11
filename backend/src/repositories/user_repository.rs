@@ -49,8 +49,9 @@ impl UserRepository {
             .map_err(|_| AppError::NotFound("User not found".to_string()))
     }
 
-    /// Find user by email (excludes deleted users)
+    /// Find user by email (excludes deleted users, case-insensitive)
     pub async fn find_by_email(&self, email: &str) -> Result<User, AppError> {
+        let email_lower = email.to_lowercase();
         let mut conn = self
             .pool
             .get()
@@ -58,7 +59,7 @@ impl UserRepository {
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         users::table
-            .filter(users::email.eq(email))
+            .filter(users::email.eq(&email_lower))
             .filter(users::deleted_at.is_null())
             .first::<User>(&mut conn)
             .await
@@ -426,8 +427,9 @@ impl UserRepository {
         Ok(())
     }
 
-    /// Check if email exists (among active users only)
+    /// Check if email exists (among active users only, case-insensitive)
     pub async fn email_exists(&self, email: &str) -> Result<bool, AppError> {
+        let email_lower = email.to_lowercase();
         let mut conn = self
             .pool
             .get()
@@ -435,7 +437,7 @@ impl UserRepository {
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = users::table
-            .filter(users::email.eq(email))
+            .filter(users::email.eq(&email_lower))
             .filter(users::deleted_at.is_null())
             .count()
             .get_result::<i64>(&mut conn)
@@ -445,12 +447,13 @@ impl UserRepository {
         Ok(count > 0)
     }
 
-    /// Check if email exists for another user (among active users only)
+    /// Check if email exists for another user (among active users only, case-insensitive)
     pub async fn email_exists_for_other(
         &self,
         email: &str,
         user_id: Uuid,
     ) -> Result<bool, AppError> {
+        let email_lower = email.to_lowercase();
         let mut conn = self
             .pool
             .get()
@@ -458,7 +461,7 @@ impl UserRepository {
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         let count = users::table
-            .filter(users::email.eq(email))
+            .filter(users::email.eq(&email_lower))
             .filter(users::id.ne(user_id))
             .filter(users::deleted_at.is_null())
             .count()

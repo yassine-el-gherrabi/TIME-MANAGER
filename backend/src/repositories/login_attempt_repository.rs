@@ -31,12 +31,13 @@ impl LoginAttemptRepository {
             .map_err(AppError::DatabaseError)
     }
 
-    /// Count failed login attempts for email within timeframe (minutes)
+    /// Count failed login attempts for email within timeframe (minutes, case-insensitive)
     pub async fn count_failed_attempts_for_email(
         &self,
         email: &str,
         within_minutes: i64,
     ) -> Result<i64, AppError> {
+        let email_lower = email.to_lowercase();
         let mut conn = self
             .pool
             .get()
@@ -46,7 +47,7 @@ impl LoginAttemptRepository {
             chrono::Utc::now().naive_utc() - chrono::Duration::minutes(within_minutes);
 
         login_attempts::table
-            .filter(login_attempts::email.eq(email))
+            .filter(login_attempts::email.eq(&email_lower))
             .filter(login_attempts::successful.eq(false))
             .filter(login_attempts::attempted_at.gt(cutoff_time))
             .count()
@@ -79,12 +80,13 @@ impl LoginAttemptRepository {
             .map_err(AppError::DatabaseError)
     }
 
-    /// Get recent login attempts for email
+    /// Get recent login attempts for email (case-insensitive)
     pub async fn get_recent_attempts_for_email(
         &self,
         email: &str,
         limit: i64,
     ) -> Result<Vec<LoginAttempt>, AppError> {
+        let email_lower = email.to_lowercase();
         let mut conn = self
             .pool
             .get()
@@ -92,7 +94,7 @@ impl LoginAttemptRepository {
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         login_attempts::table
-            .filter(login_attempts::email.eq(email))
+            .filter(login_attempts::email.eq(&email_lower))
             .order(login_attempts::attempted_at.desc())
             .limit(limit)
             .load::<LoginAttempt>(&mut conn)
