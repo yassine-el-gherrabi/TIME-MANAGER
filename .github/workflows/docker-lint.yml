@@ -1,4 +1,4 @@
-name: Docker
+name: Dockerfile
 
 on:
   push:
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   hadolint:
-    name: "\U0001F433 Lint ${{ matrix.dockerfile }}"
+    name: "hadolint · ${{ matrix.dockerfile }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,7 +38,7 @@ jobs:
           failure-threshold: warning
 
   compose-validate:
-    name: "\U0001F433 Compose Validate"
+    name: "docker compose config"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

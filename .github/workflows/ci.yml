@@ -1,4 +1,4 @@
-name: CI
+name: Code
 
 on:
   push:
@@ -14,11 +14,8 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  # ══════════════════════════════════════════════════════════════
-  #                         BACKEND
-  # ══════════════════════════════════════════════════════════════
   backend-lint:
-    name: "\U0001F980 Lint"
+    name: "Backend · cargo fmt + clippy"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,7 +45,7 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
   backend-test:
-    name: "\U0001F980 Test"
+    name: "Backend · cargo nextest"
     runs-on: ubuntu-latest
     needs: [backend-lint]
     defaults:
@@ -85,11 +82,8 @@ jobs:
       - name: Run doctests
         run: cargo test --doc
 
-  # ══════════════════════════════════════════════════════════════
-  #                         FRONTEND
-  # ══════════════════════════════════════════════════════════════
   frontend-lint:
-    name: "\u269B\uFE0F Lint"
+    name: "Frontend · eslint + tsc"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -114,7 +108,7 @@ jobs:
         run: npm run type-check
 
   frontend-test:
-    name: "\u269B\uFE0F Test"
+    name: "Frontend · vitest"
     runs-on: ubuntu-latest
     needs: [frontend-lint]
     defaults:
@@ -147,7 +141,7 @@ jobs:
           retention-days: 1
 
   frontend-e2e:
-    name: "\u269B\uFE0F E2E"
+    name: "Frontend · playwright"
     runs-on: ubuntu-latest
     needs: [frontend-test]
     defaults:
@@ -185,21 +179,3 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 7
-
-  # ══════════════════════════════════════════════════════════════
-  #                         GATE
-  # ══════════════════════════════════════════════════════════════
-  ci-success:
-    name: "\u2705 All Checks Passed"
-    runs-on: ubuntu-latest
-    needs: [backend-test, frontend-e2e]
-    if: always()
-    steps:
-      - name: Check all jobs
-        run: |
-          if [[ "${{ needs.backend-test.result }}" != "success" ]] || \
-             [[ "${{ needs.frontend-e2e.result }}" != "success" ]]; then
-            echo "Some checks failed"
-            exit 1
-          fi
-          echo "All checks passed!"

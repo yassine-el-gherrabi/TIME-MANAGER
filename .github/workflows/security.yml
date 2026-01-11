@@ -1,4 +1,4 @@
-name: Security
+name: Audit
 
 on:
   push:
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   cargo-audit:
-    name: "\U0001F512 Rust Audit"
+    name: "Backend · cargo audit"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,7 +37,7 @@ jobs:
         run: cargo audit
 
   npm-audit:
-    name: "\U0001F512 NPM Audit"
+    name: "Frontend · npm audit"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,17 +52,3 @@ jobs:
 
       - name: Run npm audit
         run: npm audit --audit-level=high
-
-  security-success:
-    name: "\u2705 Security Passed"
-    runs-on: ubuntu-latest
-    needs: [cargo-audit, npm-audit]
-    if: always()
-    steps:
-      - name: Check results
-        run: |
-          if [[ "${{ needs.cargo-audit.result }}" != "success" ]] || \
-             [[ "${{ needs.npm-audit.result }}" != "success" ]]; then
-            exit 1
-          fi
-          echo "All security checks passed!"
