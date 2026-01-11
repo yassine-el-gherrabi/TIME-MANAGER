@@ -18,7 +18,9 @@ pub async fn get_my_teams(
     AuthenticatedUser(claims): AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
     let team_service = TeamService::new(state.db_pool.clone());
-    let teams = team_service.get_user_teams(claims.org_id, claims.sub).await?;
+    let teams = team_service
+        .get_user_teams(claims.org_id, claims.sub)
+        .await?;
 
     Ok((StatusCode::OK, Json(teams)))
 }

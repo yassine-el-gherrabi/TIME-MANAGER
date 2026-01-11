@@ -50,9 +50,9 @@ impl WorkScheduleRepository {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
                     _,
-                ) => AppError::Conflict(
-                    "A work schedule with this name already exists".to_string(),
-                ),
+                ) => {
+                    AppError::Conflict("A work schedule with this name already exists".to_string())
+                }
                 _ => AppError::DatabaseError(e),
             })
     }

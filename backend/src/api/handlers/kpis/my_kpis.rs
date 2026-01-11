@@ -30,9 +30,7 @@ pub async fn get_my_kpis(
 
     // Default to current month if not specified
     let now = Utc::now();
-    let start = query.start_date.unwrap_or_else(|| {
-        now - Duration::days(30)
-    });
+    let start = query.start_date.unwrap_or_else(|| now - Duration::days(30));
     let end = query.end_date.unwrap_or(now);
 
     let period = DateRange { start, end };

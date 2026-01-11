@@ -36,7 +36,13 @@ pub async fn reject_absence(
 
     let service = AbsenceService::new(state.db_pool.clone());
     let absence = service
-        .reject(claims.org_id, absence_id, claims.sub, claims.role, body.reason)
+        .reject(
+            claims.org_id,
+            absence_id,
+            claims.sub,
+            claims.role,
+            body.reason,
+        )
         .await?;
 
     Ok((StatusCode::OK, Json(absence)))

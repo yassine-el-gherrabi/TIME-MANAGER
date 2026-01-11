@@ -5,8 +5,8 @@ use uuid::Uuid;
 use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{
-    DayConfig, NewWorkSchedule, NewWorkScheduleDay, WorkScheduleDay,
-    WorkScheduleDayUpdate, WorkScheduleUpdate, WorkScheduleWithDays,
+    DayConfig, NewWorkSchedule, NewWorkScheduleDay, WorkScheduleDay, WorkScheduleDayUpdate,
+    WorkScheduleUpdate, WorkScheduleWithDays,
 };
 use crate::repositories::WorkScheduleRepository;
 
@@ -150,7 +150,10 @@ impl WorkScheduleService {
             updated_at: Some(Utc::now()),
         };
 
-        let schedule = self.schedule_repo.update(org_id, schedule_id, update).await?;
+        let schedule = self
+            .schedule_repo
+            .update(org_id, schedule_id, update)
+            .await?;
         let days = self.schedule_repo.get_days(schedule_id).await?;
 
         Ok(WorkScheduleWithDays { schedule, days })
@@ -237,7 +240,10 @@ impl WorkScheduleService {
         org_id: Uuid,
         user_id: Uuid,
     ) -> Result<Option<WorkScheduleWithDays>, AppError> {
-        let schedule = self.schedule_repo.get_user_schedule(org_id, user_id).await?;
+        let schedule = self
+            .schedule_repo
+            .get_user_schedule(org_id, user_id)
+            .await?;
 
         match schedule {
             Some(s) => {

@@ -71,7 +71,10 @@ pub async fn add_member(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Check authorization - Admin+ only
@@ -88,8 +91,13 @@ pub async fn add_member(
 
     // Log audit event (entity_id is the team_id, data contains both team and user)
     let audit_service = AuditService::new(state.db_pool.clone());
-    let audit_data = TeamMemberAuditData { team_id, user_id: body.user_id };
-    let _ = audit_service.log_create(&audit_ctx, "team_members", team_id, &audit_data).await;
+    let audit_data = TeamMemberAuditData {
+        team_id,
+        user_id: body.user_id,
+    };
+    let _ = audit_service
+        .log_create(&audit_ctx, "team_members", team_id, &audit_data)
+        .await;
 
     Ok((StatusCode::CREATED, Json(member)))
 }
@@ -118,7 +126,10 @@ pub async fn remove_member(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Check authorization - Admin+ only
@@ -136,7 +147,9 @@ pub async fn remove_member(
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
     let audit_data = TeamMemberAuditData { team_id, user_id };
-    let _ = audit_service.log_delete(&audit_ctx, "team_members", team_id, &audit_data).await;
+    let _ = audit_service
+        .log_delete(&audit_ctx, "team_members", team_id, &audit_data)
+        .await;
 
     Ok(StatusCode::NO_CONTENT)
 }

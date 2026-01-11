@@ -25,8 +25,8 @@ pub async fn get_organization(
     let organization = org_repo.find_by_id(org_id).await?;
     let user_count = org_repo.get_user_count(org_id).await?;
 
-    let response = OrganizationResponse::from_organization(&organization)
-        .with_user_count(user_count);
+    let response =
+        OrganizationResponse::from_organization(&organization).with_user_count(user_count);
 
     Ok((StatusCode::OK, Json(response)))
 }

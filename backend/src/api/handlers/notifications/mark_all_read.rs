@@ -1,9 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::Serialize;
 
 use crate::config::AppState;
@@ -25,9 +20,7 @@ pub async fn mark_all_read(
 ) -> Result<impl IntoResponse, AppError> {
     let service = NotificationService::new(state.db_pool.clone());
 
-    let marked_count = service
-        .mark_all_as_read(claims.org_id, claims.sub)
-        .await?;
+    let marked_count = service.mark_all_as_read(claims.org_id, claims.sub).await?;
 
     Ok((StatusCode::OK, Json(MarkAllReadResponse { marked_count })))
 }

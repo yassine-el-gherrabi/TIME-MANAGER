@@ -15,11 +15,7 @@ pub async fn list_absence_types(
 ) -> Result<impl IntoResponse, AppError> {
     // Check cache first
     if let Some(cached_types) = CacheService::get_absence_types(claims.org_id) {
-        return Ok((
-            StatusCode::OK,
-            [("x-cache", "HIT")],
-            Json(cached_types),
-        ));
+        return Ok((StatusCode::OK, [("x-cache", "HIT")], Json(cached_types)));
     }
 
     // Cache miss - fetch from database
@@ -29,9 +25,5 @@ pub async fn list_absence_types(
     // Store in cache
     CacheService::set_absence_types(claims.org_id, types.clone());
 
-    Ok((
-        StatusCode::OK,
-        [("x-cache", "MISS")],
-        Json(types),
-    ))
+    Ok((StatusCode::OK, [("x-cache", "MISS")], Json(types)))
 }

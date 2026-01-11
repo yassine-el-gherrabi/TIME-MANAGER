@@ -35,9 +35,8 @@ fn init_tracing() -> anyhow::Result<()> {
     // Default to INFO level - DEBUG is too verbose for Loki
     // Filter out noisy dependencies (hyper, h2, tower, etc.)
     // Override with RUST_LOG env var if needed (e.g., RUST_LOG=timemanager_backend=debug)
-    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| {
-            "timemanager_backend=info,\
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        "timemanager_backend=info,\
              hyper=warn,\
              h2=warn,\
              tower=warn,\
@@ -46,18 +45,18 @@ fn init_tracing() -> anyhow::Result<()> {
              axum::rejection=warn,\
              diesel=warn,\
              r2d2=warn"
-                .into()
-        });
+            .into()
+    });
 
     // JSON format layer for Loki - minimal output
     // Loki adds: timestamp, level detection, container labels
     // We only output: message + flattened contextual fields (user_id, method, etc.)
     let fmt_layer = tracing_subscriber::fmt::layer()
         .json()
-        .without_time()           // Loki adds its own timestamp
-        .with_target(false)       // Don't include module path (too verbose)
+        .without_time() // Loki adds its own timestamp
+        .with_target(false) // Don't include module path (too verbose)
         .with_current_span(false) // Don't include span info (Tempo handles tracing)
-        .flatten_event(true)      // Flatten fields to root level
+        .flatten_event(true) // Flatten fields to root level
         .with_span_events(FmtSpan::NONE); // Don't log span open/close events
 
     if let Some(endpoint) = otel_endpoint {

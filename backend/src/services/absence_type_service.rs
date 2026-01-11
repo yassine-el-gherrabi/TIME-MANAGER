@@ -55,7 +55,12 @@ impl AbsenceTypeService {
         }
 
         // Check for duplicate code
-        if self.absence_type_repo.find_by_code(org_id, &code).await?.is_some() {
+        if self
+            .absence_type_repo
+            .find_by_code(org_id, &code)
+            .await?
+            .is_some()
+        {
             return Err(AppError::Conflict(
                 "An absence type with this code already exists".to_string(),
             ));
@@ -76,11 +81,7 @@ impl AbsenceTypeService {
     }
 
     /// Get an absence type by ID
-    pub async fn get(
-        &self,
-        org_id: Uuid,
-        type_id: Uuid,
-    ) -> Result<AbsenceTypeResponse, AppError> {
+    pub async fn get(&self, org_id: Uuid, type_id: Uuid) -> Result<AbsenceTypeResponse, AppError> {
         let absence_type = self.absence_type_repo.find_by_id(org_id, type_id).await?;
         Ok(AbsenceTypeResponse::from(absence_type))
     }
@@ -96,7 +97,10 @@ impl AbsenceTypeService {
         &self,
         org_id: Uuid,
     ) -> Result<Vec<AbsenceTypeResponse>, AppError> {
-        let types = self.absence_type_repo.list_balance_affecting(org_id).await?;
+        let types = self
+            .absence_type_repo
+            .list_balance_affecting(org_id)
+            .await?;
         Ok(types.into_iter().map(AbsenceTypeResponse::from).collect())
     }
 
@@ -116,7 +120,11 @@ impl AbsenceTypeService {
                 ));
             }
 
-            if let Some(existing) = self.absence_type_repo.find_by_code(org_id, &normalized).await? {
+            if let Some(existing) = self
+                .absence_type_repo
+                .find_by_code(org_id, &normalized)
+                .await?
+            {
                 if existing.id != type_id {
                     return Err(AppError::Conflict(
                         "An absence type with this code already exists".to_string(),
@@ -139,7 +147,10 @@ impl AbsenceTypeService {
             updated_at: None,
         };
 
-        let absence_type = self.absence_type_repo.update(org_id, type_id, update).await?;
+        let absence_type = self
+            .absence_type_repo
+            .update(org_id, type_id, update)
+            .await?;
         Ok(AbsenceTypeResponse::from(absence_type))
     }
 

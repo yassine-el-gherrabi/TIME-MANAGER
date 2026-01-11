@@ -397,7 +397,10 @@ impl ClockRepository {
     }
 
     /// Get all currently clocked in users for organization
-    pub async fn get_currently_clocked_in(&self, org_id: Uuid) -> Result<Vec<ClockEntry>, AppError> {
+    pub async fn get_currently_clocked_in(
+        &self,
+        org_id: Uuid,
+    ) -> Result<Vec<ClockEntry>, AppError> {
         let mut conn = self
             .pool
             .get()
@@ -444,10 +447,7 @@ impl ClockRepository {
     }
 
     /// Get user info for clock entries
-    pub async fn get_user_info(
-        &self,
-        user_id: Uuid,
-    ) -> Result<(String, String), AppError> {
+    pub async fn get_user_info(&self, user_id: Uuid) -> Result<(String, String), AppError> {
         let mut conn = self
             .pool
             .get()

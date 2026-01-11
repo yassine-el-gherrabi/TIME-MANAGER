@@ -58,7 +58,10 @@ pub async fn restore_user(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Get user repository
@@ -88,7 +91,15 @@ pub async fn restore_user(
 
     // Log audit event (fire and forget) - log as update since we're changing deleted_at
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_update(&audit_ctx, "users", user_id, &old_user_response, &new_user_response).await;
+    let _ = audit_service
+        .log_update(
+            &audit_ctx,
+            "users",
+            user_id,
+            &old_user_response,
+            &new_user_response,
+        )
+        .await;
 
     // Build response
     let response = RestoreUserResponse {

@@ -56,7 +56,10 @@ pub async fn delete_organization(
         Some(claims.sub),
         Some(org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     let org_repo = OrganizationRepository::new(state.db_pool.clone());
@@ -70,7 +73,9 @@ pub async fn delete_organization(
 
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_delete(&audit_ctx, "organizations", org_id, &org_response).await;
+    let _ = audit_service
+        .log_delete(&audit_ctx, "organizations", org_id, &org_response)
+        .await;
 
     Ok((
         StatusCode::OK,

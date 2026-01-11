@@ -10,7 +10,9 @@ use validator::Validate;
 use crate::config::AppState;
 use crate::error::AppError;
 use crate::extractors::{RoleGuard, SuperAdmin};
-use crate::models::{AuditContext, CreateOrganizationRequest, NewOrganization, OrganizationResponse};
+use crate::models::{
+    AuditContext, CreateOrganizationRequest, NewOrganization, OrganizationResponse,
+};
 use crate::repositories::OrganizationRepository;
 use crate::services::AuditService;
 
@@ -52,16 +54,19 @@ pub async fn create_organization(
     let claims = user.0;
 
     // Validate request
-    request.validate().map_err(|e| {
-        AppError::ValidationError(e.to_string())
-    })?;
+    request
+        .validate()
+        .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     // Extract audit context
     let audit_ctx = AuditContext::new(
         Some(claims.sub),
         None, // Organization-level operation, not org-specific
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     let org_repo = OrganizationRepository::new(state.db_pool.clone());
@@ -77,12 +82,13 @@ pub async fn create_organization(
     let new_org = NewOrganization::from_request(request);
     let organization = org_repo.create(new_org).await?;
 
-    let response_org = OrganizationResponse::from_organization(&organization)
-        .with_user_count(0);
+    let response_org = OrganizationResponse::from_organization(&organization).with_user_count(0);
 
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_create(&audit_ctx, "organizations", organization.id, &response_org).await;
+    let _ = audit_service
+        .log_create(&audit_ctx, "organizations", organization.id, &response_org)
+        .await;
 
     Ok((
         StatusCode::CREATED,

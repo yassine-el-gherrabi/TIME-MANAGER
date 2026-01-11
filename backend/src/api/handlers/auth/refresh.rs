@@ -47,10 +47,7 @@ fn generate_csrf_token() -> String {
 /// POST /api/v1/auth/refresh
 ///
 /// Refresh access token using refresh token from HttpOnly cookie
-#[tracing::instrument(
-    name = "auth.refresh",
-    skip(state, headers)
-)]
+#[tracing::instrument(name = "auth.refresh", skip(state, headers))]
 pub async fn refresh(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -60,7 +57,8 @@ pub async fn refresh(
         .ok_or_else(|| AppError::Unauthorized("No refresh token provided".to_string()))?;
 
     // Create JWT service and auth service
-    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
+    let jwt_service =
+        crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let auth_service = AuthService::new(state.db_pool.clone(), jwt_service);
 
     // Extract User-Agent from headers for session tracking
@@ -117,10 +115,7 @@ mod tests {
             "Cookie",
             "refresh_token=abc123; other_cookie=value".parse().unwrap(),
         );
-        assert_eq!(
-            extract_refresh_token(&headers),
-            Some("abc123".to_string())
-        );
+        assert_eq!(extract_refresh_token(&headers), Some("abc123".to_string()));
     }
 
     #[test]

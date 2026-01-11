@@ -54,8 +54,7 @@ impl JwtService {
     ) -> Result<String, AppError> {
         let claims = Claims::new(user_id, org_id, role, self.access_token_expiry);
 
-        encode(&self.header, &claims, &self.encoding_key)
-            .map_err(|_| AppError::InternalError)
+        encode(&self.header, &claims, &self.encoding_key).map_err(|_| AppError::InternalError)
     }
 
     /// Generate refresh token (7 days)
@@ -67,8 +66,7 @@ impl JwtService {
     ) -> Result<String, AppError> {
         let claims = Claims::new(user_id, org_id, role, self.refresh_token_expiry);
 
-        encode(&self.header, &claims, &self.encoding_key)
-            .map_err(|_e| AppError::InternalError)
+        encode(&self.header, &claims, &self.encoding_key).map_err(|_e| AppError::InternalError)
     }
 
     /// Validate and decode token

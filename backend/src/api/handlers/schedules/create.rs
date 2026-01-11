@@ -22,7 +22,9 @@ pub async fn create_schedule(
     }
 
     let schedule_service = WorkScheduleService::new(state.db_pool.clone());
-    let schedule = schedule_service.create_schedule(claims.org_id, body).await?;
+    let schedule = schedule_service
+        .create_schedule(claims.org_id, body)
+        .await?;
 
     // Invalidate cache
     CacheService::invalidate_schedules(claims.org_id);

@@ -6,8 +6,8 @@ use crate::config::database::DbPool;
 use crate::domain::enums::AuditAction;
 use crate::error::AppError;
 use crate::models::{
-    AuditContext, AuditLogFilter, AuditLogResponse, AuditUserInfo, NewAuditLog,
-    PaginatedAuditLogs, Pagination,
+    AuditContext, AuditLogFilter, AuditLogResponse, AuditUserInfo, NewAuditLog, PaginatedAuditLogs,
+    Pagination,
 };
 use crate::repositories::AuditRepository;
 
@@ -135,10 +135,8 @@ impl AuditService {
 
         // Fetch user info
         let users_info = self.audit_repo.get_users_info(user_ids).await?;
-        let users_map: HashMap<Uuid, AuditUserInfo> = users_info
-            .into_iter()
-            .map(|u| (u.id, u))
-            .collect();
+        let users_map: HashMap<Uuid, AuditUserInfo> =
+            users_info.into_iter().map(|u| (u.id, u)).collect();
 
         // Build response with user info
         let data: Vec<AuditLogResponse> = audit_logs
@@ -178,10 +176,8 @@ impl AuditService {
 
         // Fetch user info
         let users_info = self.audit_repo.get_users_info(user_ids).await?;
-        let users_map: HashMap<Uuid, AuditUserInfo> = users_info
-            .into_iter()
-            .map(|u| (u.id, u))
-            .collect();
+        let users_map: HashMap<Uuid, AuditUserInfo> =
+            users_info.into_iter().map(|u| (u.id, u)).collect();
 
         // Build CSV
         let mut csv = String::from(

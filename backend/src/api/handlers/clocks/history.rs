@@ -38,17 +38,24 @@ pub async fn get_history(
 ) -> Result<impl IntoResponse, AppError> {
     let clock_service = ClockService::new(state.db_pool.clone());
 
-    let status_filter = query.status.as_ref().and_then(|s| match s.to_lowercase().as_str() {
-        "pending" => Some(ClockEntryStatus::Pending),
-        "approved" => Some(ClockEntryStatus::Approved),
-        "rejected" => Some(ClockEntryStatus::Rejected),
-        _ => None,
-    });
+    let status_filter = query
+        .status
+        .as_ref()
+        .and_then(|s| match s.to_lowercase().as_str() {
+            "pending" => Some(ClockEntryStatus::Pending),
+            "approved" => Some(ClockEntryStatus::Approved),
+            "rejected" => Some(ClockEntryStatus::Rejected),
+            _ => None,
+        });
 
     // Convert NaiveDate to DateTime<Utc> for filtering
     let filter = ClockFilter {
-        start_date: query.start_date.map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc()),
-        end_date: query.end_date.map(|d| d.and_hms_opt(23, 59, 59).unwrap().and_utc()),
+        start_date: query
+            .start_date
+            .map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc()),
+        end_date: query
+            .end_date
+            .map(|d| d.and_hms_opt(23, 59, 59).unwrap().and_utc()),
         status: status_filter,
         user_id: None,
     };

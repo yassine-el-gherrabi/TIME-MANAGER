@@ -34,7 +34,13 @@ pub async fn reject_entry(
     let clock_service = ClockService::new(state.db_pool.clone());
 
     let entry = clock_service
-        .reject_entry(claims.org_id, entry_id, claims.sub, claims.role, body.reason)
+        .reject_entry(
+            claims.org_id,
+            entry_id,
+            claims.sub,
+            claims.role,
+            body.reason,
+        )
         .await?;
 
     Ok((StatusCode::OK, Json(entry)))

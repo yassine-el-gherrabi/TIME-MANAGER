@@ -46,11 +46,12 @@ where
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         // First, extract the JSON payload
-        let Json(value) = Json::<T>::from_request(req, state)
-            .await
-            .map_err(|rejection: JsonRejection| {
-                AppError::ValidationError(format!("Invalid JSON: {}", rejection))
-            })?;
+        let Json(value) =
+            Json::<T>::from_request(req, state)
+                .await
+                .map_err(|rejection: JsonRejection| {
+                    AppError::ValidationError(format!("Invalid JSON: {}", rejection))
+                })?;
 
         // Then validate the payload
         value
@@ -81,9 +82,7 @@ mod tests {
         name: String,
     }
 
-    async fn test_handler(
-        ValidatedJson(_payload): ValidatedJson<TestPayload>,
-    ) -> StatusCode {
+    async fn test_handler(ValidatedJson(_payload): ValidatedJson<TestPayload>) -> StatusCode {
         StatusCode::OK
     }
 
@@ -99,7 +98,9 @@ mod tests {
             .method("POST")
             .uri("/test")
             .header("Content-Type", "application/json")
-            .body(Body::from(r#"{"email": "test@example.com", "name": "John"}"#))
+            .body(Body::from(
+                r#"{"email": "test@example.com", "name": "John"}"#,
+            ))
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();

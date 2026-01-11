@@ -5,7 +5,9 @@ use uuid::Uuid;
 use crate::config::database::DbPool;
 use crate::domain::enums::ClockEntryStatus;
 use crate::error::AppError;
-use crate::repositories::{ClockRepository, TeamRepository, UserRepository, WorkScheduleRepository};
+use crate::repositories::{
+    ClockRepository, TeamRepository, UserRepository, WorkScheduleRepository,
+};
 
 /// Individual user KPIs
 #[derive(Debug, Serialize)]
@@ -149,8 +151,9 @@ impl KPIService {
             .await?;
 
         // Calculate punctuality
-        let (days_worked, days_late) =
-            self.calculate_punctuality(org_id, user_id, &entries).await?;
+        let (days_worked, days_late) = self
+            .calculate_punctuality(org_id, user_id, &entries)
+            .await?;
 
         let punctuality_rate = if days_worked > 0 {
             ((days_worked - days_late) as f64 / days_worked as f64) * 100.0
@@ -205,8 +208,9 @@ impl KPIService {
                 .sum::<i64>() as f64
                 / 60.0;
 
-            let (days_worked, days_late) =
-                self.calculate_punctuality(org_id, member.id, &entries).await?;
+            let (days_worked, days_late) = self
+                .calculate_punctuality(org_id, member.id, &entries)
+                .await?;
 
             let punctuality_rate = if days_worked > 0 {
                 ((days_worked - days_late) as f64 / days_worked as f64) * 100.0
@@ -255,11 +259,7 @@ impl KPIService {
     }
 
     /// Get organization-wide KPIs
-    pub async fn get_org_kpis(
-        &self,
-        org_id: Uuid,
-        period: DateRange,
-    ) -> Result<OrgKPIs, AppError> {
+    pub async fn get_org_kpis(&self, org_id: Uuid, period: DateRange) -> Result<OrgKPIs, AppError> {
         // This is a simplified version - in production you'd want proper pagination
         let filter = crate::models::UserFilter::default();
         let pagination = crate::models::Pagination {
@@ -289,8 +289,9 @@ impl KPIService {
                     .sum::<i64>() as f64
                     / 60.0;
 
-                let (days_worked, days_late) =
-                    self.calculate_punctuality(org_id, user.id, &entries).await?;
+                let (days_worked, days_late) = self
+                    .calculate_punctuality(org_id, user.id, &entries)
+                    .await?;
 
                 let punctuality = if days_worked > 0 {
                     ((days_worked - days_late) as f64 / days_worked as f64) * 100.0
@@ -303,7 +304,11 @@ impl KPIService {
             }
         }
 
-        let clocked_in = self.clock_repo.get_currently_clocked_in(org_id).await?.len() as i32;
+        let clocked_in = self
+            .clock_repo
+            .get_currently_clocked_in(org_id)
+            .await?
+            .len() as i32;
 
         let average_punctuality = if users_with_entries > 0 {
             total_punctuality / users_with_entries as f64
@@ -438,7 +443,10 @@ impl KPIService {
         entries: &[crate::models::ClockEntry],
     ) -> Result<(i32, i32), AppError> {
         // Get user's schedule
-        let schedule = self.schedule_repo.get_user_schedule(org_id, user_id).await?;
+        let schedule = self
+            .schedule_repo
+            .get_user_schedule(org_id, user_id)
+            .await?;
         let schedule = match schedule {
             Some(s) => s,
             None => {
@@ -469,8 +477,8 @@ impl KPIService {
             let weekday = entry.clock_in.weekday().num_days_from_monday() as i16;
             if let Some(day_schedule) = days.iter().find(|d| d.day_of_week == weekday) {
                 let clock_in_time = entry.clock_in.time();
-                let expected_start = day_schedule.start_time
-                    + chrono::Duration::minutes(grace_period_minutes);
+                let expected_start =
+                    day_schedule.start_time + chrono::Duration::minutes(grace_period_minutes);
 
                 if clock_in_time > expected_start {
                     days_late += 1;

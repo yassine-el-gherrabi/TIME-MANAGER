@@ -13,9 +13,10 @@ use super::handlers::audit_logs;
 use super::handlers::auth;
 use super::handlers::balances;
 use super::handlers::clocks;
-use super::handlers::health::health_check;
 use super::handlers::closed_days;
+use super::handlers::health::health_check;
 use super::handlers::kpis;
+use super::handlers::metrics;
 use super::handlers::notifications;
 use super::handlers::organizations;
 use super::handlers::password;
@@ -23,7 +24,6 @@ use super::handlers::reports;
 use super::handlers::schedules;
 use super::handlers::teams;
 use super::handlers::users;
-use super::handlers::metrics;
 use crate::config::AppState;
 
 /// Creates the main application router with all endpoints
@@ -113,7 +113,10 @@ pub fn create_router(state: AppState) -> Router {
 
     // Work schedule routes
     let schedule_routes = Router::new()
-        .route("/", get(schedules::list_schedules).post(schedules::create_schedule))
+        .route(
+            "/",
+            get(schedules::list_schedules).post(schedules::create_schedule),
+        )
         .route("/me", get(schedules::get_my_schedule))
         .route(
             "/:id",
@@ -188,8 +191,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/read-all", put(notifications::mark_all_read));
 
     // Reports export routes (Admin only)
-    let reports_routes = Router::new()
-        .route("/export", get(reports::export_reports));
+    let reports_routes = Router::new().route("/export", get(reports::export_reports));
 
     // Organization routes (Super Admin only)
     let organization_routes = Router::new()
@@ -313,8 +315,8 @@ mod tests {
             .build()
             .expect("Failed to create test pool");
 
-        let email_service = EmailService::new(config.email.clone())
-            .expect("Failed to create email service");
+        let email_service =
+            EmailService::new(config.email.clone()).expect("Failed to create email service");
         let hibp_service = HibpService::new(config.hibp.clone());
         let rate_limiter = EndpointRateLimiter::new();
         let metrics_service = MetricsService::new();

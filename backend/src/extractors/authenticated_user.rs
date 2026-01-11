@@ -26,7 +26,10 @@ pub struct AuthenticatedUser(pub Claims);
 impl FromRequestParts<AppState> for AuthenticatedUser {
     type Rejection = AuthError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
         // Extract Authorization header
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
@@ -34,11 +37,9 @@ impl FromRequestParts<AppState> for AuthenticatedUser {
             .map_err(|_| AuthError::MissingToken)?;
 
         // Get JWT keys from AppState config (loaded from PEM files)
-        let jwt_service = JwtService::new(
-            &state.config.jwt_private_key,
-            &state.config.jwt_public_key,
-        )
-        .map_err(|_| AuthError::InvalidToken)?;
+        let jwt_service =
+            JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)
+                .map_err(|_| AuthError::InvalidToken)?;
 
         // Validate token
         let claims = jwt_service

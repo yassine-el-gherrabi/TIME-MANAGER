@@ -19,7 +19,10 @@ impl NotificationRepository {
     }
 
     /// Create a new notification
-    pub async fn create(&self, new_notification: NewNotification) -> Result<Notification, AppError> {
+    pub async fn create(
+        &self,
+        new_notification: NewNotification,
+    ) -> Result<Notification, AppError> {
         let mut conn = self
             .pool
             .get()

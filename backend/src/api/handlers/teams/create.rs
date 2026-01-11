@@ -51,7 +51,10 @@ pub async fn create_team(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Check authorization - Admin+ only
@@ -66,7 +69,9 @@ pub async fn create_team(
 
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_create(&audit_ctx, "teams", team.id, &team).await;
+    let _ = audit_service
+        .log_create(&audit_ctx, "teams", team.id, &team)
+        .await;
 
     Ok((StatusCode::CREATED, Json(team)))
 }

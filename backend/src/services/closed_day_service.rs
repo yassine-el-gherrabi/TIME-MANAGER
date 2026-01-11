@@ -64,7 +64,10 @@ impl ClosedDayService {
         org_id: Uuid,
         closed_day_id: Uuid,
     ) -> Result<ClosedDayResponse, AppError> {
-        let closed_day = self.closed_day_repo.find_by_id(org_id, closed_day_id).await?;
+        let closed_day = self
+            .closed_day_repo
+            .find_by_id(org_id, closed_day_id)
+            .await?;
         Ok(ClosedDayResponse::from(closed_day))
     }
 
@@ -75,7 +78,10 @@ impl ClosedDayService {
         filter: ClosedDayFilter,
     ) -> Result<Vec<ClosedDayResponse>, AppError> {
         let closed_days = self.closed_day_repo.list(org_id, &filter).await?;
-        Ok(closed_days.into_iter().map(ClosedDayResponse::from).collect())
+        Ok(closed_days
+            .into_iter()
+            .map(ClosedDayResponse::from)
+            .collect())
     }
 
     /// List all closed days for a year
@@ -85,7 +91,10 @@ impl ClosedDayService {
         year: i32,
     ) -> Result<Vec<ClosedDayResponse>, AppError> {
         let closed_days = self.closed_day_repo.list_for_year(org_id, year).await?;
-        Ok(closed_days.into_iter().map(ClosedDayResponse::from).collect())
+        Ok(closed_days
+            .into_iter()
+            .map(ClosedDayResponse::from)
+            .collect())
     }
 
     /// Update a closed day
@@ -109,7 +118,10 @@ impl ClosedDayService {
             is_recurring: request.is_recurring,
         };
 
-        let closed_day = self.closed_day_repo.update(org_id, closed_day_id, update).await?;
+        let closed_day = self
+            .closed_day_repo
+            .update(org_id, closed_day_id, update)
+            .await?;
         Ok(ClosedDayResponse::from(closed_day))
     }
 
@@ -130,6 +142,8 @@ impl ClosedDayService {
         start_date: NaiveDate,
         end_date: NaiveDate,
     ) -> Result<Vec<NaiveDate>, AppError> {
-        self.closed_day_repo.list_range(org_id, start_date, end_date).await
+        self.closed_day_repo
+            .list_range(org_id, start_date, end_date)
+            .await
     }
 }

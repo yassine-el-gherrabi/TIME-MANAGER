@@ -6,15 +6,15 @@ use uuid::Uuid;
 use crate::config::database::DbPool;
 use crate::domain::enums::{AbsenceStatus, NotificationType, UserRole};
 use crate::error::AppError;
-use crate::services::NotificationService;
 use crate::models::{
-    Absence, AbsenceFilter, AbsenceResponse, AbsenceUpdate, NewAbsence, Pagination,
-    PaginatedAbsences,
+    Absence, AbsenceFilter, AbsenceResponse, AbsenceUpdate, NewAbsence, PaginatedAbsences,
+    Pagination,
 };
 use crate::repositories::{
     AbsenceRepository, AbsenceTypeRepository, ClosedDayRepository, LeaveBalanceRepository,
     TeamRepository,
 };
+use crate::services::NotificationService;
 
 /// Request to create an absence
 #[derive(Debug, Deserialize)]
@@ -68,7 +68,10 @@ impl AbsenceService {
         }
 
         // Get absence type
-        let absence_type = self.absence_type_repo.find_by_id(org_id, request.type_id).await?;
+        let absence_type = self
+            .absence_type_repo
+            .find_by_id(org_id, request.type_id)
+            .await?;
 
         // Check for overlapping absences
         let has_overlap = self
@@ -189,7 +192,10 @@ impl AbsenceService {
         }
 
         // Get absence type to check if affects balance
-        let absence_type = self.absence_type_repo.find_by_id(org_id, absence.type_id).await?;
+        let absence_type = self
+            .absence_type_repo
+            .find_by_id(org_id, absence.type_id)
+            .await?;
 
         // Update status
         let update = AbsenceUpdate {
@@ -282,7 +288,10 @@ impl AbsenceService {
         let updated = self.absence_repo.update(org_id, absence_id, update).await?;
 
         // Create notification for the employee
-        let absence_type = self.absence_type_repo.find_by_id(org_id, absence.type_id).await?;
+        let absence_type = self
+            .absence_type_repo
+            .find_by_id(org_id, absence.type_id)
+            .await?;
         let notification_service = NotificationService::new(self.absence_repo.pool().clone());
         let _ = notification_service
             .create_notification(
@@ -340,7 +349,10 @@ impl AbsenceService {
         }
 
         // Get absence type to check if balance should be restored
-        let absence_type = self.absence_type_repo.find_by_id(org_id, absence.type_id).await?;
+        let absence_type = self
+            .absence_type_repo
+            .find_by_id(org_id, absence.type_id)
+            .await?;
 
         // Update status
         let update = AbsenceUpdate {
@@ -368,11 +380,7 @@ impl AbsenceService {
     }
 
     /// Get an absence by ID
-    pub async fn get(
-        &self,
-        org_id: Uuid,
-        absence_id: Uuid,
-    ) -> Result<AbsenceResponse, AppError> {
+    pub async fn get(&self, org_id: Uuid, absence_id: Uuid) -> Result<AbsenceResponse, AppError> {
         let absence = self.absence_repo.find_by_id(org_id, absence_id).await?;
         self.build_response(&absence).await
     }
@@ -418,7 +426,10 @@ impl AbsenceService {
 
         // For managers, get team member IDs
         let user_ids = if approver_role == UserRole::Manager {
-            let managed_teams = self.team_repo.get_managed_teams(org_id, approver_id).await?;
+            let managed_teams = self
+                .team_repo
+                .get_managed_teams(org_id, approver_id)
+                .await?;
             let mut member_ids = Vec::new();
 
             for team in managed_teams {
@@ -573,9 +584,9 @@ impl AbsenceService {
 
     /// Get user info (placeholder - should use user repo)
     async fn get_user_info(&self, user_id: Uuid) -> Result<(String, String), AppError> {
+        use crate::schema::users;
         use diesel::prelude::*;
         use diesel_async::RunQueryDsl;
-        use crate::schema::users;
 
         let pool = self.absence_repo.pool();
         let mut conn = pool

@@ -30,8 +30,10 @@ pub async fn auth_middleware(
         .ok_or(AuthMiddlewareError::InvalidFormat)?;
 
     // Get JWT keys from environment
-    let jwt_private_key = std::env::var("JWT_PRIVATE_KEY").map_err(|_| AuthMiddlewareError::ConfigError)?;
-    let jwt_public_key = std::env::var("JWT_PUBLIC_KEY").map_err(|_| AuthMiddlewareError::ConfigError)?;
+    let jwt_private_key =
+        std::env::var("JWT_PRIVATE_KEY").map_err(|_| AuthMiddlewareError::ConfigError)?;
+    let jwt_public_key =
+        std::env::var("JWT_PUBLIC_KEY").map_err(|_| AuthMiddlewareError::ConfigError)?;
 
     // Validate token
     let jwt_service = JwtService::new(&jwt_private_key, &jwt_public_key)

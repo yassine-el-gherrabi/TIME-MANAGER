@@ -53,22 +53,13 @@ impl EndpointRateLimiter {
         );
 
         // Password reset: 5 requests per 5 minutes
-        configs.insert(
-            "password_reset".to_string(),
-            RateLimitConfig::new(5, 300),
-        );
+        configs.insert("password_reset".to_string(), RateLimitConfig::new(5, 300));
 
         // Accept invite: 5 requests per 5 minutes
-        configs.insert(
-            "accept_invite".to_string(),
-            RateLimitConfig::new(5, 300),
-        );
+        configs.insert("accept_invite".to_string(), RateLimitConfig::new(5, 300));
 
         // Verify invite: 10 requests per 5 minutes (less sensitive)
-        configs.insert(
-            "verify_invite".to_string(),
-            RateLimitConfig::new(10, 300),
-        );
+        configs.insert("verify_invite".to_string(), RateLimitConfig::new(10, 300));
 
         Self {
             configs: Arc::new(configs),
@@ -79,11 +70,7 @@ impl EndpointRateLimiter {
     /// Check if a request is allowed for the given endpoint and IP
     ///
     /// Returns Ok(remaining_requests) if allowed, Err with retry_after if rate limited
-    pub fn check_rate_limit(
-        &self,
-        endpoint: &str,
-        ip_address: &str,
-    ) -> Result<usize, AppError> {
+    pub fn check_rate_limit(&self, endpoint: &str, ip_address: &str) -> Result<usize, AppError> {
         let config = match self.configs.get(endpoint) {
             Some(c) => c,
             None => {
@@ -96,10 +83,7 @@ impl EndpointRateLimiter {
         let now = Instant::now();
         let window_start = now - Duration::from_secs(config.window_seconds);
 
-        let mut requests = self
-            .requests
-            .lock()
-            .map_err(|_| AppError::InternalError)?;
+        let mut requests = self.requests.lock().map_err(|_| AppError::InternalError)?;
 
         let entry = requests.entry(key).or_insert_with(|| RequestEntry {
             timestamps: Vec::new(),
@@ -138,10 +122,7 @@ impl EndpointRateLimiter {
 
     /// Cleanup old entries to prevent memory growth
     pub fn cleanup(&self) -> Result<usize, AppError> {
-        let mut requests = self
-            .requests
-            .lock()
-            .map_err(|_| AppError::InternalError)?;
+        let mut requests = self.requests.lock().map_err(|_| AppError::InternalError)?;
 
         let now = Instant::now();
         let max_window = Duration::from_secs(600); // 10 minutes max
@@ -149,7 +130,9 @@ impl EndpointRateLimiter {
         let before_count = requests.len();
 
         requests.retain(|_, entry| {
-            entry.timestamps.retain(|&ts| now.duration_since(ts) < max_window);
+            entry
+                .timestamps
+                .retain(|&ts| now.duration_since(ts) < max_window);
             !entry.timestamps.is_empty()
         });
 
@@ -218,7 +201,9 @@ mod tests {
         let ip = "192.168.1.1";
 
         // Different endpoints should have independent limits
-        assert!(limiter.check_rate_limit("password_reset_request", ip).is_ok());
+        assert!(limiter
+            .check_rate_limit("password_reset_request", ip)
+            .is_ok());
         assert!(limiter.check_rate_limit("password_reset", ip).is_ok());
         assert!(limiter.check_rate_limit("accept_invite", ip).is_ok());
     }
@@ -239,8 +224,12 @@ mod tests {
         let limiter = EndpointRateLimiter::new();
 
         // Add some requests
-        limiter.check_rate_limit("password_reset_request", "ip1").unwrap();
-        limiter.check_rate_limit("password_reset_request", "ip2").unwrap();
+        limiter
+            .check_rate_limit("password_reset_request", "ip1")
+            .unwrap();
+        limiter
+            .check_rate_limit("password_reset_request", "ip2")
+            .unwrap();
 
         // Cleanup should work without errors
         let result = limiter.cleanup();

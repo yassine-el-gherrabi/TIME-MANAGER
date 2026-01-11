@@ -127,16 +127,14 @@ pub struct PasswordExpiryPolicy {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_password_expiry_constants() {
-        // Verify constants are reasonable
+    // Compile-time verification that constants are within reasonable bounds
+    const _: () = {
         assert!(PASSWORD_EXPIRY_DAYS >= 30);
         assert!(PASSWORD_EXPIRY_DAYS <= 365);
-
         assert!(PASSWORD_EXPIRY_WARNING_DAYS >= 1);
         assert!(PASSWORD_EXPIRY_WARNING_DAYS <= 30);
         assert!(PASSWORD_EXPIRY_WARNING_DAYS < PASSWORD_EXPIRY_DAYS);
-    }
+    };
 
     #[test]
     fn test_policy_info() {

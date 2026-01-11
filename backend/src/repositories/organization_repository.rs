@@ -122,7 +122,9 @@ impl OrganizationRepository {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
                     _,
-                ) => AppError::ValidationError("Organization with this slug already exists".to_string()),
+                ) => AppError::ValidationError(
+                    "Organization with this slug already exists".to_string(),
+                ),
                 _ => AppError::DatabaseError(e),
             })
     }
@@ -214,10 +216,8 @@ impl OrganizationRepository {
         let mut responses = Vec::with_capacity(organizations.len());
         for org in organizations {
             let user_count = self.get_user_count(org.id).await?;
-            responses.push(
-                OrganizationResponse::from_organization(&org)
-                    .with_user_count(user_count),
-            );
+            responses
+                .push(OrganizationResponse::from_organization(&org).with_user_count(user_count));
         }
 
         let total_pages = (total + pagination.per_page - 1) / pagination.per_page;

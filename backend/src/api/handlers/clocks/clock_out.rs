@@ -1,9 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 
 use crate::config::AppState;
 use crate::error::AppError;
@@ -24,9 +19,7 @@ pub async fn clock_out(
 ) -> Result<impl IntoResponse, AppError> {
     let clock_service = ClockService::new(state.db_pool.clone());
 
-    let entry = clock_service
-        .clock_out(claims.org_id, claims.sub)
-        .await?;
+    let entry = clock_service.clock_out(claims.org_id, claims.sub).await?;
 
     Ok((StatusCode::OK, Json(entry)))
 }

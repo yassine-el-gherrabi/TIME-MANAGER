@@ -57,9 +57,9 @@ pub async fn update_organization(
     let claims = user.0;
 
     // Validate request
-    request.validate().map_err(|e| {
-        AppError::ValidationError(e.to_string())
-    })?;
+    request
+        .validate()
+        .map_err(|e| AppError::ValidationError(e.to_string()))?;
 
     // Check if there's anything to update
     if request.name.is_none() && request.timezone.is_none() {
@@ -73,7 +73,10 @@ pub async fn update_organization(
         Some(claims.sub),
         Some(org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     let org_repo = OrganizationRepository::new(state.db_pool.clone());
@@ -87,12 +90,20 @@ pub async fn update_organization(
     let updated_org = org_repo.update(org_id, update).await?;
 
     let user_count = org_repo.get_user_count(org_id).await?;
-    let new_response = OrganizationResponse::from_organization(&updated_org)
-        .with_user_count(user_count);
+    let new_response =
+        OrganizationResponse::from_organization(&updated_org).with_user_count(user_count);
 
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_update(&audit_ctx, "organizations", org_id, &old_response, &new_response).await;
+    let _ = audit_service
+        .log_update(
+            &audit_ctx,
+            "organizations",
+            org_id,
+            &old_response,
+            &new_response,
+        )
+        .await;
 
     Ok((
         StatusCode::OK,

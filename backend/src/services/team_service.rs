@@ -4,10 +4,10 @@ use uuid::Uuid;
 
 use crate::config::database::DbPool;
 use crate::error::AppError;
+use crate::models::team::TeamMemberInfo;
 use crate::models::{
     NewTeam, Pagination, Team, TeamFilter, TeamMember, TeamResponse, TeamUpdate, TeamWithMembers,
 };
-use crate::models::team::TeamMemberInfo;
 use crate::repositories::TeamRepository;
 
 /// Request to create a team

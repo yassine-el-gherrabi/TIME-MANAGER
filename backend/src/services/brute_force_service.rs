@@ -141,18 +141,15 @@ impl BruteForceService {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_constants_are_reasonable() {
-        // Verify constants are within reasonable bounds
+    // Compile-time verification that constants are within reasonable bounds
+    const _: () = {
         assert!(MAX_FAILED_ATTEMPTS >= 3);
         assert!(MAX_FAILED_ATTEMPTS <= 10);
-
         assert!(LOCKOUT_DURATION_MINUTES >= 5);
         assert!(LOCKOUT_DURATION_MINUTES <= 60);
-
         assert!(ATTEMPT_WINDOW_MINUTES >= 5);
         assert!(ATTEMPT_WINDOW_MINUTES <= 60);
-    }
+    };
 
     #[test]
     fn test_lockout_duration_getter() {

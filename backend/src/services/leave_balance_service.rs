@@ -56,7 +56,10 @@ impl LeaveBalanceService {
         user_id: Uuid,
         year: i32,
     ) -> Result<Vec<LeaveBalanceResponse>, AppError> {
-        let balances = self.balance_repo.get_user_balances(org_id, user_id, year).await?;
+        let balances = self
+            .balance_repo
+            .get_user_balances(org_id, user_id, year)
+            .await?;
 
         let mut responses = Vec::with_capacity(balances.len());
         for balance in balances {
@@ -118,7 +121,9 @@ impl LeaveBalanceService {
         let balance = if let Some(b) = existing {
             // Update existing
             let update = LeaveBalanceUpdate {
-                initial_balance: Some(BigDecimal::try_from(request.initial_balance).unwrap_or_default()),
+                initial_balance: Some(
+                    BigDecimal::try_from(request.initial_balance).unwrap_or_default(),
+                ),
                 ..Default::default()
             };
             self.balance_repo.update(org_id, b.id, update).await?

@@ -110,11 +110,10 @@ impl SessionService {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_max_sessions_constant() {
-        // Verify max sessions limit is reasonable
+    // Compile-time verification that max sessions constant is reasonable
+    const _: () = {
         const MAX_SESSIONS: usize = 5;
         assert!(MAX_SESSIONS > 0);
         assert!(MAX_SESSIONS <= 10);
-    }
+    };
 }

@@ -82,7 +82,10 @@ where
 {
     type Rejection = RoleError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
         // First authenticate the user
         let user = AuthenticatedUser::from_request_parts(parts, state)
             .await

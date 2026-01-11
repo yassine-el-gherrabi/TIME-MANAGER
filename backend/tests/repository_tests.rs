@@ -159,7 +159,6 @@ mod repository_integration_tests {
         };
 
         // If we get here, all struct types compile correctly
-        assert!(true);
     }
 }
 

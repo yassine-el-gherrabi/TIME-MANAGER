@@ -56,8 +56,7 @@ impl NotificationService {
             .list_by_user(org_id, user_id, &pagination)
             .await?;
 
-        let data: Vec<NotificationResponse> =
-            notifications.into_iter().map(|n| n.into()).collect();
+        let data: Vec<NotificationResponse> = notifications.into_iter().map(|n| n.into()).collect();
 
         let total_pages = (total as f64 / pagination.per_page as f64).ceil() as i64;
 
@@ -95,11 +94,7 @@ impl NotificationService {
     }
 
     /// Mark all notifications as read for a user
-    pub async fn mark_all_as_read(
-        &self,
-        org_id: Uuid,
-        user_id: Uuid,
-    ) -> Result<i64, AppError> {
+    pub async fn mark_all_as_read(&self, org_id: Uuid, user_id: Uuid) -> Result<i64, AppError> {
         self.notification_repo
             .mark_all_as_read(org_id, user_id)
             .await

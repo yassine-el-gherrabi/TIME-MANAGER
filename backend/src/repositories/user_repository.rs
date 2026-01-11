@@ -241,7 +241,8 @@ impl UserRepository {
         filter: &UserFilter,
         pagination: &Pagination,
     ) -> Result<(Vec<User>, i64), AppError> {
-        self.list_with_deleted(organization_id, filter, pagination, false).await
+        self.list_with_deleted(organization_id, filter, pagination, false)
+            .await
     }
 
     /// List users with optional inclusion of deleted users
@@ -366,16 +367,11 @@ impl UserRepository {
         let now = chrono::Utc::now().naive_utc();
 
         diesel::update(users::table.find(user_id))
-            .set((
-                users::deleted_at.eq(Some(now)),
-                users::updated_at.eq(now),
-            ))
+            .set((users::deleted_at.eq(Some(now)), users::updated_at.eq(now)))
             .get_result(&mut conn)
             .await
             .map_err(|e| match e {
-                diesel::result::Error::NotFound => {
-                    AppError::NotFound("User not found".to_string())
-                }
+                diesel::result::Error::NotFound => AppError::NotFound("User not found".to_string()),
                 _ => AppError::DatabaseError(e),
             })
     }

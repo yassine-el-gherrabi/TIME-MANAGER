@@ -34,19 +34,15 @@ impl AbsenceTypeRepository {
                 diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::UniqueViolation,
                     _,
-                ) => AppError::Conflict(
-                    "An absence type with this code already exists".to_string(),
-                ),
+                ) => {
+                    AppError::Conflict("An absence type with this code already exists".to_string())
+                }
                 _ => AppError::DatabaseError(e),
             })
     }
 
     /// Find absence type by ID within organization
-    pub async fn find_by_id(
-        &self,
-        org_id: Uuid,
-        type_id: Uuid,
-    ) -> Result<AbsenceType, AppError> {
+    pub async fn find_by_id(&self, org_id: Uuid, type_id: Uuid) -> Result<AbsenceType, AppError> {
         let mut conn = self
             .pool
             .get()

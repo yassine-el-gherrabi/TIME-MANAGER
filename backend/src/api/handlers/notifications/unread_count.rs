@@ -1,9 +1,4 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 
 use crate::config::AppState;
 use crate::error::AppError;
@@ -19,9 +14,7 @@ pub async fn unread_count(
 ) -> Result<impl IntoResponse, AppError> {
     let service = NotificationService::new(state.db_pool.clone());
 
-    let response = service
-        .get_unread_count(claims.org_id, claims.sub)
-        .await?;
+    let response = service.get_unread_count(claims.org_id, claims.sub).await?;
 
     Ok((StatusCode::OK, Json(response)))
 }

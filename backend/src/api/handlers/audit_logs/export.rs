@@ -75,8 +75,9 @@ pub async fn export_audit_logs(
     );
     headers.insert(
         header::CONTENT_DISPOSITION,
-        HeaderValue::from_str(&format!("attachment; filename=\"{}\"", filename))
-            .unwrap_or_else(|_| HeaderValue::from_static("attachment; filename=\"audit_logs.csv\"")),
+        HeaderValue::from_str(&format!("attachment; filename=\"{}\"", filename)).unwrap_or_else(
+            |_| HeaderValue::from_static("attachment; filename=\"audit_logs.csv\""),
+        ),
     );
 
     Ok((StatusCode::OK, headers, csv_content).into_response())

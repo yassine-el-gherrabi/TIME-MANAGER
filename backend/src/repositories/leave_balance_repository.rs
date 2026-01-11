@@ -98,7 +98,10 @@ impl LeaveBalanceRepository {
         year: i32,
         default_initial: BigDecimal,
     ) -> Result<LeaveBalance, AppError> {
-        if let Some(balance) = self.find_by_user_type_year(org_id, user_id, absence_type_id, year).await? {
+        if let Some(balance) = self
+            .find_by_user_type_year(org_id, user_id, absence_type_id, year)
+            .await?
+        {
             return Ok(balance);
         }
 
@@ -140,7 +143,10 @@ impl LeaveBalanceRepository {
         }
 
         let balances = query
-            .order((leave_balances::year.desc(), leave_balances::absence_type_id.asc()))
+            .order((
+                leave_balances::year.desc(),
+                leave_balances::absence_type_id.asc(),
+            ))
             .load::<LeaveBalance>(&mut conn)
             .await
             .map_err(AppError::DatabaseError)?;

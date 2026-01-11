@@ -4,11 +4,11 @@ use uuid::Uuid;
 use crate::config::database::DbPool;
 use crate::domain::enums::{NotificationType, UserRole};
 use crate::error::AppError;
-use crate::services::NotificationService;
 use crate::models::{
     ClockEntry, ClockEntryResponse, ClockFilter, ClockStatus, PaginatedClockEntries, Pagination,
 };
 use crate::repositories::{ClockRepository, TeamRepository};
+use crate::services::NotificationService;
 
 /// Service for clock in/out operations
 pub struct ClockService {
@@ -32,7 +32,12 @@ impl ClockService {
         notes: Option<String>,
     ) -> Result<ClockEntry, AppError> {
         // Check if user already has an open clock entry
-        if self.clock_repo.find_open_entry(org_id, user_id).await?.is_some() {
+        if self
+            .clock_repo
+            .find_open_entry(org_id, user_id)
+            .await?
+            .is_some()
+        {
             return Err(AppError::ValidationError(
                 "You are already clocked in. Please clock out first.".to_string(),
             ));
@@ -165,7 +170,10 @@ impl ClockService {
 
         // For managers, verify they manage a team the user belongs to
         if approver_role == UserRole::Manager {
-            let managed_teams = self.team_repo.get_managed_teams(org_id, approver_id).await?;
+            let managed_teams = self
+                .team_repo
+                .get_managed_teams(org_id, approver_id)
+                .await?;
             let mut can_approve = false;
 
             for team in managed_teams {
@@ -182,7 +190,10 @@ impl ClockService {
             }
         }
 
-        let approved = self.clock_repo.approve(org_id, entry_id, approver_id).await?;
+        let approved = self
+            .clock_repo
+            .approve(org_id, entry_id, approver_id)
+            .await?;
 
         // Create notification for the employee
         let notification_service = NotificationService::new(self.clock_repo.pool().clone());
@@ -227,7 +238,10 @@ impl ClockService {
 
         // For managers, verify they manage a team the user belongs to
         if approver_role == UserRole::Manager {
-            let managed_teams = self.team_repo.get_managed_teams(org_id, approver_id).await?;
+            let managed_teams = self
+                .team_repo
+                .get_managed_teams(org_id, approver_id)
+                .await?;
             let mut can_reject = false;
 
             for team in managed_teams {
@@ -290,7 +304,10 @@ impl ClockService {
 
         // For managers, filter to only their team members
         let filtered_entries = if approver_role == UserRole::Manager {
-            let managed_teams = self.team_repo.get_managed_teams(org_id, approver_id).await?;
+            let managed_teams = self
+                .team_repo
+                .get_managed_teams(org_id, approver_id)
+                .await?;
             let mut filtered = Vec::new();
 
             for entry in entries {
@@ -309,7 +326,9 @@ impl ClockService {
         let mut responses = Vec::with_capacity(filtered_entries.len());
         for entry in &filtered_entries {
             let (user_name, user_email) = self.clock_repo.get_user_info(entry.user_id).await?;
-            responses.push(ClockEntryResponse::from_entry(entry, user_name, user_email, None));
+            responses.push(ClockEntryResponse::from_entry(
+                entry, user_name, user_email, None,
+            ));
         }
 
         let total_pages = (total as f64 / pagination.per_page as f64).ceil() as i64;

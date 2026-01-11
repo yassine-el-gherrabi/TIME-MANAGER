@@ -89,11 +89,7 @@ impl ClosedDayRepository {
     }
 
     /// List all closed days for a year (including recurring ones)
-    pub async fn list_for_year(
-        &self,
-        org_id: Uuid,
-        year: i32,
-    ) -> Result<Vec<ClosedDay>, AppError> {
+    pub async fn list_for_year(&self, org_id: Uuid, year: i32) -> Result<Vec<ClosedDay>, AppError> {
         let mut conn = self
             .pool
             .get()
@@ -185,11 +181,7 @@ impl ClosedDayRepository {
     }
 
     /// Check if a date is a closed day
-    pub async fn is_closed_day(
-        &self,
-        org_id: Uuid,
-        date: NaiveDate,
-    ) -> Result<bool, AppError> {
+    pub async fn is_closed_day(&self, org_id: Uuid, date: NaiveDate) -> Result<bool, AppError> {
         let mut conn = self
             .pool
             .get()

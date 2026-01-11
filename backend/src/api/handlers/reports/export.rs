@@ -11,7 +11,9 @@ use uuid::Uuid;
 use crate::config::AppState;
 use crate::error::AppError;
 use crate::extractors::{Admin, RoleGuard};
-use crate::repositories::{AbsenceRepository, AbsenceTypeRepository, ClockRepository, UserRepository};
+use crate::repositories::{
+    AbsenceRepository, AbsenceTypeRepository, ClockRepository, UserRepository,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ExportReportsQuery {
@@ -135,7 +137,9 @@ async fn export_clocks(
     let mut user_cache: HashMap<Uuid, (String, String)> = HashMap::new();
 
     // Build CSV
-    let mut csv = String::from("Date,User Email,User Name,Clock In,Clock Out,Duration (hours),Status,Notes\n");
+    let mut csv = String::from(
+        "Date,User Email,User Name,Clock In,Clock Out,Duration (hours),Status,Notes\n",
+    );
 
     for entry in entries {
         // Get user info from cache or fetch
@@ -158,14 +162,21 @@ async fn export_clocks(
             .unwrap_or_default();
 
         // Calculate duration in hours
-        let duration = entry.clock_out.map(|out| {
-            let duration = out - entry.clock_in;
-            let hours = duration.num_minutes() as f64 / 60.0;
-            format!("{:.2}", hours)
-        }).unwrap_or_default();
+        let duration = entry
+            .clock_out
+            .map(|out| {
+                let duration = out - entry.clock_in;
+                let hours = duration.num_minutes() as f64 / 60.0;
+                format!("{:.2}", hours)
+            })
+            .unwrap_or_default();
 
         let status = format!("{:?}", entry.status);
-        let notes = entry.notes.unwrap_or_default().replace(',', ";").replace('\n', " ");
+        let notes = entry
+            .notes
+            .unwrap_or_default()
+            .replace(',', ";")
+            .replace('\n', " ");
 
         csv.push_str(&format!(
             "{},{},{},{},{},{},{},{}\n",
@@ -222,7 +233,8 @@ async fn export_absences(
     }
 
     // Build CSV
-    let mut csv = String::from("Start Date,End Date,User Email,User Name,Type,Days,Status,Reason\n");
+    let mut csv =
+        String::from("Start Date,End Date,User Email,User Name,Type,Days,Status,Reason\n");
 
     for absence in absences {
         // Get user info from cache or fetch
@@ -247,7 +259,11 @@ async fn export_absences(
         let end_date = absence.end_date.format("%Y-%m-%d").to_string();
         let days = absence.days_count.to_string();
         let status = format!("{:?}", absence.status);
-        let reason = absence.reason.unwrap_or_default().replace(',', ";").replace('\n', " ");
+        let reason = absence
+            .reason
+            .unwrap_or_default()
+            .replace(',', ";")
+            .replace('\n', " ");
 
         csv.push_str(&format!(
             "{},{},{},{},{},{},{},{}\n",

@@ -31,7 +31,8 @@ fn validate_slug(slug: &str) -> Result<(), validator::ValidationError> {
         Ok(())
     } else {
         let mut error = validator::ValidationError::new("slug_format");
-        error.message = Some("Slug must contain only lowercase letters, numbers, and hyphens".into());
+        error.message =
+            Some("Slug must contain only lowercase letters, numbers, and hyphens".into());
         Err(error)
     }
 }
@@ -39,9 +40,17 @@ fn validate_slug(slug: &str) -> Result<(), validator::ValidationError> {
 /// Request to create a new organization
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateOrganizationRequest {
-    #[validate(length(min = 2, max = 100, message = "Name must be between 2 and 100 characters"))]
+    #[validate(length(
+        min = 2,
+        max = 100,
+        message = "Name must be between 2 and 100 characters"
+    ))]
     pub name: String,
-    #[validate(length(min = 2, max = 50, message = "Slug must be between 2 and 50 characters"))]
+    #[validate(length(
+        min = 2,
+        max = 50,
+        message = "Slug must be between 2 and 50 characters"
+    ))]
     #[validate(custom(function = "validate_slug"))]
     pub slug: String,
     #[validate(length(max = 100))]
@@ -70,7 +79,11 @@ impl NewOrganization {
 /// Request to update an organization
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateOrganizationRequest {
-    #[validate(length(min = 2, max = 100, message = "Name must be between 2 and 100 characters"))]
+    #[validate(length(
+        min = 2,
+        max = 100,
+        message = "Name must be between 2 and 100 characters"
+    ))]
     pub name: Option<String>,
     #[validate(length(max = 100))]
     pub timezone: Option<String>,

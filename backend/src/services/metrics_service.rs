@@ -47,10 +47,7 @@ impl MetricsService {
             "auth_login_success_total",
             "Total number of successful logins"
         );
-        describe_counter!(
-            "auth_login_failure_total",
-            "Total number of failed logins"
-        );
+        describe_counter!("auth_login_failure_total", "Total number of failed logins");
 
         Self { handle }
     }
@@ -109,10 +106,7 @@ impl SqlQueryTimer {
         histogram!("sql_query_duration_seconds", &labels).record(duration);
         counter!("sql_query_total", &labels).increment(1);
 
-        let error_labels = [
-            ("operation", self.operation),
-            ("table", self.table),
-        ];
+        let error_labels = [("operation", self.operation), ("table", self.table)];
         counter!("sql_query_errors_total", &error_labels).increment(1);
     }
 }
@@ -137,8 +131,8 @@ macro_rules! time_sql {
 
 /// Normalize path by replacing UUIDs and IDs with placeholders
 fn normalize_path(path: &str) -> String {
-    use regex::Regex;
     use once_cell::sync::Lazy;
+    use regex::Regex;
 
     // Regex for UUID format (e.g., 123e4567-e89b-12d3-a456-426614174000)
     static UUID_RE: Lazy<Regex> = Lazy::new(|| {
@@ -167,13 +161,15 @@ pub fn record_http_request(method: &str, path: &str, status: u16, duration_secs:
         "method" => method.to_string(),
         "path" => normalized_path.clone(),
         "status" => status_class.to_string()
-    ).record(duration_secs);
+    )
+    .record(duration_secs);
 
     counter!("http_requests_total",
         "method" => method.to_string(),
         "path" => normalized_path,
         "status" => status_class.to_string()
-    ).increment(1);
+    )
+    .increment(1);
 }
 
 /// Record authentication metrics

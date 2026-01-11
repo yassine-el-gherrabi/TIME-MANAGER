@@ -37,7 +37,10 @@ pub async fn get_team(
         let team_with_members = team_service
             .get_team_with_members(claims.org_id, team_id)
             .await?;
-        Ok((StatusCode::OK, Json(serde_json::to_value(team_with_members).unwrap())))
+        Ok((
+            StatusCode::OK,
+            Json(serde_json::to_value(team_with_members).unwrap()),
+        ))
     } else {
         let team = team_service.get_team(claims.org_id, team_id).await?;
         Ok((StatusCode::OK, Json(serde_json::to_value(team).unwrap())))

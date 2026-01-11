@@ -51,7 +51,10 @@ pub async fn delete_team(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Check authorization - Admin+ only
@@ -70,7 +73,9 @@ pub async fn delete_team(
 
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_delete(&audit_ctx, "teams", team_id, &old_team).await;
+    let _ = audit_service
+        .log_delete(&audit_ctx, "teams", team_id, &old_team)
+        .await;
 
     Ok(StatusCode::NO_CONTENT)
 }

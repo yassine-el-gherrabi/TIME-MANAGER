@@ -76,7 +76,12 @@ impl CacheService {
     // === Closed Days Cache ===
 
     /// Build cache key for closed days (org_id + filter params)
-    fn closed_days_key(org_id: Uuid, start: Option<&str>, end: Option<&str>, recurring: Option<bool>) -> String {
+    fn closed_days_key(
+        org_id: Uuid,
+        start: Option<&str>,
+        end: Option<&str>,
+        recurring: Option<bool>,
+    ) -> String {
         format!(
             "{}:{}:{}:{}",
             org_id,
@@ -144,7 +149,12 @@ mod tests {
     fn test_closed_days_key_generation() {
         let org_id = Uuid::new_v4();
 
-        let key1 = CacheService::closed_days_key(org_id, Some("2024-01-01"), Some("2024-12-31"), Some(true));
+        let key1 = CacheService::closed_days_key(
+            org_id,
+            Some("2024-01-01"),
+            Some("2024-12-31"),
+            Some(true),
+        );
         let key2 = CacheService::closed_days_key(org_id, None, None, None);
 
         assert!(key1.contains(&org_id.to_string()));

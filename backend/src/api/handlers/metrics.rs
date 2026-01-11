@@ -1,7 +1,7 @@
 //! Prometheus metrics endpoint handler
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use crate::config::AppState;
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 
 /// GET /metrics
 ///

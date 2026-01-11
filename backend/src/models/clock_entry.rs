@@ -65,10 +65,15 @@ pub struct ClockEntryResponse {
 }
 
 impl ClockEntryResponse {
-    pub fn from_entry(entry: &ClockEntry, user_name: String, user_email: String, approver_name: Option<String>) -> Self {
-        let duration_minutes = entry.clock_out.map(|out| {
-            (out - entry.clock_in).num_minutes()
-        });
+    pub fn from_entry(
+        entry: &ClockEntry,
+        user_name: String,
+        user_email: String,
+        approver_name: Option<String>,
+    ) -> Self {
+        let duration_minutes = entry
+            .clock_out
+            .map(|out| (out - entry.clock_in).num_minutes());
 
         Self {
             id: entry.id,

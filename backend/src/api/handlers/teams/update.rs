@@ -53,7 +53,10 @@ pub async fn update_team(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Check authorization - Admin+ only
@@ -77,7 +80,9 @@ pub async fn update_team(
 
     // Log audit event
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_update(&audit_ctx, "teams", team_id, &old_team, &new_team).await;
+    let _ = audit_service
+        .log_update(&audit_ctx, "teams", team_id, &old_team, &new_team)
+        .await;
 
     Ok((StatusCode::OK, Json(new_team)))
 }

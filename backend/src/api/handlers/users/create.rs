@@ -86,7 +86,10 @@ pub async fn create_user(
         Some(claims.sub),
         Some(claims.org_id),
         extract_client_ip(&headers),
-        headers.get(USER_AGENT).and_then(|v| v.to_str().ok()).map(String::from),
+        headers
+            .get(USER_AGENT)
+            .and_then(|v| v.to_str().ok())
+            .map(String::from),
     );
 
     // Validate payload
@@ -118,7 +121,14 @@ pub async fn create_user(
 
     // Log audit event (fire and forget)
     let audit_service = AuditService::new(state.db_pool.clone());
-    let _ = audit_service.log_create(&audit_ctx, "users", user.id, &UserResponse::from_user(&user)).await;
+    let _ = audit_service
+        .log_create(
+            &audit_ctx,
+            "users",
+            user.id,
+            &UserResponse::from_user(&user),
+        )
+        .await;
 
     // Generate invite token
     let jwt_service = JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;

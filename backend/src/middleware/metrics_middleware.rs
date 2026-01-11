@@ -4,12 +4,7 @@
 //! - Request count by method, path, and status
 //! - Request duration histogram
 
-use axum::{
-    body::Body,
-    http::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{body::Body, http::Request, middleware::Next, response::Response};
 use std::time::Instant;
 
 use crate::services::metrics_service::record_http_request;
@@ -21,10 +16,7 @@ use crate::services::metrics_service::record_http_request;
 /// - Normalized path (UUIDs replaced with :id)
 /// - Response status code class (2xx, 3xx, 4xx, 5xx)
 /// - Request duration in seconds
-pub async fn metrics_middleware(
-    req: Request<Body>,
-    next: Next,
-) -> Response {
+pub async fn metrics_middleware(req: Request<Body>, next: Next) -> Response {
     let start = Instant::now();
     let method = req.method().to_string();
     let path = req.uri().path().to_string();
@@ -76,10 +68,7 @@ mod tests {
             .route("/test", get(test_handler))
             .layer(axum::middleware::from_fn(metrics_middleware));
 
-        let request = Request::builder()
-            .uri("/test")
-            .body(Body::empty())
-            .unwrap();
+        let request = Request::builder().uri("/test").body(Body::empty()).unwrap();
 
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);

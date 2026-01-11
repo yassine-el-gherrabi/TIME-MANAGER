@@ -52,9 +52,15 @@ impl AppConfig {
         // Load JWT keys from PEM files
         let jwt_keys_path = env::var("JWT_KEYS_PATH").unwrap_or_else(|_| "./keys".to_string());
         let jwt_private_key = std::fs::read_to_string(format!("{}/jwt_private.pem", jwt_keys_path))
-            .context(format!("Failed to read JWT private key from {}/jwt_private.pem", jwt_keys_path))?;
+            .context(format!(
+                "Failed to read JWT private key from {}/jwt_private.pem",
+                jwt_keys_path
+            ))?;
         let jwt_public_key = std::fs::read_to_string(format!("{}/jwt_public.pem", jwt_keys_path))
-            .context(format!("Failed to read JWT public key from {}/jwt_public.pem", jwt_keys_path))?;
+            .context(format!(
+            "Failed to read JWT public key from {}/jwt_public.pem",
+            jwt_keys_path
+        ))?;
 
         let jwt_access_token_expiry_seconds = env::var("JWT_ACCESS_TOKEN_EXPIRY_SECONDS")
             .unwrap_or_else(|_| "900".to_string())

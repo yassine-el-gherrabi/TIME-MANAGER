@@ -86,9 +86,8 @@ impl AuditRepository {
 
         // Apply date range filters
         if let Some(start_date) = filter.start_date {
-            let start_datetime = Utc.from_utc_datetime(
-                &start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap()),
-            );
+            let start_datetime = Utc
+                .from_utc_datetime(&start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap()));
             query = query.filter(audit_logs::created_at.ge(start_datetime));
             count_query = count_query.filter(audit_logs::created_at.ge(start_datetime));
         }
@@ -163,9 +162,8 @@ impl AuditRepository {
 
         // Apply date range filters
         if let Some(start_date) = filter.start_date {
-            let start_datetime = Utc.from_utc_datetime(
-                &start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap()),
-            );
+            let start_datetime = Utc
+                .from_utc_datetime(&start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap()));
             query = query.filter(audit_logs::created_at.ge(start_datetime));
         }
 
@@ -188,7 +186,10 @@ impl AuditRepository {
     }
 
     /// Get user info for a list of user IDs
-    pub async fn get_users_info(&self, user_ids: Vec<Uuid>) -> Result<Vec<AuditUserInfo>, AppError> {
+    pub async fn get_users_info(
+        &self,
+        user_ids: Vec<Uuid>,
+    ) -> Result<Vec<AuditUserInfo>, AppError> {
         if user_ids.is_empty() {
             return Ok(vec![]);
         }

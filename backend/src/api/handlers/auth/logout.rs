@@ -36,10 +36,7 @@ fn extract_refresh_token(headers: &HeaderMap) -> Option<String> {
 /// POST /api/v1/auth/logout
 ///
 /// Logout user by revoking refresh token from HttpOnly cookie
-#[tracing::instrument(
-    name = "auth.logout",
-    skip(state, headers)
-)]
+#[tracing::instrument(name = "auth.logout", skip(state, headers))]
 pub async fn logout(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -49,7 +46,8 @@ pub async fn logout(
         .ok_or_else(|| AppError::Unauthorized("No refresh token provided".to_string()))?;
 
     // Create JWT service and auth service
-    let jwt_service = crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
+    let jwt_service =
+        crate::utils::JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
     let auth_service = AuthService::new(state.db_pool.clone(), jwt_service);
 
     // Logout user
@@ -65,14 +63,8 @@ pub async fn logout(
     let clear_csrf_cookie = "csrf_token=; SameSite=Strict; Path=/; Max-Age=0";
 
     let mut response_headers = HeaderMap::new();
-    response_headers.insert(
-        SET_COOKIE,
-        HeaderValue::from_static(clear_refresh_cookie),
-    );
-    response_headers.append(
-        SET_COOKIE,
-        HeaderValue::from_static(clear_csrf_cookie),
-    );
+    response_headers.insert(SET_COOKIE, HeaderValue::from_static(clear_refresh_cookie));
+    response_headers.append(SET_COOKIE, HeaderValue::from_static(clear_csrf_cookie));
 
     Ok((StatusCode::OK, response_headers, Json(response)))
 }
@@ -88,10 +80,7 @@ mod tests {
             "Cookie",
             "refresh_token=abc123; other_cookie=value".parse().unwrap(),
         );
-        assert_eq!(
-            extract_refresh_token(&headers),
-            Some("abc123".to_string())
-        );
+        assert_eq!(extract_refresh_token(&headers), Some("abc123".to_string()));
     }
 
     #[test]

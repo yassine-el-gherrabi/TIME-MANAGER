@@ -41,11 +41,7 @@ impl AbsenceRepository {
     }
 
     /// Find absence by ID within organization
-    pub async fn find_by_id(
-        &self,
-        org_id: Uuid,
-        absence_id: Uuid,
-    ) -> Result<Absence, AppError> {
+    pub async fn find_by_id(&self, org_id: Uuid, absence_id: Uuid) -> Result<Absence, AppError> {
         let mut conn = self
             .pool
             .get()

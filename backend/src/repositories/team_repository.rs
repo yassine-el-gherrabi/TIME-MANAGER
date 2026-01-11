@@ -4,9 +4,7 @@ use uuid::Uuid;
 
 use crate::config::database::DbPool;
 use crate::error::AppError;
-use crate::models::{
-    NewTeam, NewTeamMember, Pagination, Team, TeamFilter, TeamMember, TeamUpdate,
-};
+use crate::models::{NewTeam, NewTeamMember, Pagination, Team, TeamFilter, TeamMember, TeamUpdate};
 use crate::repositories::User;
 use crate::schema::{team_members, teams, users};
 
@@ -325,7 +323,11 @@ impl TeamRepository {
     }
 
     /// Get teams managed by a user
-    pub async fn get_managed_teams(&self, org_id: Uuid, manager_id: Uuid) -> Result<Vec<Team>, AppError> {
+    pub async fn get_managed_teams(
+        &self,
+        org_id: Uuid,
+        manager_id: Uuid,
+    ) -> Result<Vec<Team>, AppError> {
         let mut conn = self
             .pool
             .get()
