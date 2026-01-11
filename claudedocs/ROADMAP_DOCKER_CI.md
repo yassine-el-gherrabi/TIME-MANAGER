@@ -24,7 +24,7 @@
 ## Basse Priorité
 
 - [x] **Add OCI labels** - Ajouter métadonnées aux images Docker (org.opencontainers.image.*)
-- [ ] **Unify backend Dockerfiles** - Supprimer la redondance Dockerfile/Dockerfile.prod (optionnel)
+- [x] **Unify backend Dockerfiles** - Supprimer la redondance Dockerfile/Dockerfile.prod (optionnel)
 
 ---
 
@@ -40,4 +40,5 @@
 | 11/01/2026 | Add CSP header | `9b892cd` |
 | 11/01/2026 | Fix Tempo root user | `1b44e34` |
 | 11/01/2026 | Add OCI labels | `4ec6ae1` |
+| 11/01/2026 | Unify backend Dockerfiles | `1c0e797` |
 
