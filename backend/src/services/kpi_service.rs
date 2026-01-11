@@ -382,8 +382,17 @@ impl KPIService {
                     (next, current.format("%Y-%m-%d").to_string())
                 }
                 Granularity::Week => {
-                    let next = current + chrono::Duration::weeks(1);
-                    (next, current.format("%Y-%m-%d").to_string())
+                    // Calculate week end but don't exceed period end
+                    let raw_next = current + chrono::Duration::weeks(1);
+                    let next = raw_next.min(period.end);
+                    // Show date range for weeks (handles partial weeks at month boundaries)
+                    let week_end_display = next - chrono::Duration::days(1);
+                    let label = format!(
+                        "{} - {}",
+                        current.format("%b %d"),
+                        week_end_display.format("%b %d")
+                    );
+                    (raw_next, label)
                 }
                 Granularity::Month => {
                     let next = current + chrono::Duration::days(30);

@@ -34,6 +34,7 @@ pub struct UserUpdate {
 pub struct UserFilter {
     pub role: Option<UserRole>,
     pub search: Option<String>,
+    pub team_id: Option<Uuid>,
 }
 
 /// Pagination parameters

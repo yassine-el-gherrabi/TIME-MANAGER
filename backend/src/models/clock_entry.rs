@@ -50,9 +50,13 @@ pub struct ClockEntryUpdate {
 #[derive(Debug, Serialize)]
 pub struct ClockEntryResponse {
     pub id: Uuid,
+    pub organization_id: Uuid,
+    pub organization_name: String,
     pub user_id: Uuid,
     pub user_name: String,
     pub user_email: String,
+    pub team_id: Option<Uuid>,
+    pub team_name: Option<String>,
     pub clock_in: DateTime<Utc>,
     pub clock_out: Option<DateTime<Utc>>,
     pub duration_minutes: Option<i64>,
@@ -67,8 +71,11 @@ pub struct ClockEntryResponse {
 impl ClockEntryResponse {
     pub fn from_entry(
         entry: &ClockEntry,
+        organization_name: String,
         user_name: String,
         user_email: String,
+        team_id: Option<Uuid>,
+        team_name: Option<String>,
         approver_name: Option<String>,
     ) -> Self {
         let duration_minutes = entry
@@ -77,9 +84,13 @@ impl ClockEntryResponse {
 
         Self {
             id: entry.id,
+            organization_id: entry.organization_id,
+            organization_name,
             user_id: entry.user_id,
             user_name,
             user_email,
+            team_id,
+            team_name,
             clock_in: entry.clock_in,
             clock_out: entry.clock_out,
             duration_minutes,
@@ -108,6 +119,15 @@ pub struct ClockFilter {
     pub end_date: Option<DateTime<Utc>>,
     pub status: Option<ClockEntryStatus>,
     pub user_id: Option<Uuid>,
+}
+
+/// Pending clock entries filter (for approval pages)
+#[derive(Debug, Clone, Default)]
+pub struct PendingClockFilter {
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
+    /// Filter by team
+    pub team_id: Option<Uuid>,
 }
 
 /// Paginated clock entries response

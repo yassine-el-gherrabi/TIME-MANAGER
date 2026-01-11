@@ -17,18 +17,34 @@ import type {
 } from '../types/schedule';
 
 /**
+ * List schedules query parameters
+ */
+export interface ListSchedulesParams {
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
+}
+
+/**
  * Schedules API methods
  */
 export const schedulesApi = {
   /**
    * List all schedules for the organization
    *
+   * @param params - Optional query parameters
    * @returns List of schedules with their days
    */
-  list: async (): Promise<WorkScheduleWithDays[]> => {
+  list: async (params: ListSchedulesParams = {}): Promise<WorkScheduleWithDays[]> => {
+    const queryParams = new URLSearchParams();
+    if (params.organization_id) {
+      queryParams.set('organization_id', params.organization_id);
+    }
+    const queryString = queryParams.toString();
+    const url = queryString ? `${SCHEDULE_ENDPOINTS.LIST}?${queryString}` : SCHEDULE_ENDPOINTS.LIST;
+
     return apiRequest<WorkScheduleWithDays[]>({
       method: 'GET',
-      url: SCHEDULE_ENDPOINTS.LIST,
+      url,
     });
   },
 

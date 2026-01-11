@@ -5,17 +5,22 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use uuid::Uuid;
 
 use crate::config::AppState;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::models::Pagination;
+use crate::models::{Pagination, PendingClockFilter};
 use crate::services::ClockService;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct PendingQuery {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
+    /// Filter by team (Admin/Manager)
+    pub team_id: Option<Uuid>,
 }
 
 /// GET /api/v1/clocks/pending
@@ -38,8 +43,13 @@ pub async fn list_pending(
         per_page: query.per_page.unwrap_or(20).clamp(1, 100),
     };
 
+    let filter = PendingClockFilter {
+        organization_id: query.organization_id,
+        team_id: query.team_id,
+    };
+
     let pending = clock_service
-        .list_pending(claims.org_id, claims.sub, claims.role, pagination)
+        .list_pending(claims.org_id, claims.sub, claims.role, filter, pagination)
         .await?;
 
     Ok((StatusCode::OK, Json(pending)))

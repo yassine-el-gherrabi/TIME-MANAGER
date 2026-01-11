@@ -8,7 +8,7 @@ use crate::config::database::DbPool;
 use crate::domain::enums::AbsenceStatus;
 use crate::error::AppError;
 use crate::models::{Absence, AbsenceFilter, AbsenceUpdate, NewAbsence, Pagination};
-use crate::schema::absences;
+use crate::schema::{absences, team_members};
 
 /// Absence repository for database operations
 pub struct AbsenceRepository {
@@ -89,6 +89,14 @@ impl AbsenceRepository {
             query = query.filter(absences::start_date.le(end_date));
         }
 
+        // Filter by team membership using subquery
+        if let Some(team_id) = filter.team_id {
+            let team_user_ids = team_members::table
+                .filter(team_members::team_id.eq(team_id))
+                .select(team_members::user_id);
+            query = query.filter(absences::user_id.eq_any(team_user_ids));
+        }
+
         // Count total
         let count_query = absences::table
             .filter(absences::organization_id.eq(org_id))
@@ -110,6 +118,14 @@ impl AbsenceRepository {
         }
         if let Some(end_date) = filter.end_date {
             count_q = count_q.filter(absences::start_date.le(end_date));
+        }
+
+        // Filter by team membership using subquery for count
+        if let Some(team_id) = filter.team_id {
+            let team_user_ids = team_members::table
+                .filter(team_members::team_id.eq(team_id))
+                .select(team_members::user_id);
+            count_q = count_q.filter(absences::user_id.eq_any(team_user_ids));
         }
 
         let total: i64 = count_q

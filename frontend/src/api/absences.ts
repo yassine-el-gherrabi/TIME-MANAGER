@@ -12,6 +12,7 @@ import type {
   CreateAbsenceRequest,
   RejectAbsenceRequest,
   AbsenceFilter,
+  PendingAbsenceFilter,
 } from '../types/absence';
 
 /**
@@ -81,18 +82,27 @@ export const absencesApi = {
   /**
    * List pending absences for approval (Manager+)
    *
-   * @param page - Page number
-   * @param perPage - Items per page
+   * @param filter - Filter parameters including pagination, organization_id, team_id
    * @returns Paginated pending absences
    */
-  listPending: async (page = 1, perPage = 20): Promise<PaginatedAbsences> => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      per_page: perPage.toString(),
-    });
+  listPending: async (filter: PendingAbsenceFilter = {}): Promise<PaginatedAbsences> => {
+    const params = new URLSearchParams();
+    if (filter.page !== undefined) {
+      params.append('page', filter.page.toString());
+    }
+    if (filter.per_page !== undefined) {
+      params.append('per_page', filter.per_page.toString());
+    }
+    if (filter.organization_id) {
+      params.append('organization_id', filter.organization_id);
+    }
+    if (filter.team_id) {
+      params.append('team_id', filter.team_id);
+    }
+    const queryString = params.toString();
     return apiRequest<PaginatedAbsences>({
       method: 'GET',
-      url: `${ABSENCE_ENDPOINTS.PENDING}?${params.toString()}`,
+      url: queryString ? `${ABSENCE_ENDPOINTS.PENDING}?${queryString}` : ABSENCE_ENDPOINTS.PENDING,
     });
   },
 

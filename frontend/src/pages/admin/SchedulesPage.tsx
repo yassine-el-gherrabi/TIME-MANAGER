@@ -21,11 +21,19 @@ import {
 import { SchedulesTable } from '../../components/admin/SchedulesTable';
 import { ScheduleForm } from '../../components/admin/ScheduleForm';
 import { ScheduleAssignPanel } from '../../components/admin/ScheduleAssignPanel';
+import { OrgTeamFilter, useOrgTeamFilter } from '../../components/filters';
 import { schedulesApi } from '../../api/schedules';
 import { mapErrorToMessage } from '../../utils/errorHandling';
 import type { WorkScheduleWithDays, CreateScheduleRequest } from '../../types/schedule';
 
 export function SchedulesPage() {
+  // Org filter state (no team filter since schedules are org-level)
+  const {
+    selectedOrgId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
+
   // Data state
   const [schedules, setSchedules] = useState<WorkScheduleWithDays[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,7 +72,9 @@ export function SchedulesPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await schedulesApi.list();
+      const params: { organization_id?: string } = {};
+      if (selectedOrgId) params.organization_id = selectedOrgId;
+      const data = await schedulesApi.list(params);
       setSchedules(data);
     } catch (err) {
       setError(err as Error);
@@ -72,7 +82,7 @@ export function SchedulesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedOrgId]);
 
   useEffect(() => {
     loadSchedules();
@@ -195,6 +205,15 @@ export function SchedulesPage() {
           <Button onClick={handleCreateClick}>Add Schedule</Button>
         </CardHeader>
         <CardContent>
+          <OrgTeamFilter
+            showTeamFilter={false}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId=""
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+            className="mb-4 pb-4 border-b"
+          />
+
           {error && (
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}

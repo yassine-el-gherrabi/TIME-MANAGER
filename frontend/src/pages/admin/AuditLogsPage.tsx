@@ -16,6 +16,7 @@ import {
   AuditLogsTable,
   AuditLogDetailsSheet,
 } from '../../components/admin';
+import { OrgTeamFilter, useOrgTeamFilter } from '../../components/filters';
 import { auditLogsApi } from '../../api/auditLogs';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { mapErrorToMessage } from '../../utils/errorHandling';
@@ -23,6 +24,13 @@ import type { AuditLog, AuditLogFilter } from '../../types/audit';
 import { AuditAction } from '../../types/audit';
 
 export function AuditLogsPage() {
+  // Org filter state (no team filter since audit logs show user actions, not team-based)
+  const {
+    selectedOrgId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
+
   // Filter state
   const [filters, setFilters] = useState({
     entityType: '',
@@ -47,8 +55,9 @@ export function AuditLogsPage() {
     if (filters.action) params.action = filters.action;
     if (filters.startDate) params.start_date = filters.startDate;
     if (filters.endDate) params.end_date = filters.endDate;
+    if (selectedOrgId) params.organization_id = selectedOrgId;
     return params;
-  }, [filters]);
+  }, [filters, selectedOrgId]);
 
   // Fetch function for infinite scroll
   const fetchLogs = useCallback(
@@ -83,7 +92,8 @@ export function AuditLogsPage() {
     filters.entityType !== '' ||
     filters.action !== '' ||
     filters.startDate !== '' ||
-    filters.endDate !== '';
+    filters.endDate !== '' ||
+    selectedOrgId !== '';
 
   // Filter handlers
   const handleEntityTypeChange = (value: string) => {
@@ -169,6 +179,15 @@ export function AuditLogsPage() {
               </Button>
             </div>
           )}
+
+          <OrgTeamFilter
+            showTeamFilter={false}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId=""
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+            className="mb-4 pb-4 border-b"
+          />
 
           <AuditLogFilters
             entityType={filters.entityType}

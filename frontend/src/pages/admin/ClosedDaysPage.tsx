@@ -23,6 +23,7 @@ import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
 import { closedDaysApi } from '../../api/closedDays';
+import { OrgTeamFilter, useOrgTeamFilter } from '../../components/filters';
 import { mapErrorToMessage } from '../../utils/errorHandling';
 import type { ClosedDay, CreateClosedDayRequest, UpdateClosedDayRequest } from '../../types/absence';
 
@@ -39,6 +40,13 @@ const initialFormData: FormData = {
 };
 
 export function ClosedDaysPage() {
+  // Org filter state (no team filter since closed days are org-level)
+  const {
+    selectedOrgId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
+
   const [closedDays, setClosedDays] = useState<ClosedDay[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,6 +81,7 @@ export function ClosedDaysPage() {
         start_date: startDate,
         end_date: endDate,
         is_recurring: showRecurring ? undefined : false,
+        organization_id: selectedOrgId || undefined,
       });
       setClosedDays(data);
     } catch (err) {
@@ -80,7 +89,7 @@ export function ClosedDaysPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterYear, showRecurring]);
+  }, [filterYear, showRecurring, selectedOrgId]);
 
   useEffect(() => {
     loadClosedDays();
@@ -181,6 +190,15 @@ export function ClosedDaysPage() {
           </Button>
         </CardHeader>
         <CardContent>
+          <OrgTeamFilter
+            showTeamFilter={false}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId=""
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+            className="mb-4 pb-4 border-b"
+          />
+
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-4 mb-6">
             <div className="space-y-1">

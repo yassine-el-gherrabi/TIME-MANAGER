@@ -25,6 +25,7 @@ pub mod work_schedule;
 // Re-export commonly used types
 pub use absence::{
     Absence, AbsenceFilter, AbsenceResponse, AbsenceUpdate, NewAbsence, PaginatedAbsences,
+    PendingAbsenceFilter,
 };
 pub use absence_type::{AbsenceType, AbsenceTypeResponse, AbsenceTypeUpdate, NewAbsenceType};
 pub use audit_log::{
@@ -34,7 +35,7 @@ pub use audit_log::{
 pub use claims::Claims;
 pub use clock_entry::{
     ClockEntry, ClockEntryResponse, ClockEntryUpdate, ClockFilter, ClockStatus, NewClockEntry,
-    PaginatedClockEntries,
+    PaginatedClockEntries, PendingClockFilter,
 };
 pub use closed_day::{
     ClosedDay, ClosedDayFilter, ClosedDayResponse, ClosedDayUpdate, NewClosedDay,

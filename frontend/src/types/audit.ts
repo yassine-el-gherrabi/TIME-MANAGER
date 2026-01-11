@@ -63,6 +63,8 @@ export interface AuditLogFilter {
   entity_id?: string;
   start_date?: string;
   end_date?: string;
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
 }
 
 /**

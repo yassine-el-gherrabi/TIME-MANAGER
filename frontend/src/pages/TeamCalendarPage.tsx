@@ -22,6 +22,7 @@ import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
 import { absencesApi } from '../api/absences';
 import { absenceTypesApi } from '../api/absenceTypes';
+import { OrgTeamFilter, useOrgTeamFilter } from '../components/filters';
 import type { Absence, AbsenceType } from '../types/absence';
 import { AbsenceStatus } from '../types/absence';
 
@@ -32,6 +33,14 @@ interface UserAbsence {
 }
 
 export function TeamCalendarPage() {
+  // Org/Team filter state
+  const {
+    selectedOrgId,
+    selectedTeamId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [userAbsences, setUserAbsences] = useState<UserAbsence[]>([]);
@@ -56,14 +65,26 @@ export function TeamCalendarPage() {
     const loadData = async () => {
       setLoading(true);
       try {
+        // Build absence list params with filters
+        const absenceParams: {
+          start_date: string;
+          end_date: string;
+          status: AbsenceStatus;
+          per_page: number;
+          organization_id?: string;
+          team_id?: string;
+        } = {
+          start_date: format(monthStart, 'yyyy-MM-dd'),
+          end_date: format(monthEnd, 'yyyy-MM-dd'),
+          status: AbsenceStatus.Approved,
+          per_page: 200,
+        };
+        if (selectedOrgId) absenceParams.organization_id = selectedOrgId;
+        if (selectedTeamId) absenceParams.team_id = selectedTeamId;
+
         const [types, response] = await Promise.all([
-          absenceTypesApi.list(),
-          absencesApi.list({
-            start_date: format(monthStart, 'yyyy-MM-dd'),
-            end_date: format(monthEnd, 'yyyy-MM-dd'),
-            status: AbsenceStatus.Approved,
-            per_page: 200,
-          }),
+          absenceTypesApi.list(selectedOrgId ? { organization_id: selectedOrgId } : {}),
+          absencesApi.list(absenceParams),
         ]);
 
         setAbsenceTypes(types);
@@ -91,7 +112,7 @@ export function TeamCalendarPage() {
     };
 
     loadData();
-  }, [currentMonth]);
+  }, [currentMonth, selectedOrgId, selectedTeamId]);
 
   // Check if a user has absence on a specific day
   const getAbsenceForDay = (userId: string, day: Date): Absence | null => {
@@ -136,6 +157,19 @@ export function TeamCalendarPage() {
           </Button>
         </div>
       </div>
+
+      {/* Org/Team Filters */}
+      <Card>
+        <CardContent className="py-3">
+          <OrgTeamFilter
+            showTeamFilter={true}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId={selectedTeamId}
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+          />
+        </CardContent>
+      </Card>
 
       {/* Legend */}
       <Card>

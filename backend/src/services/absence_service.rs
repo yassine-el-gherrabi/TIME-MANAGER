@@ -8,11 +8,11 @@ use crate::domain::enums::{AbsenceStatus, NotificationType, UserRole};
 use crate::error::AppError;
 use crate::models::{
     Absence, AbsenceFilter, AbsenceResponse, AbsenceUpdate, NewAbsence, PaginatedAbsences,
-    Pagination,
+    Pagination, PendingAbsenceFilter,
 };
 use crate::repositories::{
     AbsenceRepository, AbsenceTypeRepository, ClosedDayRepository, LeaveBalanceRepository,
-    TeamRepository,
+    OrganizationRepository, TeamRepository,
 };
 use crate::services::NotificationService;
 
@@ -32,6 +32,7 @@ pub struct AbsenceService {
     leave_balance_repo: LeaveBalanceRepository,
     closed_day_repo: ClosedDayRepository,
     team_repo: TeamRepository,
+    org_repo: OrganizationRepository,
 }
 
 impl AbsenceService {
@@ -41,7 +42,8 @@ impl AbsenceService {
             absence_type_repo: AbsenceTypeRepository::new(pool.clone()),
             leave_balance_repo: LeaveBalanceRepository::new(pool.clone()),
             closed_day_repo: ClosedDayRepository::new(pool.clone()),
-            team_repo: TeamRepository::new(pool),
+            team_repo: TeamRepository::new(pool.clone()),
+            org_repo: OrganizationRepository::new(pool),
         }
     }
 
@@ -411,11 +413,16 @@ impl AbsenceService {
     }
 
     /// List pending absences for approval
+    ///
+    /// - SuperAdmin: Can filter by organization_id (defaults to their org), can filter by team_id
+    /// - Admin: Uses their org, can filter by team_id
+    /// - Manager: Uses their org, filters by managed teams, can further filter by team_id
     pub async fn list_pending(
         &self,
-        org_id: Uuid,
+        user_org_id: Uuid,
         approver_id: Uuid,
         approver_role: UserRole,
+        filter: PendingAbsenceFilter,
         pagination: Pagination,
     ) -> Result<PaginatedAbsences, AppError> {
         if approver_role == UserRole::Employee {
@@ -424,7 +431,15 @@ impl AbsenceService {
             ));
         }
 
-        // For managers, get team member IDs
+        // Determine which organization to query
+        // SuperAdmin can specify a different org, others use their own
+        let org_id = if approver_role == UserRole::SuperAdmin {
+            filter.organization_id.unwrap_or(user_org_id)
+        } else {
+            user_org_id
+        };
+
+        // For managers, get team member IDs from managed teams
         let user_ids = if approver_role == UserRole::Manager {
             let managed_teams = self
                 .team_repo
@@ -433,6 +448,12 @@ impl AbsenceService {
             let mut member_ids = Vec::new();
 
             for team in managed_teams {
+                // If team_id filter is set, only include that team
+                if let Some(filter_team_id) = filter.team_id {
+                    if team.id != filter_team_id {
+                        continue;
+                    }
+                }
                 let members = self.team_repo.list_members(team.id).await?;
                 for member in members {
                     if !member_ids.contains(&member.id) {
@@ -442,6 +463,10 @@ impl AbsenceService {
             }
 
             Some(member_ids)
+        } else if let Some(filter_team_id) = filter.team_id {
+            // Admin or SuperAdmin filtering by team
+            let members = self.team_repo.list_members(filter_team_id).await?;
+            Some(members.iter().map(|m| m.id).collect())
         } else {
             None
         };
@@ -543,8 +568,20 @@ impl AbsenceService {
 
     /// Build response with enriched data
     async fn build_response(&self, absence: &Absence) -> Result<AbsenceResponse, AppError> {
+        // Get organization info
+        let organization = self.org_repo.find_by_id(absence.organization_id).await?;
+
         // Get user info (simplified - you'd want a user repo method)
         let (user_name, user_email) = self.get_user_info(absence.user_id).await?;
+
+        // Get team info
+        let teams = self
+            .team_repo
+            .get_user_teams(absence.organization_id, absence.user_id)
+            .await
+            .unwrap_or_default();
+        let team_id = teams.first().map(|t| t.id);
+        let team_name = teams.first().map(|t| t.name.clone());
 
         // Get absence type info
         let absence_type = self
@@ -562,9 +599,13 @@ impl AbsenceService {
 
         Ok(AbsenceResponse {
             id: absence.id,
+            organization_id: absence.organization_id,
+            organization_name: organization.name,
             user_id: absence.user_id,
             user_name,
             user_email,
+            team_id,
+            team_name,
             type_id: absence.type_id,
             type_name: absence_type.name,
             type_code: absence_type.code,

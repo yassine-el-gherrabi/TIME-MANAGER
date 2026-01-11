@@ -6,7 +6,7 @@
 
 import type { FC } from 'react';
 import { format } from 'date-fns';
-import { Calendar, User, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, User, CheckCircle, XCircle, Building2, Users } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
@@ -76,6 +76,21 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
                 <span className="text-sm" style={{ color: absenceType?.color }}>
                   {absenceType?.name || 'Unknown Type'}
                 </span>
+              </div>
+              {/* Organization and Team info */}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {absence.organization_name && (
+                  <span className="flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    {absence.organization_name}
+                  </span>
+                )}
+                {absence.team_name && (
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {absence.team_name}
+                  </span>
+                )}
               </div>
 
               {/* Date info */}

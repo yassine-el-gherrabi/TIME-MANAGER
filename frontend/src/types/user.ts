@@ -68,6 +68,10 @@ export interface ListUsersParams {
   role?: UserRole;
   search?: string;
   include_deleted?: boolean;
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
+  /** Filter by team (Admin/Manager+) */
+  team_id?: string;
 }
 
 /**

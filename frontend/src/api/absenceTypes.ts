@@ -13,18 +13,34 @@ import type {
 } from '../types/absence';
 
 /**
+ * List absence types query parameters
+ */
+export interface ListAbsenceTypesParams {
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
+}
+
+/**
  * Absence Types API methods
  */
 export const absenceTypesApi = {
   /**
    * List all absence types for the organization
    *
+   * @param params - Optional query parameters
    * @returns List of absence types
    */
-  list: async (): Promise<AbsenceType[]> => {
+  list: async (params: ListAbsenceTypesParams = {}): Promise<AbsenceType[]> => {
+    const queryParams = new URLSearchParams();
+    if (params.organization_id) {
+      queryParams.set('organization_id', params.organization_id);
+    }
+    const queryString = queryParams.toString();
+    const url = queryString ? `${ABSENCE_TYPE_ENDPOINTS.LIST}?${queryString}` : ABSENCE_TYPE_ENDPOINTS.LIST;
+
     return apiRequest<AbsenceType[]>({
       method: 'GET',
-      url: ABSENCE_TYPE_ENDPOINTS.LIST,
+      url,
     });
   },
 

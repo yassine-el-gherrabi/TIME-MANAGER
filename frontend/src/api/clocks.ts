@@ -99,7 +99,7 @@ export const clocksApi = {
   /**
    * Get pending entries for approval (Manager+)
    *
-   * @param params - Query parameters for pagination
+   * @param params - Query parameters for pagination and filtering
    * @returns Paginated pending entries
    */
   getPending: async (params: PendingEntriesParams = {}): Promise<PaginatedPendingResponse> => {
@@ -110,6 +110,12 @@ export const clocksApi = {
     }
     if (params.per_page !== undefined) {
       queryParams.set('per_page', params.per_page.toString());
+    }
+    if (params.organization_id) {
+      queryParams.set('organization_id', params.organization_id);
+    }
+    if (params.team_id) {
+      queryParams.set('team_id', params.team_id);
     }
 
     const queryString = queryParams.toString();

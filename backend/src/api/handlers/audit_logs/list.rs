@@ -33,6 +33,8 @@ pub struct ListAuditLogsQuery {
     pub start_date: Option<NaiveDate>,
     /// Filter to date (YYYY-MM-DD)
     pub end_date: Option<NaiveDate>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
 }
 
 /// GET /api/v1/audit-logs
@@ -60,8 +62,8 @@ pub async fn list_audit_logs(
         end_date: query.end_date,
     };
 
-    // Super Admin can see all organizations (pass None)
-    let audit_logs = service.list(None, filter, pagination).await?;
+    // Super Admin can filter by organization or see all
+    let audit_logs = service.list(query.organization_id, filter, pagination).await?;
 
     // Log access for audit trail (optional - could be omitted for audit log reads)
     tracing::info!(

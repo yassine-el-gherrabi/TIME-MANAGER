@@ -20,6 +20,7 @@ import {
   SheetDescription,
 } from '../../components/ui/sheet';
 import { UsersTable, UserFilters, UserForm } from '../../components/admin';
+import { OrgTeamFilter, useOrgTeamFilter } from '../../components/filters';
 import { usersApi } from '../../api/users';
 import { schedulesApi } from '../../api/schedules';
 import { useAuthStore } from '../../stores/authStore';
@@ -31,6 +32,14 @@ import { UserRole } from '../../types/auth';
 
 export function UsersPage() {
   const currentUser = useAuthStore((state) => state.user);
+
+  // Org/Team filter state
+  const {
+    selectedOrgId,
+    selectedTeamId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
 
   // Schedules for assignment dropdown
   const [schedules, setSchedules] = useState<ScheduleOption[]>([]);
@@ -61,8 +70,10 @@ export function UsersPage() {
     if (filters.search) params.search = filters.search;
     if (filters.role) params.role = filters.role;
     if (filters.showDeleted) params.include_deleted = true;
+    if (selectedOrgId) params.organization_id = selectedOrgId;
+    if (selectedTeamId) params.team_id = selectedTeamId;
     return params;
-  }, [filters]);
+  }, [filters, selectedOrgId, selectedTeamId]);
 
   // Fetch function for infinite scroll
   const fetchUsers = useCallback(
@@ -127,7 +138,7 @@ export function UsersPage() {
     error: string;
   }>({ open: false, user: null, loading: false, error: '' });
 
-  const hasActiveFilters = filters.search !== '' || filters.role !== '' || filters.showDeleted;
+  const hasActiveFilters = filters.search !== '' || filters.role !== '' || filters.showDeleted || selectedOrgId !== '' || selectedTeamId !== '';
 
   const handleSearchChange = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
@@ -290,6 +301,15 @@ export function UsersPage() {
               </Button>
             </div>
           )}
+
+          <OrgTeamFilter
+            showTeamFilter={true}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId={selectedTeamId}
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+            className="mb-4 pb-4 border-b"
+          />
 
           <UserFilters
             search={filters.search}

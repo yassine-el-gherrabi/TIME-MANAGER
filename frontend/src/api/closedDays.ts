@@ -24,6 +24,7 @@ function buildQueryString(filter?: ClosedDayFilter): string {
   if (filter.start_date) params.append('start_date', filter.start_date);
   if (filter.end_date) params.append('end_date', filter.end_date);
   if (filter.is_recurring !== undefined) params.append('is_recurring', filter.is_recurring.toString());
+  if (filter.organization_id) params.append('organization_id', filter.organization_id);
 
   const queryString = params.toString();
   return queryString ? `?${queryString}` : '';

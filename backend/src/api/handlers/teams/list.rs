@@ -5,8 +5,10 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::config::AppState;
+use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
 use crate::models::{Pagination, TeamFilter, TeamResponse};
@@ -18,6 +20,8 @@ pub struct ListTeamsQuery {
     pub per_page: Option<i64>,
     pub search: Option<String>,
     pub manager_id: Option<String>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
 }
 
 #[derive(Debug, Serialize)]
@@ -41,6 +45,13 @@ pub async fn list_teams(
     AuthenticatedUser(claims): AuthenticatedUser,
     Query(query): Query<ListTeamsQuery>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Determine organization ID - SuperAdmin can filter by organization
+    let org_id = if claims.role == UserRole::SuperAdmin {
+        query.organization_id.unwrap_or(claims.org_id)
+    } else {
+        claims.org_id // Non-superadmin always uses their org
+    };
+
     let team_service = TeamService::new(state.db_pool.clone());
 
     let filter = TeamFilter {
@@ -54,7 +65,7 @@ pub async fn list_teams(
     };
 
     let (teams, total) = team_service
-        .list_teams(claims.org_id, filter, pagination.clone())
+        .list_teams(org_id, filter, pagination.clone())
         .await?;
 
     Ok((

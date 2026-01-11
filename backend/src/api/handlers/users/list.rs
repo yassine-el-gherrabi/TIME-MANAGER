@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use uuid::Uuid;
 
 use crate::config::AppState;
 use crate::domain::enums::UserRole;
@@ -21,6 +22,10 @@ pub struct ListUsersQuery {
     pub role: Option<String>,
     pub search: Option<String>,
     pub include_deleted: Option<bool>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
+    /// Filter by team (Admin/Manager+)
+    pub team_id: Option<Uuid>,
 }
 
 /// GET /api/v1/users
@@ -43,6 +48,13 @@ pub async fn list_users(
 ) -> Result<impl IntoResponse, AppError> {
     let claims = user.0;
 
+    // Determine organization ID - SuperAdmin can filter by organization
+    let org_id = if claims.role == UserRole::SuperAdmin {
+        query.organization_id.unwrap_or(claims.org_id)
+    } else {
+        claims.org_id // Non-superadmin always uses their org
+    };
+
     // Parse role filter
     let role_filter = query
         .role
@@ -59,6 +71,7 @@ pub async fn list_users(
     let filter = UserFilter {
         role: role_filter,
         search: query.search.clone(),
+        team_id: query.team_id,
     };
 
     // Build pagination
@@ -71,7 +84,7 @@ pub async fn list_users(
     let user_repo = UserRepository::new(state.db_pool.clone());
     let include_deleted = query.include_deleted.unwrap_or(false);
     let (users, total) = user_repo
-        .list_with_deleted(claims.org_id, &filter, &pagination, include_deleted)
+        .list_with_deleted(org_id, &filter, &pagination, include_deleted)
         .await?;
 
     // Build response

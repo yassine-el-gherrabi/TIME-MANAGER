@@ -24,6 +24,10 @@ pub struct ListAbsencesQuery {
     pub end_date: Option<NaiveDate>,
     pub page: Option<i64>,
     pub per_page: Option<i64>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
+    /// Filter by team (Admin/Manager+)
+    pub team_id: Option<Uuid>,
 }
 
 /// GET /api/v1/absences
@@ -37,6 +41,13 @@ pub async fn list_absences(
     AuthenticatedUser(claims): AuthenticatedUser,
     Query(query): Query<ListAbsencesQuery>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Determine organization ID - SuperAdmin can filter by organization
+    let org_id = if claims.role == UserRole::SuperAdmin {
+        query.organization_id.unwrap_or(claims.org_id)
+    } else {
+        claims.org_id // Non-superadmin always uses their org
+    };
+
     let service = AbsenceService::new(state.db_pool.clone());
 
     // Build filter based on role
@@ -49,6 +60,7 @@ pub async fn list_absences(
                 type_id: query.type_id,
                 start_date: query.start_date,
                 end_date: query.end_date,
+                team_id: None, // Employees cannot filter by team
             }
         }
         UserRole::Manager | UserRole::Admin | UserRole::SuperAdmin => {
@@ -59,6 +71,7 @@ pub async fn list_absences(
                 type_id: query.type_id,
                 start_date: query.start_date,
                 end_date: query.end_date,
+                team_id: query.team_id,
             }
         }
     };
@@ -68,7 +81,7 @@ pub async fn list_absences(
         per_page: query.per_page.unwrap_or(20),
     };
 
-    let absences = service.list(claims.org_id, filter, pagination).await?;
+    let absences = service.list(org_id, filter, pagination).await?;
 
     Ok((StatusCode::OK, Json(absences)))
 }

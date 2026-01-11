@@ -45,8 +45,13 @@ export interface ClockEntry {
  */
 export interface ClockEntryResponse {
   id: string;
+  organization_id: string;
+  organization_name: string;
   user_id: string;
   user_name: string;
+  user_email: string;
+  team_id: string | null;
+  team_name: string | null;
   clock_in: string;
   clock_out: string | null;
   status: ClockEntryStatus;
@@ -115,6 +120,10 @@ export interface PaginatedClockHistoryResponse {
 export interface PendingEntriesParams {
   page?: number;
   per_page?: number;
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
+  /** Filter by team (Admin/Manager) */
+  team_id?: string;
 }
 
 /**

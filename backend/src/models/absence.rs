@@ -57,9 +57,13 @@ pub struct AbsenceUpdate {
 #[derive(Debug, Serialize)]
 pub struct AbsenceResponse {
     pub id: Uuid,
+    pub organization_id: Uuid,
+    pub organization_name: String,
     pub user_id: Uuid,
     pub user_name: String,
     pub user_email: String,
+    pub team_id: Option<Uuid>,
+    pub team_name: Option<String>,
     pub type_id: Uuid,
     pub type_name: String,
     pub type_code: String,
@@ -84,6 +88,16 @@ pub struct AbsenceFilter {
     pub status: Option<AbsenceStatus>,
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
+    pub team_id: Option<Uuid>,
+}
+
+/// Pending absence entries filter (for approval pages)
+#[derive(Debug, Clone, Default)]
+pub struct PendingAbsenceFilter {
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
+    /// Filter by team
+    pub team_id: Option<Uuid>,
 }
 
 /// Paginated absences response

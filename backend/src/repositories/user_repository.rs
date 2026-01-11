@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{NewUser, Pagination, UserFilter, UserUpdate};
-use crate::schema::users;
+use crate::schema::{team_members, users};
 
 /// User repository for database operations
 pub struct UserRepository {
@@ -290,6 +290,14 @@ impl UserRepository {
                 );
             }
 
+            // Filter by team membership using subquery
+            if let Some(team_id) = filter.team_id {
+                let team_user_ids = team_members::table
+                    .filter(team_members::team_id.eq(team_id))
+                    .select(team_members::user_id);
+                count_query = count_query.filter(users::id.eq_any(team_user_ids));
+            }
+
             count_query
                 .count()
                 .get_result(&mut conn)
@@ -318,6 +326,14 @@ impl UserRepository {
                     .or(users::first_name.ilike(pattern))
                     .or(users::last_name.ilike(pattern)),
             );
+        }
+
+        // Filter by team membership using subquery
+        if let Some(team_id) = filter.team_id {
+            let team_user_ids = team_members::table
+                .filter(team_members::team_id.eq(team_id))
+                .select(team_members::user_id);
+            query = query.filter(users::id.eq_any(team_user_ids));
         }
 
         // Apply pagination

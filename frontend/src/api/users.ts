@@ -45,6 +45,12 @@ export const usersApi = {
     if (params.include_deleted) {
       queryParams.set('include_deleted', 'true');
     }
+    if (params.organization_id) {
+      queryParams.set('organization_id', params.organization_id);
+    }
+    if (params.team_id) {
+      queryParams.set('team_id', params.team_id);
+    }
 
     const queryString = queryParams.toString();
     const url = queryString ? `${USER_ENDPOINTS.LIST}?${queryString}` : USER_ENDPOINTS.LIST;

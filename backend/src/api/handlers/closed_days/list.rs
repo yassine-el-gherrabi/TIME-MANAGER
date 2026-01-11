@@ -6,8 +6,10 @@ use axum::{
 };
 use chrono::NaiveDate;
 use serde::Deserialize;
+use uuid::Uuid;
 
 use crate::config::AppState;
+use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
 use crate::models::ClosedDayFilter;
@@ -18,6 +20,8 @@ pub struct ListClosedDaysQuery {
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
     pub is_recurring: Option<bool>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
 }
 
 /// GET /api/v1/closed-days
@@ -28,13 +32,20 @@ pub async fn list_closed_days(
     AuthenticatedUser(claims): AuthenticatedUser,
     Query(query): Query<ListClosedDaysQuery>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Determine organization ID - SuperAdmin can filter by organization
+    let org_id = if claims.role == UserRole::SuperAdmin {
+        query.organization_id.unwrap_or(claims.org_id)
+    } else {
+        claims.org_id // Non-superadmin always uses their org
+    };
+
     // Build cache key components
     let start_str = query.start_date.map(|d| d.to_string());
     let end_str = query.end_date.map(|d| d.to_string());
 
     // Check cache first
     if let Some(cached_days) = CacheService::get_closed_days(
-        claims.org_id,
+        org_id,
         start_str.as_deref(),
         end_str.as_deref(),
         query.is_recurring,
@@ -51,11 +62,11 @@ pub async fn list_closed_days(
         is_recurring: query.is_recurring,
     };
 
-    let closed_days = service.list(claims.org_id, filter).await?;
+    let closed_days = service.list(org_id, filter).await?;
 
     // Store in cache
     CacheService::set_closed_days(
-        claims.org_id,
+        org_id,
         start_str.as_deref(),
         end_str.as_deref(),
         query.is_recurring,

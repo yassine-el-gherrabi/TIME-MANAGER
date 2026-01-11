@@ -24,6 +24,7 @@ import { TeamsTable } from '../../components/admin/TeamsTable';
 import { TeamFilters } from '../../components/admin/TeamFilters';
 import { TeamForm } from '../../components/admin/TeamForm';
 import { TeamMembersPanel } from '../../components/admin/TeamMembersPanel';
+import { OrgTeamFilter, useOrgTeamFilter } from '../../components/filters';
 import { teamsApi } from '../../api/teams';
 import { usersApi } from '../../api/users';
 import { schedulesApi } from '../../api/schedules';
@@ -34,6 +35,13 @@ import type { UserResponse } from '../../types/user';
 import { UserRole } from '../../types/auth';
 
 export function TeamsPage() {
+  // Org filter state (no team filter since this is the teams list)
+  const {
+    selectedOrgId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
+
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
@@ -94,8 +102,9 @@ export function TeamsPage() {
     const params: Record<string, string | undefined> = {};
     if (filters.search) params.search = filters.search;
     if (filters.manager_id) params.manager_id = filters.manager_id;
+    if (selectedOrgId) params.organization_id = selectedOrgId;
     return params;
-  }, [filters]);
+  }, [filters, selectedOrgId]);
 
   // Fetch function for infinite scroll
   const fetchTeams = useCallback(
@@ -165,7 +174,7 @@ export function TeamsPage() {
     loading: boolean;
   }>({ open: false, team: null, loading: false });
 
-  const hasActiveFilters = filters.search !== '' || filters.manager_id !== '';
+  const hasActiveFilters = filters.search !== '' || filters.manager_id !== '' || selectedOrgId !== '';
 
   const handleSearchChange = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
@@ -282,6 +291,15 @@ export function TeamsPage() {
               </Button>
             </div>
           )}
+
+          <OrgTeamFilter
+            showTeamFilter={false}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId=""
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+            className="mb-4 pb-4 border-b"
+          />
 
           <TeamFilters
             search={filters.search}

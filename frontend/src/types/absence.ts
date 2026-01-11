@@ -34,9 +34,13 @@ export interface AbsenceType {
  */
 export interface Absence {
   id: string;
+  organization_id: string;
+  organization_name: string;
   user_id: string;
   user_name: string;
   user_email: string;
+  team_id: string | null;
+  team_name: string | null;
   type_id: string;
   type_name: string;
   type_code: string;
@@ -182,12 +186,26 @@ export interface AbsenceFilter {
 }
 
 /**
+ * Pending absence filter options (for approval pages)
+ */
+export interface PendingAbsenceFilter {
+  page?: number;
+  per_page?: number;
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
+  /** Filter by team (Admin/Manager) */
+  team_id?: string;
+}
+
+/**
  * Closed day filter options
  */
 export interface ClosedDayFilter {
   start_date?: string;
   end_date?: string;
   is_recurring?: boolean;
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
 }
 
 /**

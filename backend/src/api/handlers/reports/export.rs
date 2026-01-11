@@ -212,6 +212,7 @@ async fn export_absences(
         end_date: query.end_date,
         status: None,
         type_id: None,
+        team_id: None,
     };
 
     // Get all absences (max 10000)

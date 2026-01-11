@@ -39,6 +39,9 @@ const buildQueryString = (params: AuditLogFilter): string => {
   if (params.end_date !== undefined) {
     queryParams.set('end_date', params.end_date);
   }
+  if (params.organization_id !== undefined) {
+    queryParams.set('organization_id', params.organization_id);
+  }
 
   return queryParams.toString();
 };

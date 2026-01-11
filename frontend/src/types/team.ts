@@ -97,6 +97,8 @@ export interface ListTeamsParams {
   per_page?: number;
   search?: string;
   manager_id?: string;
+  /** Filter by organization (SuperAdmin only) */
+  organization_id?: string;
 }
 
 /**

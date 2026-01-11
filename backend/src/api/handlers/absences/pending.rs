@@ -5,18 +5,23 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use uuid::Uuid;
 
 use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::models::Pagination;
+use crate::models::{Pagination, PendingAbsenceFilter};
 use crate::services::AbsenceService;
 
 #[derive(Debug, Deserialize)]
 pub struct PendingAbsencesQuery {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
+    /// Filter by organization (SuperAdmin only)
+    pub organization_id: Option<Uuid>,
+    /// Filter by team (Admin/Manager)
+    pub team_id: Option<Uuid>,
 }
 
 /// GET /api/v1/absences/pending
@@ -41,9 +46,14 @@ pub async fn list_pending_absences(
         per_page: query.per_page.unwrap_or(20),
     };
 
+    let filter = PendingAbsenceFilter {
+        organization_id: query.organization_id,
+        team_id: query.team_id,
+    };
+
     let service = AbsenceService::new(state.db_pool.clone());
     let absences = service
-        .list_pending(claims.org_id, claims.sub, claims.role, pagination)
+        .list_pending(claims.org_id, claims.sub, claims.role, filter, pagination)
         .await?;
 
     Ok((StatusCode::OK, Json(absences)))

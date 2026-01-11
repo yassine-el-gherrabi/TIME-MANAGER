@@ -21,6 +21,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { absenceTypesApi } from '../../api/absenceTypes';
+import { OrgTeamFilter, useOrgTeamFilter } from '../../components/filters';
 import { mapErrorToMessage } from '../../utils/errorHandling';
 import type { AbsenceType, CreateAbsenceTypeRequest, UpdateAbsenceTypeRequest } from '../../types/absence';
 
@@ -43,6 +44,13 @@ const initialFormData: FormData = {
 };
 
 export function AbsenceTypesPage() {
+  // Org filter state (no team filter since absence types are org-level)
+  const {
+    selectedOrgId,
+    setSelectedOrgId,
+    setSelectedTeamId,
+  } = useOrgTeamFilter();
+
   const [types, setTypes] = useState<AbsenceType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,15 +73,18 @@ export function AbsenceTypesPage() {
 
   // Load types
   const loadTypes = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await absenceTypesApi.list();
+      const params: { organization_id?: string } = {};
+      if (selectedOrgId) params.organization_id = selectedOrgId;
+      const data = await absenceTypesApi.list(params);
       setTypes(data);
     } catch (err) {
       toast.error(mapErrorToMessage(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedOrgId]);
 
   useEffect(() => {
     loadTypes();
@@ -162,6 +173,15 @@ export function AbsenceTypesPage() {
           </Button>
         </CardHeader>
         <CardContent>
+          <OrgTeamFilter
+            showTeamFilter={false}
+            selectedOrgId={selectedOrgId}
+            selectedTeamId=""
+            onOrgChange={setSelectedOrgId}
+            onTeamChange={setSelectedTeamId}
+            className="mb-4 pb-4 border-b"
+          />
+
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

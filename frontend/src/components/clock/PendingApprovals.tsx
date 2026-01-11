@@ -3,11 +3,12 @@
  *
  * Lists pending clock entries for manager approval/rejection.
  * Uses infinite scroll for seamless loading.
+ * Includes filtering by organization (SuperAdmin) and team (Admin/Manager).
  */
 
-import { useState, useCallback, type FC, type ChangeEvent } from 'react';
+import { useState, useCallback, useEffect, type FC, type ChangeEvent } from 'react';
 import { format } from 'date-fns';
-import { Loader2, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Clock, CheckCircle, XCircle, AlertCircle, Building2, Users, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -20,9 +21,22 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
+import { useCurrentUser } from '../../hooks/useAuth';
 import { clocksApi } from '../../api/clocks';
-import type { ClockEntryResponse } from '../../types/clock';
+import { organizationsApi } from '../../api/organizations';
+import { teamsApi } from '../../api/teams';
+import type { ClockEntryResponse, PendingEntriesParams } from '../../types/clock';
+import type { OrganizationResponse } from '../../types/organization';
+import type { TeamResponse } from '../../types/team';
+import { UserRole } from '../../types/auth';
 
 interface PendingApprovalsProps {
   className?: string;
@@ -48,22 +62,65 @@ const calculateDuration = (clockIn: string, clockOut: string | null): string => 
 };
 
 export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
+  const user = useCurrentUser();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ClockEntryResponse | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
-  // Fetch function for infinite scroll
+  // Filter state
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [organizations, setOrganizations] = useState<OrganizationResponse[]>([]);
+  const [teams, setTeams] = useState<TeamResponse[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+
+  // Check user role for filter visibility
+  const isSuperAdmin = user?.role === UserRole.SuperAdmin;
+  const isAdminOrHigher = user?.role === UserRole.SuperAdmin || user?.role === UserRole.Admin;
+  const canFilterByTeam = isAdminOrHigher || user?.role === UserRole.Manager;
+
+  // Load organizations for SuperAdmin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      setLoadingOrgs(true);
+      organizationsApi.list({ per_page: 100 })
+        .then((response) => setOrganizations(response.data))
+        .catch(() => setOrganizations([]))
+        .finally(() => setLoadingOrgs(false));
+    }
+  }, [isSuperAdmin]);
+
+  // Load teams for Admin/Manager/SuperAdmin
+  useEffect(() => {
+    if (canFilterByTeam) {
+      setLoadingTeams(true);
+      teamsApi.list({ per_page: 100 })
+        .then((response) => setTeams(response.teams))
+        .catch(() => setTeams([]))
+        .finally(() => setLoadingTeams(false));
+    }
+  }, [canFilterByTeam]);
+
+  // Fetch function for infinite scroll with filters
   const fetchPending = useCallback(
     async (params: { page: number; per_page: number }) => {
-      const response = await clocksApi.getPending({
+      const queryParams: PendingEntriesParams = {
         page: params.page,
         per_page: params.per_page,
-      });
+      };
+      if (selectedOrgId) {
+        queryParams.organization_id = selectedOrgId;
+      }
+      if (selectedTeamId) {
+        queryParams.team_id = selectedTeamId;
+      }
+      const response = await clocksApi.getPending(queryParams);
       return response;
     },
-    []
+    [selectedOrgId, selectedTeamId]
   );
 
   // Use infinite scroll hook
@@ -81,9 +138,31 @@ export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
     perPage: 20,
   });
 
+  // Reset when filters change
+  useEffect(() => {
+    setRemovedIds(new Set());
+    reset();
+  }, [selectedOrgId, selectedTeamId, reset]);
+
   // Filter out removed entries
   const entries = allEntries.filter((e) => !removedIds.has(e.id));
   const displayTotal = Math.max(0, total - removedIds.size);
+
+  // Handle filter changes
+  const handleOrgChange = (value: string) => {
+    setSelectedOrgId(value === 'all' ? '' : value);
+  };
+
+  const handleTeamChange = (value: string) => {
+    setSelectedTeamId(value === 'all' ? '' : value);
+  };
+
+  const hasActiveFilters = selectedOrgId !== '' || selectedTeamId !== '';
+
+  const clearFilters = () => {
+    setSelectedOrgId('');
+    setSelectedTeamId('');
+  };
 
   const handleApprove = async (entry: ClockEntryResponse) => {
     setActionLoading(entry.id);
@@ -173,6 +252,72 @@ export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
           <CardDescription>
             Review and approve or reject clock entries
           </CardDescription>
+
+          {/* Filters */}
+          {(isSuperAdmin || canFilterByTeam) && (
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>Filter by:</span>
+              </div>
+
+              {/* Organization filter - SuperAdmin only */}
+              {isSuperAdmin && (
+                <Select
+                  value={selectedOrgId || 'all'}
+                  onValueChange={handleOrgChange}
+                  disabled={loadingOrgs}
+                >
+                  <SelectTrigger className="w-[180px] h-9">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="All Organizations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Organizations</SelectItem>
+                    {organizations.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Team filter - Admin/Manager/SuperAdmin */}
+              {canFilterByTeam && (
+                <Select
+                  value={selectedTeamId || 'all'}
+                  onValueChange={handleTeamChange}
+                  disabled={loadingTeams}
+                >
+                  <SelectTrigger className="w-[180px] h-9">
+                    <Users className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="All Teams" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Teams</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Clear filters button */}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-9"
+                >
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {entries.length === 0 ? (
@@ -197,6 +342,20 @@ export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
                       <p className="text-sm font-medium">
                         {entry.user_name}
                       </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {entry.organization_name && (
+                          <span className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3" />
+                            {entry.organization_name}
+                          </span>
+                        )}
+                        {entry.team_name && (
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {entry.team_name}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground mb-1">
                         {format(new Date(entry.clock_in), 'EEEE, MMM d')}
                       </p>

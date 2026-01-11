@@ -43,6 +43,9 @@ export const teamsApi = {
     if (params.manager_id) {
       queryParams.set('manager_id', params.manager_id);
     }
+    if (params.organization_id) {
+      queryParams.set('organization_id', params.organization_id);
+    }
 
     const queryString = queryParams.toString();
     const url = queryString ? `${TEAM_ENDPOINTS.LIST}?${queryString}` : TEAM_ENDPOINTS.LIST;

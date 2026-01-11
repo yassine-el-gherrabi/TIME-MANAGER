@@ -2,25 +2,76 @@
  * Pending Absences Page (Manager)
  *
  * Page for managers to review and approve/reject absence requests.
+ * Includes filtering by organization (SuperAdmin) and team (Admin/Manager).
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Building2, Users, Filter } from 'lucide-react';
 import { logger } from '../utils/logger';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { PendingAbsenceCard, RejectReasonModal } from '../components/absences';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { useCurrentUser } from '../hooks/useAuth';
 import { absencesApi } from '../api/absences';
 import { absenceTypesApi } from '../api/absenceTypes';
+import { organizationsApi } from '../api/organizations';
+import { teamsApi } from '../api/teams';
 import { mapErrorToMessage } from '../utils/errorHandling';
-import type { Absence, AbsenceType } from '../types/absence';
+import type { Absence, AbsenceType, PendingAbsenceFilter } from '../types/absence';
+import type { OrganizationResponse } from '../types/organization';
+import type { TeamResponse } from '../types/team';
+import { UserRole } from '../types/auth';
 
 export function PendingAbsencesPage() {
+  const user = useCurrentUser();
+
   // Reference data
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
+
+  // Filter state
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [organizations, setOrganizations] = useState<OrganizationResponse[]>([]);
+  const [teams, setTeams] = useState<TeamResponse[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [loadingTeams, setLoadingTeams] = useState(false);
+
+  // Check user role for filter visibility
+  const isSuperAdmin = user?.role === UserRole.SuperAdmin;
+  const isAdminOrHigher = user?.role === UserRole.SuperAdmin || user?.role === UserRole.Admin;
+  const canFilterByTeam = isAdminOrHigher || user?.role === UserRole.Manager;
+
+  // Load organizations for SuperAdmin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      setLoadingOrgs(true);
+      organizationsApi.list({ per_page: 100 })
+        .then((response) => setOrganizations(response.data))
+        .catch(() => setOrganizations([]))
+        .finally(() => setLoadingOrgs(false));
+    }
+  }, [isSuperAdmin]);
+
+  // Load teams for Admin/Manager/SuperAdmin
+  useEffect(() => {
+    if (canFilterByTeam) {
+      setLoadingTeams(true);
+      teamsApi.list({ per_page: 100 })
+        .then((response) => setTeams(response.teams))
+        .catch(() => setTeams([]))
+        .finally(() => setLoadingTeams(false));
+    }
+  }, [canFilterByTeam]);
 
   // Load absence types on mount
   useEffect(() => {
@@ -44,10 +95,20 @@ export function PendingAbsencesPage() {
     return map;
   }, [absenceTypes]);
 
-  // Fetch function for infinite scroll
+  // Fetch function for infinite scroll with filters
   const fetchPending = useCallback(
     async (params: { page: number; per_page: number }) => {
-      const response = await absencesApi.listPending(params.page, params.per_page);
+      const filter: PendingAbsenceFilter = {
+        page: params.page,
+        per_page: params.per_page,
+      };
+      if (selectedOrgId) {
+        filter.organization_id = selectedOrgId;
+      }
+      if (selectedTeamId) {
+        filter.team_id = selectedTeamId;
+      }
+      const response = await absencesApi.listPending(filter);
       return {
         data: response.data,
         total: response.total,
@@ -55,7 +116,7 @@ export function PendingAbsencesPage() {
         per_page: response.per_page,
       };
     },
-    []
+    [selectedOrgId, selectedTeamId]
   );
 
   // Use infinite scroll hook
@@ -77,9 +138,31 @@ export function PendingAbsencesPage() {
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Reset when filters change
+  useEffect(() => {
+    setRemovedIds(new Set());
+    reset();
+  }, [selectedOrgId, selectedTeamId, reset]);
+
   // Filter out removed entries
   const absences = allAbsences.filter((a) => !removedIds.has(a.id));
   const displayTotal = Math.max(0, total - removedIds.size);
+
+  // Handle filter changes
+  const handleOrgChange = (value: string) => {
+    setSelectedOrgId(value === 'all' ? '' : value);
+  };
+
+  const handleTeamChange = (value: string) => {
+    setSelectedTeamId(value === 'all' ? '' : value);
+  };
+
+  const hasActiveFilters = selectedOrgId !== '' || selectedTeamId !== '';
+
+  const clearFilters = () => {
+    setSelectedOrgId('');
+    setSelectedTeamId('');
+  };
 
   // Reject dialog state
   const [rejectDialog, setRejectDialog] = useState<{
@@ -167,6 +250,72 @@ export function PendingAbsencesPage() {
           <CardDescription>
             Review and approve or reject absence requests from your team
           </CardDescription>
+
+          {/* Filters */}
+          {(isSuperAdmin || canFilterByTeam) && (
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>Filter by:</span>
+              </div>
+
+              {/* Organization filter - SuperAdmin only */}
+              {isSuperAdmin && (
+                <Select
+                  value={selectedOrgId || 'all'}
+                  onValueChange={handleOrgChange}
+                  disabled={loadingOrgs}
+                >
+                  <SelectTrigger className="w-[180px] h-9">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="All Organizations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Organizations</SelectItem>
+                    {organizations.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Team filter - Admin/Manager/SuperAdmin */}
+              {canFilterByTeam && (
+                <Select
+                  value={selectedTeamId || 'all'}
+                  onValueChange={handleTeamChange}
+                  disabled={loadingTeams}
+                >
+                  <SelectTrigger className="w-[180px] h-9">
+                    <Users className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="All Teams" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Teams</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Clear filters button */}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-9"
+                >
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {error && (
