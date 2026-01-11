@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, TrendingUp, Calendar, CheckCircle, Users, Globe } from 'lucide-react';
+import { Clock, TrendingUp, Calendar, CheckCircle, Users, Globe, History, CalendarDays, ClipboardCheck, Zap } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { logger } from '../utils/logger';
@@ -235,59 +235,97 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Manager Section - Presence Widget */}
-      {isManager && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <PresenceWidget />
+      {/* Quick Actions & Presence Section */}
+      <div className={`grid gap-6 ${isManager ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
+        {/* Presence Widget - Managers only */}
+        {isManager && <PresenceWidget />}
 
-          {/* Quick Actions Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription>
-                Management shortcuts
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => navigate('/clock/pending')}
-              >
-                View Pending Approvals
-              </Button>
-              {isAdmin && (
-                <>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/admin/users')}
-                  >
-                    Manage Users
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/admin/teams')}
-                  >
-                    Manage Teams
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/admin/schedules')}
-                  >
-                    Manage Schedules
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        {/* Quick Actions Card - All users with role-specific options */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Zap className="h-5 w-5" />
+              Quick Actions
+            </CardTitle>
+            <CardDescription>
+              {isAdmin ? 'Management & personal shortcuts' : isManager ? 'Team management' : 'Personal shortcuts'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {/* Employee actions - available to all */}
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => navigate('/clock/history')}
+            >
+              <History className="h-4 w-4" />
+              View Clock History
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => navigate('/absences')}
+            >
+              <CalendarDays className="h-4 w-4" />
+              Request Absence
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => navigate('/calendar')}
+            >
+              <Calendar className="h-4 w-4" />
+              Team Calendar
+            </Button>
+
+            {/* Manager actions */}
+            {isManager && (
+              <>
+                <div className="border-t my-2" />
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/clock/pending')}
+                >
+                  <ClipboardCheck className="h-4 w-4" />
+                  Pending Clock Approvals
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/absences/pending')}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Pending Absence Requests
+                </Button>
+              </>
+            )}
+
+            {/* Admin actions */}
+            {isAdmin && (
+              <>
+                <div className="border-t my-2" />
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/admin/users')}
+                >
+                  <Users className="h-4 w-4" />
+                  Manage Users
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => navigate('/admin/teams')}
+                >
+                  <Users className="h-4 w-4" />
+                  Manage Teams
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* User Info Card */}
       <Card>

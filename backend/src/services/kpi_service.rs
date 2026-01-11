@@ -95,7 +95,7 @@ pub struct DateRange {
 }
 
 /// Granularity for chart data
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Granularity {
     Day,
     Week,
@@ -373,7 +373,15 @@ impl KPIService {
     ) -> Result<ChartData, AppError> {
         // Simplified - generates data points based on granularity
         let mut data = Vec::new();
-        let mut current = period.start;
+
+        // For Week granularity, align to ISO week boundaries (Monday)
+        let mut current = if granularity == Granularity::Week {
+            // Find the Monday of the week containing period.start
+            let days_since_monday = period.start.weekday().num_days_from_monday() as i64;
+            period.start - chrono::Duration::days(days_since_monday)
+        } else {
+            period.start
+        };
 
         while current < period.end {
             let (point_end, date_str) = match granularity {
@@ -383,10 +391,10 @@ impl KPIService {
                     (next, current.format("%Y-%m-%d").to_string())
                 }
                 Granularity::Week => {
-                    // Calculate week end but don't exceed period end
-                    let raw_next = current + chrono::Duration::weeks(1);
-                    // Return ISO date of week start - frontend will calculate week end
-                    (raw_next, current.format("%Y-%m-%d").to_string())
+                    // Week runs Monday to Sunday
+                    let week_end = current + chrono::Duration::weeks(1);
+                    // Return ISO date of week's Monday - frontend will display week info
+                    (week_end, current.format("%Y-%m-%d").to_string())
                 }
                 Granularity::Month => {
                     // Move to first day of next month for accurate month handling

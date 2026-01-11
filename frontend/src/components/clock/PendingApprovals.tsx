@@ -367,6 +367,17 @@ export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
                         <span className="font-medium">
                           {calculateDuration(entry.clock_in, entry.clock_out)}
                         </span>
+                        {entry.theoretical_hours != null && entry.duration_minutes != null && (
+                          <span className={`text-xs ${
+                            (entry.duration_minutes / 60) >= entry.theoretical_hours
+                              ? 'text-green-600'
+                              : 'text-orange-600'
+                          }`}>
+                            ({entry.theoretical_hours.toFixed(1)}h expected,{' '}
+                            {((entry.duration_minutes / 60) - entry.theoretical_hours) >= 0 ? '+' : ''}
+                            {((entry.duration_minutes / 60) - entry.theoretical_hours).toFixed(1)}h)
+                          </span>
+                        )}
                       </div>
                       {entry.notes && (
                         <p className="text-xs text-muted-foreground mt-1">

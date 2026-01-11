@@ -126,6 +126,7 @@ impl ClockService {
                 team_id,
                 team_name,
                 approver_name,
+                None, // theoretical_hours not needed for history view
             ));
         }
 
@@ -167,6 +168,7 @@ impl ClockService {
             team_id,
             team_name,
             approver_name,
+            None, // theoretical_hours not needed for single entry view
         ))
     }
 
@@ -392,8 +394,9 @@ impl ClockService {
             let teams = self.team_repo.get_user_teams(org_id, entry.user_id).await.unwrap_or_default();
             let team_id = teams.first().map(|t| t.id);
             let team_name = teams.first().map(|t| t.name.clone());
+            // TODO: Calculate theoretical_hours from user's schedule when WorkScheduleRepository is added
             responses.push(ClockEntryResponse::from_entry(
-                entry, org_name.clone(), user_name, user_email, team_id, team_name, None,
+                entry, org_name.clone(), user_name, user_email, team_id, team_name, None, None,
             ));
         }
 

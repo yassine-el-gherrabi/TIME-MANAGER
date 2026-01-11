@@ -60,6 +60,8 @@ pub struct ClockEntryResponse {
     pub clock_in: DateTime<Utc>,
     pub clock_out: Option<DateTime<Utc>>,
     pub duration_minutes: Option<i64>,
+    /// Expected hours for the day based on user's schedule (None if no schedule)
+    pub theoretical_hours: Option<f64>,
     pub status: ClockEntryStatus,
     pub approved_by: Option<Uuid>,
     pub approver_name: Option<String>,
@@ -77,6 +79,7 @@ impl ClockEntryResponse {
         team_id: Option<Uuid>,
         team_name: Option<String>,
         approver_name: Option<String>,
+        theoretical_hours: Option<f64>,
     ) -> Self {
         let duration_minutes = entry
             .clock_out
@@ -94,6 +97,7 @@ impl ClockEntryResponse {
             clock_in: entry.clock_in,
             clock_out: entry.clock_out,
             duration_minutes,
+            theoretical_hours,
             status: entry.status,
             approved_by: entry.approved_by,
             approver_name,

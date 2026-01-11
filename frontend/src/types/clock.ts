@@ -60,6 +60,8 @@ export interface ClockEntryResponse {
   approved_at: string | null;
   notes: string | null;
   duration_minutes: number | null;
+  /** Expected hours for the day based on user's schedule (null if no schedule) */
+  theoretical_hours: number | null;
   created_at: string;
 }
 

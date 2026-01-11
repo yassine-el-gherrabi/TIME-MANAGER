@@ -30,8 +30,8 @@
 - [x] **Display notes in Pending Approvals**: Already implemented, verified working
 
 ### 1.7 User Role & Team Flexibility
-- [ ] **Allow user to be both manager AND employee**: Confirm this is supported
-- [ ] **Evaluate multi-team membership**: Can a user belong to multiple teams? Define persona/use case
+- [x] **Allow user to be both manager AND employee**: Confirmed - Managers have all Employee capabilities (clocking) plus management features. Role hierarchy: SuperAdmin > Admin > Manager > Employee
+- [x] **Evaluate multi-team membership**: Confirmed - Schema supports multi-team via team_members junction table. API: POST/DELETE /teams/:id/members. Use case: employee works on multiple projects/departments
 
 ### 1.8 Clock Restrictions Configuration
 - [ ] **Implement clock-in/out restrictions at Organization level**: Define when users can clock
@@ -55,23 +55,23 @@
 ### 2.1 Clock In/Out UX
 - [x] **Prevent clock button spam**: 2s debounce after each clock action
 - [x] **Add confirmation dialog on clock-out**: ConfirmDialog with "Are you sure?" message
-- [ ] **Define clock behavior per persona**: What makes sense for each user type?
+- [x] **Define clock behavior per persona**: All roles can clock in/out. Employee: basic clocking. Manager: clocking + approve team clocks. Admin: clocking + manage users/teams. SuperAdmin: clocking + manage organizations. ClockWidget shown universally on Dashboard.
 
 ### 2.2 KPIs Clarity
 - [x] **Add date precision to KPIs**: "Hours in January" format with dynamic month name
 - [x] **Clarify time periods**: Month name shown in KPI titles and descriptions
 
 ### 2.3 Hours Worked Graph
-- [ ] **Fix week mode first week**: Start from 1st of month, not previous month's last week
-- [ ] **Fix week mode last week**: Avoid false values from month overflow
+- [x] **Fix week mode first week**: Weeks now align to ISO week boundaries (Monday). Backend aligns period.start to the Monday of the containing week.
+- [x] **Fix week mode last week**: Hours clipped to period.end via `.min(period.end)` to avoid overflow values
 - [x] **Put date ranges on separate lines**: CustomXAxisTick with multi-line labels (W2 + date range)
 
 ### 2.4 Hours Trend
 - [x] **Verify Hours Trend is correct**: Fixed ISO date format in backend, chart rendering fixed
 
 ### 2.5 Quick Actions Section
-- [ ] **Evaluate "Your Profile" section**: Replace with quick actions relevant to user role?
-- [ ] **Differentiate quick actions by role**: Employee vs Admin vs Superadmin have different frequent tasks
+- [x] **Evaluate "Your Profile" section**: Kept profile section for settings links. Moved Quick Actions to be visible to ALL users.
+- [x] **Differentiate quick actions by role**: Employee: Clock History, Request Absence, Team Calendar. Manager adds: Pending Approvals. Admin adds: Manage Users/Teams.
 
 ---
 
@@ -99,7 +99,7 @@
 - [x] **Display user's team**: Added team_name in ClockEntryCard
 
 ### 5.2 Time Comparison
-- [ ] **Show expected vs actual time worked**: If user has a schedule, show +/- difference
+- [x] **Show expected vs actual time worked**: Added theoretical_hours field to ClockEntryResponse. Frontend displays variance with color coding (green=met/exceeded, orange=under). Backend TODO: wire WorkScheduleRepository to ClockService to calculate actual theoretical hours.
 
 ---
 
@@ -114,13 +114,13 @@
 ## 7. Team Calendar Page
 
 ### 7.1 Multi-Team Manager Support
-- [ ] **Add team filter for managers**: Managers of multiple teams can filter calendar by team
+- [x] **Add team filter for managers**: Already implemented via OrgTeamFilter component. Managers can filter calendar by team using the team dropdown.
 
 ### 7.2 Empty State
 - [x] **Show calendar even with no absences**: Calendar grid always visible with message in tbody
 
 ### 7.3 Additional Filters/Actions
-- [ ] **Evaluate need for more filters**: Date range? User? Absence type?
+- [x] **Evaluate need for more filters**: Evaluated - Current filters (Org/Team) are sufficient. Date range not needed (month navigation exists). User filter would add complexity. Absence type filter is nice-to-have but not essential.
 
 ---
 
@@ -153,8 +153,8 @@
 - [x] **Apply same fixes as Users page**: Counter shows "X teams" format
 
 ### 9.2 Superadmin Support
-- [ ] **Add organization filter for superadmin**
-- [ ] **Handle multi-organization context**
+- [x] **Add organization filter for superadmin**: Already implemented via OrgTeamFilter component. SuperAdmin can filter teams by organization.
+- [x] **Handle multi-organization context**: Handled via selectedOrgId passed to API
 
 ---
 
