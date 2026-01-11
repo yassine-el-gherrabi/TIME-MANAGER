@@ -379,24 +379,28 @@ impl KPIService {
             let (point_end, date_str) = match granularity {
                 Granularity::Day => {
                     let next = current + chrono::Duration::days(1);
+                    // Return ISO date format for frontend parsing
                     (next, current.format("%Y-%m-%d").to_string())
                 }
                 Granularity::Week => {
                     // Calculate week end but don't exceed period end
                     let raw_next = current + chrono::Duration::weeks(1);
-                    let next = raw_next.min(period.end);
-                    // Show date range for weeks (handles partial weeks at month boundaries)
-                    let week_end_display = next - chrono::Duration::days(1);
-                    let label = format!(
-                        "{} - {}",
-                        current.format("%b %d"),
-                        week_end_display.format("%b %d")
-                    );
-                    (raw_next, label)
+                    // Return ISO date of week start - frontend will calculate week end
+                    (raw_next, current.format("%Y-%m-%d").to_string())
                 }
                 Granularity::Month => {
-                    let next = current + chrono::Duration::days(30);
-                    (next, current.format("%Y-%m").to_string())
+                    // Move to first day of next month for accurate month handling
+                    let next_month = if current.month() == 12 {
+                        chrono::NaiveDate::from_ymd_opt(current.year() + 1, 1, 1)
+                    } else {
+                        chrono::NaiveDate::from_ymd_opt(current.year(), current.month() + 1, 1)
+                    };
+                    let next = next_month
+                        .map(|d| d.and_hms_opt(0, 0, 0).unwrap())
+                        .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
+                        .unwrap_or_else(|| current + chrono::Duration::days(30));
+                    // Return ISO date format for frontend parsing
+                    (next, current.format("%Y-%m-%d").to_string())
                 }
             };
 
