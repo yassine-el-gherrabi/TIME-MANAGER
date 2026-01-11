@@ -19,16 +19,26 @@ describe('Auth Integration Tests', () => {
     localStorage.clear();
 
     // Mock dashboard API calls to prevent unhandled rejections
-    vi.mocked(clocksApi.getStatus).mockResolvedValue({ is_clocked_in: false });
-    vi.mocked(kpisApi.getMyKpis).mockResolvedValue({
-      hours_worked_today: 0,
-      hours_worked_week: 0,
-      hours_worked_month: 0,
-      overtime_hours_week: 0,
-      overtime_hours_month: 0,
-      attendance_rate: 100,
+    vi.mocked(clocksApi.getStatus).mockResolvedValue({
+      is_clocked_in: false,
+      current_entry: null,
+      elapsed_minutes: null,
     });
-    vi.mocked(kpisApi.getCharts).mockResolvedValue({ daily: [], weekly: [] });
+    vi.mocked(kpisApi.getMyKpis).mockResolvedValue({
+      user_id: 'test-user',
+      user_name: 'Test User',
+      total_hours_worked: 0,
+      theoretical_hours: 40,
+      hours_variance: 0,
+      punctuality_rate: 100,
+      days_worked: 0,
+      days_late: 0,
+      average_daily_hours: 0,
+    });
+    vi.mocked(kpisApi.getCharts).mockResolvedValue({
+      data: [],
+      granularity: 'day',
+    });
   });
 
   it('should complete login flow', async () => {
