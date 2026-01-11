@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   cargo-audit:
-    name: "Backend · cargo audit"
+    name: "Backend · cargo audit (security)"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,7 +37,7 @@ jobs:
         run: cargo audit
 
   npm-audit:
-    name: "Frontend · npm audit"
+    name: "Frontend · npm audit (security)"
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -15,7 +15,7 @@ env:
 
 jobs:
   backend-lint:
-    name: "Backend · cargo fmt + clippy"
+    name: "Backend · cargo fmt + clippy (lint)"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,7 +45,7 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
   backend-test:
-    name: "Backend · cargo nextest"
+    name: "Backend · cargo nextest (unit tests)"
     runs-on: ubuntu-latest
     needs: [backend-lint]
     defaults:
@@ -83,7 +83,7 @@ jobs:
         run: cargo test --doc
 
   frontend-lint:
-    name: "Frontend · eslint + tsc"
+    name: "Frontend · eslint + tsc (lint)"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -108,7 +108,7 @@ jobs:
         run: npm run type-check
 
   frontend-test:
-    name: "Frontend · vitest"
+    name: "Frontend · vitest (unit tests)"
     runs-on: ubuntu-latest
     needs: [frontend-lint]
     defaults:
@@ -141,7 +141,7 @@ jobs:
           retention-days: 1
 
   frontend-e2e:
-    name: "Frontend · playwright"
+    name: "Frontend · playwright (e2e)"
     runs-on: ubuntu-latest
     needs: [frontend-test]
     defaults:

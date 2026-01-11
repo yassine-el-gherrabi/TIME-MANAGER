@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   scan-backend:
-    name: "trivy · backend/Dockerfile.prod"
+    name: "trivy · backend/Dockerfile.prod (security)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   scan-frontend:
-    name: "trivy · frontend/Dockerfile.prod"
+    name: "trivy · frontend/Dockerfile.prod (security)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   scan-config:
-    name: "trivy config · docker-compose.yml"
+    name: "trivy config · docker-compose.yml (security)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

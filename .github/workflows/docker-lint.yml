@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   hadolint:
-    name: "hadolint · ${{ matrix.dockerfile }}"
+    name: "hadolint · ${{ matrix.dockerfile }} (lint)"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,7 +38,7 @@ jobs:
           failure-threshold: warning
 
   compose-validate:
-    name: "docker compose config"
+    name: "docker compose config (validate)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
