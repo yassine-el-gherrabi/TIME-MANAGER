@@ -173,6 +173,7 @@ export const SetupWizardForm: React.FC = () => {
         last_name: response.user.last_name,
         role: response.user.role,
         organization_id: response.user.organization_id,
+        organization_name: response.organization.name,
         created_at: response.user.created_at,
       });
 

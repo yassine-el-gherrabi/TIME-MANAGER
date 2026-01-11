@@ -78,6 +78,7 @@ export interface User {
   role: UserRole;
   phone?: string | null;
   organization_id: string;
+  organization_name: string;
   created_at: string;
 }
 
@@ -92,6 +93,7 @@ export interface MeResponse {
   role: UserRole;
   phone?: string | null;
   organization_id: string;
+  organization_name: string;
   created_at: string;
 }
 

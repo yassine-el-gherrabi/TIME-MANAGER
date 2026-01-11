@@ -6,7 +6,7 @@ use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
-use crate::repositories::UserRepository;
+use crate::repositories::{OrganizationRepository, UserRepository};
 
 /// Current user response
 #[derive(Debug, Serialize)]
@@ -18,6 +18,7 @@ pub struct MeResponse {
     pub role: UserRole,
     pub phone: Option<String>,
     pub organization_id: Uuid,
+    pub organization_name: String,
     pub created_at: chrono::NaiveDateTime,
 }
 
@@ -33,11 +34,15 @@ pub async fn me(
     State(state): State<AppState>,
     AuthenticatedUser(claims): AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
-    // Create user repository
+    // Create repositories
     let user_repo = UserRepository::new(state.db_pool.clone());
+    let org_repo = OrganizationRepository::new(state.db_pool.clone());
 
     // Find user by ID
     let user = user_repo.find_by_id(claims.sub).await?;
+
+    // Fetch organization name
+    let organization = org_repo.find_by_id(user.organization_id).await?;
 
     // Build response
     let response = MeResponse {
@@ -48,6 +53,7 @@ pub async fn me(
         role: user.role,
         phone: user.phone,
         organization_id: user.organization_id,
+        organization_name: organization.name,
         created_at: user.created_at,
     };
 
@@ -69,6 +75,7 @@ mod tests {
             role: UserRole::Employee,
             phone: Some("+33612345678".to_string()),
             organization_id: Uuid::new_v4(),
+            organization_name: "Test Company".to_string(),
             created_at: now,
         };
 
@@ -76,5 +83,6 @@ mod tests {
         assert_eq!(response.first_name, "John");
         assert_eq!(response.last_name, "Doe");
         assert_eq!(response.role, UserRole::Employee);
+        assert_eq!(response.organization_name, "Test Company");
     }
 }

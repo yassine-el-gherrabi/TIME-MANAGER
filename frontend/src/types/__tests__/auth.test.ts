@@ -23,7 +23,7 @@ describe('Auth Types', () => {
         first_name: 'John',
         last_name: 'Doe',
         role: UserRole.Employee,
-        organization_id: '123e4567-e89b-12d3-a456-426614174001',
+        organization_id: 'org-1', organization_name: 'Test Org',
         created_at: '2024-01-01T00:00:00Z',
       };
 

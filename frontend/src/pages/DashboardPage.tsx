@@ -291,10 +291,14 @@ export function DashboardPage() {
             Edit Profile
           </Button>
         </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Email</p>
             <p className="text-sm">{user?.email}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Organization</p>
+            <p className="text-sm">{user?.organization_name}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Role</p>
