@@ -185,7 +185,8 @@ services:
     container_name: timemanager-tempo
     profiles: ["monitoring"]
     command: ["-config.file=/etc/tempo/tempo.yml"]
-    user: "0:0"
+    # Note: Tempo runs as user 10001 by default in the official image
+    # The named volume handles permissions automatically
     ports:
       - "3200:3200"   # Tempo HTTP
       - "4317:4317"   # OTLP gRPC
