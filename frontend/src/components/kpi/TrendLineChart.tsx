@@ -37,32 +37,75 @@ interface TrendLineChartProps {
 }
 
 /**
- * Format date based on granularity
+ * Format date label for chart display
  */
-function formatDate(dateStr: string, granularity: Granularity): string {
-  if (!dateStr) return '';
+interface FormattedLabel {
+  line1: string;
+  line2?: string;
+}
+
+function formatDate(dateStr: string, granularity: Granularity): FormattedLabel {
+  if (!dateStr) return { line1: '' };
   try {
     const date = parseISO(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
+    if (isNaN(date.getTime())) return { line1: dateStr };
     switch (granularity) {
       case 'day':
-        return format(date, 'dd MMM');
+        return { line1: format(date, 'dd MMM') };
       case 'week': {
-        // Week starts on Monday
+        // Week starts on Monday - split into two lines
         const weekNum = getWeek(date, { weekStartsOn: 1 });
         const monday = startOfWeek(date, { weekStartsOn: 1 });
         const sunday = endOfWeek(date, { weekStartsOn: 1 });
         const formatShort = (d: Date) => format(d, 'dd/MM');
-        return `W${weekNum} (${formatShort(monday)}-${formatShort(sunday)})`;
+        return {
+          line1: `W${weekNum}`,
+          line2: `${formatShort(monday)}-${formatShort(sunday)}`,
+        };
       }
       case 'month':
-        return format(date, 'MMM yy');
+        return { line1: format(date, 'MMM yy') };
       default:
-        return format(date, 'dd/MM');
+        return { line1: format(date, 'dd/MM') };
     }
   } catch {
-    return dateStr;
+    return { line1: dateStr };
   }
+}
+
+/**
+ * Custom XAxis tick component for multi-line labels
+ */
+function CustomXAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: FormattedLabel } }) {
+  if (!payload?.value) return null;
+  const { line1, line2 } = payload.value;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={12}
+        textAnchor="middle"
+        className="fill-muted-foreground"
+        style={{ fontSize: 12 }}
+      >
+        {line1}
+      </text>
+      {line2 && (
+        <text
+          x={0}
+          y={0}
+          dy={26}
+          textAnchor="middle"
+          className="fill-muted-foreground"
+          style={{ fontSize: 10 }}
+        >
+          {line2}
+        </text>
+      )}
+    </g>
+  );
 }
 
 /**
@@ -71,9 +114,13 @@ function formatDate(dateStr: string, granularity: Granularity): string {
 function CustomTooltip({ active, payload, label }: {
   active?: boolean;
   payload?: Array<{ value: number; dataKey: string; color: string; stroke?: string }>;
-  label?: string;
+  label?: FormattedLabel;
 }) {
   if (!active || !payload || !payload.length) return null;
+
+  const labelStr = typeof label === 'object' && label
+    ? label.line2 ? `${label.line1} (${label.line2})` : label.line1
+    : String(label);
 
   const worked = payload.find((p) => p.dataKey === 'hours_worked');
   const expected = payload.find((p) => p.dataKey === 'theoretical_hours');
@@ -81,7 +128,7 @@ function CustomTooltip({ active, payload, label }: {
 
   return (
     <div className="bg-background border rounded-lg shadow-lg p-3">
-      <p className="font-medium text-sm mb-2">{label}</p>
+      <p className="font-medium text-sm mb-2">{labelStr}</p>
       {worked && (
         <p className="text-sm text-primary">
           Worked: <span className="font-medium">{worked.value.toFixed(1)}h</span>
@@ -224,7 +271,7 @@ export function TrendLineChart({
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                margin={{ top: 10, right: 10, left: 0, bottom: granularity === 'week' ? 20 : 0 }}
               >
                 <defs>
                   <linearGradient id="colorWorked" x1="0" y1="0" x2="0" y2="1">
@@ -235,10 +282,10 @@ export function TrendLineChart({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12 }}
+                  tick={<CustomXAxisTick />}
                   tickLine={false}
                   axisLine={false}
-                  className="text-muted-foreground"
+                  height={granularity === 'week' ? 45 : 30}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
