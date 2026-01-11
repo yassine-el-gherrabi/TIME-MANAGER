@@ -13,7 +13,7 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run --exclude '**/src/__tests__/**'",
-    "test:integration": "vitest run 'src/__tests__/**/*.test.{ts,tsx}'",
+    "test:integration": "vitest run integration",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
