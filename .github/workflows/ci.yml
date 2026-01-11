@@ -1,18 +1,25 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [main, master, develop, 'feature/**']
+    branches: [main, develop]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
+  # ══════════════════════════════════════════════════════════════
+  #                         BACKEND
+  # ══════════════════════════════════════════════════════════════
   backend-lint:
-    name: Backend Lint
+    name: "\U0001F980 Lint"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,23 +32,15 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Cache cargo registry
+      - name: Cache cargo
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: backend/target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Check formatting
         run: cargo fmt --check
@@ -49,9 +48,10 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-  backend-build:
-    name: Backend Build
+  backend-test:
+    name: "\U0001F980 Test"
     runs-on: ubuntu-latest
+    needs: [backend-lint]
     defaults:
       run:
         working-directory: ./backend
@@ -62,9 +62,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -74,15 +72,25 @@ jobs:
             ~/.cargo/git
             backend/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Build release
-        run: cargo build --release --verbose
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
 
-      - name: Run tests
-        run: cargo test --verbose -- --skip "ignore"
+      - name: Build
+        run: cargo build --release
 
+      - name: Run tests with nextest
+        run: cargo nextest run --release --no-fail-fast
+
+      - name: Run doctests
+        run: cargo test --doc
+
+  # ══════════════════════════════════════════════════════════════
+  #                         FRONTEND
+  # ══════════════════════════════════════════════════════════════
   frontend-lint:
-    name: Frontend Lint
+    name: "\u269B\uFE0F Lint"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -106,9 +114,10 @@ jobs:
       - name: Run TypeScript check
         run: npm run type-check
 
-  frontend-build:
-    name: Frontend Build
+  frontend-test:
+    name: "\u269B\uFE0F Test"
     runs-on: ubuntu-latest
+    needs: [frontend-lint]
     defaults:
       run:
         working-directory: ./frontend
@@ -128,12 +137,20 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
+      - name: Run unit tests
         run: npm run test
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
   frontend-e2e:
-    name: Frontend E2E Tests
+    name: "\u269B\uFE0F E2E"
     runs-on: ubuntu-latest
+    needs: [frontend-test]
     defaults:
       run:
         working-directory: ./frontend
@@ -150,13 +167,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Browsers
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests
+      - name: Run E2E tests
         run: npm run e2e -- --project=chromium
 
-      - name: Upload Playwright Report
+      - name: Upload report
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -164,10 +187,20 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 7
 
+  # ══════════════════════════════════════════════════════════════
+  #                         GATE
+  # ══════════════════════════════════════════════════════════════
   ci-success:
-    name: CI Success
+    name: "\u2705 All Checks Passed"
     runs-on: ubuntu-latest
-    needs: [backend-lint, backend-build, frontend-lint, frontend-build, frontend-e2e]
+    needs: [backend-test, frontend-e2e]
+    if: always()
     steps:
-      - name: Mark CI as successful
-        run: echo "All CI checks passed!"
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.backend-test.result }}" != "success" ]] || \
+             [[ "${{ needs.frontend-e2e.result }}" != "success" ]]; then
+            echo "Some checks failed"
+            exit 1
+          fi
+          echo "All checks passed!"

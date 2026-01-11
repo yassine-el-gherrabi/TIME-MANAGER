@@ -1,27 +1,29 @@
-name: Docker Security Scan
+name: Docker Scan
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, develop]
     paths:
       - '**/Dockerfile*'
       - '**/docker-compose*.yml'
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, develop]
     paths:
       - '**/Dockerfile*'
       - '**/docker-compose*.yml'
   schedule:
-    # Run weekly on Monday at 10:00 UTC
     - cron: '0 10 * * 1'
 
+concurrency:
+  group: docker-scan-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-scan-backend:
-    name: Build & Scan Backend Image
+  scan-backend:
+    name: "\U0001F50D Backend Image"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -34,8 +36,10 @@ jobs:
           push: false
           load: true
           tags: timemanager-backend:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'timemanager-backend:scan'
@@ -45,12 +49,11 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-  build-and-scan-frontend:
-    name: Build & Scan Frontend Image
+  scan-frontend:
+    name: "\U0001F50D Frontend Image"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -63,8 +66,10 @@ jobs:
           push: false
           load: true
           tags: timemanager-frontend:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'timemanager-frontend:scan'
@@ -75,11 +80,10 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   scan-config:
-    name: Scan Infrastructure Config
+    name: "\U0001F50D IaC Config"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Run Trivy config scanner
         uses: aquasecurity/trivy-action@master
@@ -91,9 +95,15 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
 
   scan-success:
-    name: Docker Scan Success
+    name: "\u2705 Scan Passed"
     runs-on: ubuntu-latest
-    needs: [build-and-scan-backend, build-and-scan-frontend, scan-config]
+    needs: [scan-backend, scan-frontend, scan-config]
+    if: always()
     steps:
-      - name: Mark scan as successful
-        run: echo "All Docker security scans passed!"
+      - name: Check results
+        run: |
+          if [[ "${{ needs.scan-backend.result }}" != "success" ]] || \
+             [[ "${{ needs.scan-frontend.result }}" != "success" ]]; then
+            exit 1
+          fi
+          echo "All Docker scans passed!"
