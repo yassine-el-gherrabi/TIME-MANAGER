@@ -131,8 +131,9 @@ export function DashboardPage() {
   // Check if user has meaningful clock data (days_worked > 0)
   const hasClockData = myKpis && myKpis.days_worked > 0;
 
-  // Period label for charts
+  // Period label and boundaries for charts
   const periodLabel = getPeriodLabel(chartDate, chartGranularity);
+  const chartDateRange = getChartDateRange(chartDate, chartGranularity);
 
   return (
     <div className="space-y-6">
@@ -222,6 +223,8 @@ export function DashboardPage() {
           title="Hours Worked"
           periodLabel={periodLabel}
           granularity={chartGranularity}
+          periodStart={chartDateRange.start_date}
+          periodEnd={chartDateRange.end_date}
           onNavigate={handleChartNavigate}
           onGranularityChange={handleGranularityChange}
         />
@@ -230,6 +233,8 @@ export function DashboardPage() {
           title="Hours Trend"
           periodLabel={periodLabel}
           granularity={chartGranularity}
+          periodStart={chartDateRange.start_date}
+          periodEnd={chartDateRange.end_date}
           onNavigate={handleChartNavigate}
           onGranularityChange={handleGranularityChange}
         />

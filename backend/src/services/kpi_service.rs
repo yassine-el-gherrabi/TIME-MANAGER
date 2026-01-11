@@ -412,10 +412,14 @@ impl KPIService {
                 }
             };
 
+            // Clip data range to period boundaries (important for week mode to stay within month)
+            let actual_start = current.max(period.start);
+            let actual_end = point_end.min(period.end);
+
             let hours_worked = if let Some(uid) = user_id {
                 let entries = self
                     .clock_repo
-                    .get_entries_for_period(org_id, uid, current, point_end.min(period.end))
+                    .get_entries_for_period(org_id, uid, actual_start, actual_end)
                     .await?;
 
                 entries
@@ -431,7 +435,7 @@ impl KPIService {
 
             let theoretical_hours = if let Some(uid) = user_id {
                 self.schedule_repo
-                    .get_theoretical_hours(org_id, uid, current, point_end.min(period.end))
+                    .get_theoretical_hours(org_id, uid, actual_start, actual_end)
                     .await?
             } else {
                 0.0

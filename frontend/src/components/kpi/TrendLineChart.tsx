@@ -32,6 +32,10 @@ interface TrendLineChartProps {
   description?: string;
   granularity?: Granularity;
   periodLabel?: string;
+  /** Period start date (ISO string) for clipping week labels */
+  periodStart?: string;
+  /** Period end date (ISO string) for clipping week labels */
+  periodEnd?: string;
   onNavigate?: (direction: 'prev' | 'next') => void;
   onGranularityChange?: (granularity: Granularity) => void;
 }
@@ -44,7 +48,12 @@ interface FormattedLabel {
   line2?: string;
 }
 
-function formatDateMultiLine(dateStr: string, granularity: Granularity): FormattedLabel {
+function formatDateMultiLine(
+  dateStr: string,
+  granularity: Granularity,
+  periodStart?: Date,
+  periodEnd?: Date
+): FormattedLabel {
   if (!dateStr) return { line1: '' };
   try {
     const date = parseISO(dateStr);
@@ -54,8 +63,13 @@ function formatDateMultiLine(dateStr: string, granularity: Granularity): Formatt
         return { line1: format(date, 'dd MMM') };
       case 'week': {
         const weekNum = getWeek(date, { weekStartsOn: 1 });
-        const monday = startOfWeek(date, { weekStartsOn: 1 });
-        const sunday = endOfWeek(date, { weekStartsOn: 1 });
+        let monday = startOfWeek(date, { weekStartsOn: 1 });
+        let sunday = endOfWeek(date, { weekStartsOn: 1 });
+
+        // Clip to period boundaries if provided (for displaying only current month)
+        if (periodStart && monday < periodStart) monday = periodStart;
+        if (periodEnd && sunday > periodEnd) sunday = periodEnd;
+
         const formatShort = (d: Date) => format(d, 'dd/MM');
         return {
           line1: `W${weekNum}`,
@@ -79,17 +93,21 @@ function CustomXAxisTick({
   x,
   y,
   payload,
-  granularity
+  granularity,
+  periodStart,
+  periodEnd,
 }: {
   x?: number;
   y?: number;
   payload?: { value: string };
   granularity: Granularity;
+  periodStart?: Date;
+  periodEnd?: Date;
 }) {
   if (!payload?.value) return null;
 
   // Get the raw date from payload and format with multi-line support
-  const formatted = formatDateMultiLine(payload.value, granularity);
+  const formatted = formatDateMultiLine(payload.value, granularity, periodStart, periodEnd);
   const { line1, line2 } = formatted;
 
   return (
@@ -123,16 +141,18 @@ function CustomXAxisTick({
 /**
  * Custom tooltip component
  */
-function CustomTooltip({ active, payload, label, granularity }: {
+function CustomTooltip({ active, payload, label, granularity, periodStart, periodEnd }: {
   active?: boolean;
   payload?: Array<{ value: number; dataKey: string; color: string; stroke?: string }>;
   label?: string;
   granularity: Granularity;
+  periodStart?: Date;
+  periodEnd?: Date;
 }) {
   if (!active || !payload || !payload.length) return null;
 
   // Format the label using multi-line formatter for tooltip display
-  const formatted = formatDateMultiLine(label || '', granularity);
+  const formatted = formatDateMultiLine(label || '', granularity, periodStart, periodEnd);
   const labelStr = formatted.line2
     ? `${formatted.line1} (${formatted.line2})`
     : formatted.line1;
@@ -199,9 +219,15 @@ export function TrendLineChart({
   description,
   granularity = 'day',
   periodLabel,
+  periodStart,
+  periodEnd,
   onNavigate,
   onGranularityChange,
 }: TrendLineChartProps) {
+  // Parse period boundaries for week label clipping
+  const periodStartDate = periodStart ? parseISO(periodStart) : undefined;
+  const periodEndDate = periodEnd ? parseISO(periodEnd) : undefined;
+
   // Transform data for chart - use raw date as name for Recharts compatibility
   const chartData = useMemo(() => {
     return data.map((point) => ({
@@ -297,10 +323,11 @@ export function TrendLineChart({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="name"
-                  tick={<CustomXAxisTick granularity={granularity} />}
+                  tick={<CustomXAxisTick granularity={granularity} periodStart={periodStartDate} periodEnd={periodEndDate} />}
                   tickLine={false}
                   axisLine={false}
                   height={granularity === 'week' ? 45 : 30}
+                  interval={0}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
@@ -309,7 +336,7 @@ export function TrendLineChart({
                   tickFormatter={(value) => `${value}h`}
                   className="text-muted-foreground"
                 />
-                <Tooltip content={<CustomTooltip granularity={granularity} />} />
+                <Tooltip content={<CustomTooltip granularity={granularity} periodStart={periodStartDate} periodEnd={periodEndDate} />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) =>
