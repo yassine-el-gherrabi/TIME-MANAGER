@@ -145,12 +145,21 @@ VwIDAQAB
 
     #[test]
     fn test_config_defaults() {
-        // Set minimal required env vars
+        // Create temp directory with JWT keys
+        let temp_dir = std::env::temp_dir().join("jwt_test_keys");
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        std::fs::write(temp_dir.join("jwt_private.pem"), TEST_PRIVATE_KEY).unwrap();
+        std::fs::write(temp_dir.join("jwt_public.pem"), TEST_PUBLIC_KEY).unwrap();
+
+        // Set env vars
         env::set_var("DATABASE_URL", "postgres://test:test@localhost/test");
-        env::set_var("JWT_PRIVATE_KEY", TEST_PRIVATE_KEY);
-        env::set_var("JWT_PUBLIC_KEY", TEST_PUBLIC_KEY);
+        env::set_var("JWT_KEYS_PATH", temp_dir.to_str().unwrap());
 
         let config = AppConfig::from_env().unwrap();
+
+        // Cleanup
+        std::fs::remove_dir_all(&temp_dir).ok();
 
         assert_eq!(config.app_host, "0.0.0.0");
         assert_eq!(config.app_port, 8080);
