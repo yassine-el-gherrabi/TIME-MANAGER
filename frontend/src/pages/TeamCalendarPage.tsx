@@ -168,13 +168,6 @@ export function TeamCalendarPage() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : userAbsences.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                No approved absences for this month
-              </p>
-            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
@@ -206,35 +199,46 @@ export function TeamCalendarPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {userAbsences.map((user) => (
-                    <tr key={user.userId} className="hover:bg-muted/50">
-                      <td className="sticky left-0 bg-background border-b px-3 py-2 font-medium">
-                        {user.userName}
+                  {userAbsences.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        No approved absences for this month
                       </td>
-                      {days.map((day) => {
-                        const absence = getAbsenceForDay(user.userId, day);
-                        const type = absence ? typeMap[absence.type_id] : null;
-
-                        return (
-                          <td
-                            key={day.toISOString()}
-                            className={cn(
-                              'border-b px-1 py-2 text-center',
-                              isWeekend(day) && 'bg-muted/50'
-                            )}
-                          >
-                            {absence && type && (
-                              <div
-                                className="h-6 w-full rounded"
-                                style={{ backgroundColor: type.color }}
-                                title={`${type.name}: ${absence.start_date} - ${absence.end_date}`}
-                              />
-                            )}
-                          </td>
-                        );
-                      })}
                     </tr>
-                  ))}
+                  ) : (
+                    userAbsences.map((user) => (
+                      <tr key={user.userId} className="hover:bg-muted/50">
+                        <td className="sticky left-0 bg-background border-b px-3 py-2 font-medium">
+                          {user.userName}
+                        </td>
+                        {days.map((day) => {
+                          const absence = getAbsenceForDay(user.userId, day);
+                          const type = absence ? typeMap[absence.type_id] : null;
+
+                          return (
+                            <td
+                              key={day.toISOString()}
+                              className={cn(
+                                'border-b px-1 py-2 text-center',
+                                isWeekend(day) && 'bg-muted/50'
+                              )}
+                            >
+                              {absence && type && (
+                                <div
+                                  className="h-6 w-full rounded"
+                                  style={{ backgroundColor: type.color }}
+                                  title={`${type.name}: ${absence.start_date} - ${absence.end_date}`}
+                                />
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

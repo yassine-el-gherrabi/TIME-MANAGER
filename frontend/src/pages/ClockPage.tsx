@@ -136,7 +136,7 @@ export function ClockPage() {
             <CardTitle className="flex items-center justify-between text-base">
               <span>Entries</span>
               <span className="text-sm font-normal text-muted-foreground">
-                {entries.length} of {total} {hasActiveFilters && '(filtered)'}
+                {total} entries {hasActiveFilters && '(filtered)'}
               </span>
             </CardTitle>
           </CardHeader>

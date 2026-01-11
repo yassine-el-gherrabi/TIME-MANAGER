@@ -20,6 +20,7 @@ pub struct ListUsersQuery {
     pub per_page: Option<i64>,
     pub role: Option<String>,
     pub search: Option<String>,
+    pub include_deleted: Option<bool>,
 }
 
 /// GET /api/v1/users
@@ -68,7 +69,10 @@ pub async fn list_users(
 
     // Get users
     let user_repo = UserRepository::new(state.db_pool.clone());
-    let (users, total) = user_repo.list(claims.org_id, &filter, &pagination).await?;
+    let include_deleted = query.include_deleted.unwrap_or(false);
+    let (users, total) = user_repo
+        .list_with_deleted(claims.org_id, &filter, &pagination, include_deleted)
+        .await?;
 
     // Build response
     let total_pages = (total as f64 / pagination.per_page as f64).ceil() as i64;

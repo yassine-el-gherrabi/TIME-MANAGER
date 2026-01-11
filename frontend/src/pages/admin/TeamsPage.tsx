@@ -265,7 +265,7 @@ export function TeamsPage() {
               <span>Teams</span>
               {displayTotal > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-4">
-                  {displayedTeams.length} of {displayTotal} {hasActiveFilters && '(filtered)'}
+                  {displayTotal} teams {hasActiveFilters && '(filtered)'}
                 </span>
               )}
             </CardTitle>

@@ -273,7 +273,7 @@ export function UsersPage() {
               <span>Users</span>
               {displayTotal > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-4">
-                  {displayedUsers.length} of {displayTotal} {hasActiveFilters && '(filtered)'}
+                  {displayTotal} users {hasActiveFilters && '(filtered)'}
                 </span>
               )}
             </CardTitle>

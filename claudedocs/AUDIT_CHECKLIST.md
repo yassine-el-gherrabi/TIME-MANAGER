@@ -81,14 +81,14 @@
 - [x] **Add frontend date validation**: FROM must be before TO date (red border + error message)
 
 ### 3.2 Entries Counter
-- [ ] **Show total entries count**: Not "X of Y displayed" but total entries (infinite scroll context)
+- [x] **Show total entries count**: Shows "X entries" instead of "X of Y"
 
 ---
 
 ## 4. My Absences Page
 
 ### 4.1 Request Counter
-- [ ] **Show total absence requests**: Not "2 of 2" but total count
+- [x] **Show total absence requests**: Shows "X requests" instead of "X of Y"
 
 ---
 
@@ -117,7 +117,7 @@
 - [ ] **Add team filter for managers**: Managers of multiple teams can filter calendar by team
 
 ### 7.2 Empty State
-- [ ] **Show calendar even with no absences**: Don't hide calendar when no absences scheduled
+- [x] **Show calendar even with no absences**: Calendar grid always visible with message in tbody
 
 ### 7.3 Additional Filters/Actions
 - [ ] **Evaluate need for more filters**: Date range? User? Absence type?
@@ -127,10 +127,10 @@
 ## 8. Users Page
 
 ### 8.1 User Counter
-- [ ] **Show total users count**: Not "10 of 10" with infinite scroll
+- [x] **Show total users count**: Shows "X users" instead of "X of Y"
 
 ### 8.2 Show Deleted Feature
-- [ ] **Fix "Show deleted" toggle**: Currently shows same list (not working)
+- [x] **Fix "Show deleted" toggle**: Backend now uses include_deleted query param
 
 ### 8.3 User Creation Form
 - [ ] **Add Organization field**: Mandatory, not editable for admin role
@@ -150,7 +150,7 @@
 ## 9. Teams Page
 
 ### 9.1 General Fixes
-- [ ] **Apply same fixes as Users page**: Counter, filters, etc.
+- [x] **Apply same fixes as Users page**: Counter shows "X teams" format
 
 ### 9.2 Superadmin Support
 - [ ] **Add organization filter for superadmin**

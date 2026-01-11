@@ -282,7 +282,7 @@ export function AbsencesPage() {
               Absence Requests
             </span>
             <span className="text-sm font-normal text-muted-foreground">
-              {displayedAbsences.length} of {total} {hasActiveFilters && '(filtered)'}
+              {total} requests {hasActiveFilters && '(filtered)'}
             </span>
           </CardTitle>
         </CardHeader>
