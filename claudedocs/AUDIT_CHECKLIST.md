@@ -26,8 +26,8 @@
 - [ ] **Fix responsive design (mobile-first)**: Currently unusable on mobile, items overflow containers
 
 ### 1.6 Clock Notes Feature
-- [ ] **Add clock note input in frontend**: Backend supports notes but no way to add them when clocking in/out
-- [ ] **Display notes in Pending Approvals**: Already done, but verify consistency
+- [x] **Add clock note input in frontend**: Optional textarea in clock-out confirmation dialog
+- [x] **Display notes in Pending Approvals**: Already implemented, verified working
 
 ### 1.7 User Role & Team Flexibility
 - [ ] **Allow user to be both manager AND employee**: Confirm this is supported
@@ -53,8 +53,8 @@
 ## 2. Dashboard Page
 
 ### 2.1 Clock In/Out UX
-- [ ] **Prevent clock button spam**: Add debounce or cooldown
-- [ ] **Add confirmation dialog on clock-out**: "Are you sure you want to clock out?"
+- [x] **Prevent clock button spam**: 2s debounce after each clock action
+- [x] **Add confirmation dialog on clock-out**: ConfirmDialog with "Are you sure?" message
 - [ ] **Define clock behavior per persona**: What makes sense for each user type?
 
 ### 2.2 KPIs Clarity
@@ -62,7 +62,6 @@
 - [ ] **Clarify time periods**: Weekly? Monthly? Add clear labels
 
 ### 2.3 Hours Worked Graph
-- [ ] **Fix day order in daily view**: Should be Monday→Sunday, not Sunday→Monday
 - [ ] **Fix week mode first week**: Start from 1st of month, not previous month's last week
 - [ ] **Fix week mode last week**: Avoid false values from month overflow
 - [ ] **Put date ranges on separate lines**: Improve readability

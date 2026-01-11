@@ -35,7 +35,7 @@ interface ClockStore {
 
   // Actions
   fetchStatus: () => Promise<void>;
-  clockIn: (notes?: string) => Promise<ClockEntry>;
+  clockIn: () => Promise<ClockEntry>;
   clockOut: (notes?: string) => Promise<ClockEntry>;
   fetchHistory: (params?: ClockHistoryParams) => Promise<void>;
   fetchFilteredHistory: (page?: number) => Promise<void>;
@@ -93,12 +93,12 @@ export const useClockStore = create<ClockStore>()((set, get) => ({
   },
 
   /**
-   * Clock in
+   * Clock in (notes are only allowed on clock-out)
    */
-  clockIn: async (notes?: string) => {
+  clockIn: async () => {
     set({ isClockingIn: true, error: null });
     try {
-      const entry = await clocksApi.clockIn({ notes });
+      const entry = await clocksApi.clockIn();
       // Refresh status after clocking in
       await get().fetchStatus();
       set({ isClockingIn: false });
@@ -111,7 +111,7 @@ export const useClockStore = create<ClockStore>()((set, get) => ({
   },
 
   /**
-   * Clock out
+   * Clock out with optional notes
    */
   clockOut: async (notes?: string) => {
     set({ isClockingOut: true, error: null });

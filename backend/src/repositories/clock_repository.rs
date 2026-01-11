@@ -51,8 +51,13 @@ impl ClockRepository {
             .map_err(AppError::DatabaseError)
     }
 
-    /// Clock out an entry
-    pub async fn clock_out(&self, org_id: Uuid, entry_id: Uuid) -> Result<ClockEntry, AppError> {
+    /// Clock out an entry with optional notes
+    pub async fn clock_out(
+        &self,
+        org_id: Uuid,
+        entry_id: Uuid,
+        notes: Option<String>,
+    ) -> Result<ClockEntry, AppError> {
         let mut conn = self
             .pool
             .get()
@@ -66,6 +71,7 @@ impl ClockRepository {
         )
         .set((
             clock_entries::clock_out.eq(Some(Utc::now())),
+            clock_entries::notes.eq(notes),
             clock_entries::updated_at.eq(Utc::now()),
         ))
         .get_result(&mut conn)

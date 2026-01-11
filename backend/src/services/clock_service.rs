@@ -46,8 +46,13 @@ impl ClockService {
         self.clock_repo.clock_in(org_id, user_id, notes).await
     }
 
-    /// Clock out - closes the current open entry
-    pub async fn clock_out(&self, org_id: Uuid, user_id: Uuid) -> Result<ClockEntry, AppError> {
+    /// Clock out - closes the current open entry with optional notes
+    pub async fn clock_out(
+        &self,
+        org_id: Uuid,
+        user_id: Uuid,
+        notes: Option<String>,
+    ) -> Result<ClockEntry, AppError> {
         // Find the open entry
         let entry = self
             .clock_repo
@@ -55,7 +60,7 @@ impl ClockService {
             .await?
             .ok_or_else(|| AppError::ValidationError("You are not clocked in".to_string()))?;
 
-        self.clock_repo.clock_out(org_id, entry.id).await
+        self.clock_repo.clock_out(org_id, entry.id, notes).await
     }
 
     /// Get current clock status for a user

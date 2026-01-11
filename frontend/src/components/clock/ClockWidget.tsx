@@ -1,14 +1,29 @@
 /**
  * Clock Widget Component
  *
- * Main clock in/out widget with timer display.
+ * Main clock in/out widget with timer display and confirmation dialog.
  */
 
-import { useEffect, useState, type FC } from 'react';
+import { useEffect, useState, useRef, useCallback, type FC } from 'react';
 import { Clock, LogIn, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 import { useClockStore, initializeClockStore } from '../../stores/clockStore';
+
+/** Debounce delay in milliseconds */
+const DEBOUNCE_DELAY = 2000;
 
 /**
  * Format seconds to HH:MM:SS
@@ -41,10 +56,23 @@ export const ClockWidget: FC = () => {
   } = useClockStore();
 
   const [elapsedSeconds, setElapsedSeconds] = useState<number | null>(null);
+  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  const [clockOutNote, setClockOutNote] = useState('');
+  const [isDebounced, setIsDebounced] = useState(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize store on mount
   useEffect(() => {
     initializeClockStore();
+  }, []);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   // Update elapsed time every second when clocked in
@@ -58,115 +86,195 @@ export const ClockWidget: FC = () => {
       };
 
       updateElapsed();
-      const interval = setInterval(updateElapsed, 1000); // Update every second
+      const interval = setInterval(updateElapsed, 1000);
       return () => clearInterval(interval);
     } else {
       setElapsedSeconds(null);
     }
   }, [status]);
 
+  /**
+   * Start debounce timer after action
+   */
+  const startDebounce = useCallback(() => {
+    setIsDebounced(true);
+    debounceTimerRef.current = setTimeout(() => {
+      setIsDebounced(false);
+    }, DEBOUNCE_DELAY);
+  }, []);
+
   const handleClockIn = async () => {
     try {
       await clockIn();
-    } catch (err) {
+      startDebounce();
+    } catch {
       // Error is handled by store
     }
   };
 
-  const handleClockOut = async () => {
+  const handleClockOutClick = () => {
+    setClockOutNote('');
+    setShowClockOutConfirm(true);
+  };
+
+  const handleClockOutConfirm = async () => {
     try {
-      await clockOut();
-    } catch (err) {
+      await clockOut(clockOutNote.trim() || undefined);
+      setClockOutNote('');
+      setShowClockOutConfirm(false);
+      startDebounce();
+    } catch {
       // Error is handled by store
     }
+  };
+
+  const handleClockOutCancel = () => {
+    setShowClockOutConfirm(false);
+    setClockOutNote('');
   };
 
   const isClockedIn = status?.is_clocked_in ?? false;
+  const isButtonDisabled = isDebounced || isLoading || isClockingIn || isClockingOut;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Time Clock</CardTitle>
+    <>
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Time Clock</CardTitle>
+            </div>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                isClockedIn
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}
+            >
+              {isClockedIn ? 'Clocked In' : 'Clocked Out'}
+            </span>
           </div>
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              isClockedIn
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {isClockedIn ? 'Clocked In' : 'Clocked Out'}
-          </span>
-        </div>
-        {isClockedIn && status?.current_entry && (
-          <CardDescription>
-            Started at {formatTime(status.current_entry.clock_in)}
-          </CardDescription>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Timer Display */}
-        <div className="text-center">
-          <div className="text-4xl font-mono font-bold text-foreground">
-            {formatElapsedTime(elapsedSeconds)}
+          {isClockedIn && status?.current_entry && (
+            <CardDescription>
+              Started at {formatTime(status.current_entry.clock_in)}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Timer Display */}
+          <div className="text-center">
+            <div className="text-4xl font-mono font-bold text-foreground">
+              {formatElapsedTime(elapsedSeconds)}
+            </div>
+            {isClockedIn && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Time worked today
+              </p>
+            )}
           </div>
-          {isClockedIn && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Time worked today
+
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-md bg-destructive/15 p-3">
+              <p className="text-sm text-destructive">{error}</p>
+              <button
+                onClick={clearError}
+                className="text-xs text-destructive/80 underline mt-1"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Clock In/Out Button */}
+          <div className="flex justify-center">
+            {isClockedIn ? (
+              <Button
+                onClick={handleClockOutClick}
+                disabled={isButtonDisabled}
+                variant="destructive"
+                size="lg"
+                className="w-full max-w-xs gap-2"
+              >
+                {isClockingOut ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <LogOut className="h-5 w-5" />
+                )}
+                {isClockingOut ? 'Clocking Out...' : 'Clock Out'}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleClockIn}
+                disabled={isButtonDisabled}
+                size="lg"
+                className="w-full max-w-xs gap-2"
+              >
+                {isClockingIn ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <LogIn className="h-5 w-5" />
+                )}
+                {isClockingIn ? 'Clocking In...' : 'Clock In'}
+              </Button>
+            )}
+          </div>
+
+          {/* Debounce indicator */}
+          {isDebounced && (
+            <p className="text-xs text-center text-muted-foreground">
+              Please wait before clocking again...
             </p>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Error Message */}
-        {error && (
-          <div className="rounded-md bg-destructive/15 p-3">
-            <p className="text-sm text-destructive">{error}</p>
-            <button
-              onClick={clearError}
-              className="text-xs text-destructive/80 underline mt-1"
-            >
-              Dismiss
-            </button>
+      {/* Clock Out Confirmation Dialog */}
+      <AlertDialog open={showClockOutConfirm} onOpenChange={setShowClockOutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Clock Out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clock out? You can add an optional note below.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="py-2">
+            <Label htmlFor="clock-out-note" className="text-sm font-medium">
+              Note (optional)
+            </Label>
+            <Textarea
+              id="clock-out-note"
+              value={clockOutNote}
+              onChange={(e) => setClockOutNote(e.target.value)}
+              placeholder="Add a note for this clock entry..."
+              className="mt-2 min-h-[80px] text-sm resize-none"
+              maxLength={500}
+            />
           </div>
-        )}
 
-        {/* Clock In/Out Button */}
-        <div className="flex justify-center">
-          {isClockedIn ? (
-            <Button
-              onClick={handleClockOut}
-              disabled={isClockingOut || isLoading}
-              variant="destructive"
-              size="lg"
-              className="w-full max-w-xs gap-2"
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleClockOutCancel} disabled={isClockingOut}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClockOutConfirm}
+              disabled={isClockingOut}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isClockingOut ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Clocking Out...
+                </>
               ) : (
-                <LogOut className="h-5 w-5" />
+                'Clock Out'
               )}
-              {isClockingOut ? 'Clocking Out...' : 'Clock Out'}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleClockIn}
-              disabled={isClockingIn || isLoading}
-              size="lg"
-              className="w-full max-w-xs gap-2"
-            >
-              {isClockingIn ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <LogIn className="h-5 w-5" />
-              )}
-              {isClockingIn ? 'Clocking In...' : 'Clock In'}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
