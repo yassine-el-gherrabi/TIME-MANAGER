@@ -14,6 +14,7 @@ export interface UsersTableProps {
   onResendInvite: (user: UserResponse) => void;
   onRestore?: (user: UserResponse) => void;
   isLoading?: boolean;
+  showOrganization?: boolean;
 }
 
 // Role hierarchy for comparison (higher value = more privileged)
@@ -48,6 +49,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
   onResendInvite,
   onRestore,
   isLoading,
+  showOrganization = false,
 }) => {
   if (isLoading) {
     return (
@@ -76,9 +78,11 @@ export const UsersTable: React.FC<UsersTableProps> = ({
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               Email
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Organization
-            </th>
+            {showOrganization && (
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                Organization
+              </th>
+            )}
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               Role
             </th>
@@ -109,7 +113,9 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                   </div>
                 </td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">{user.organization_name}</td>
+                {showOrganization && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{user.organization_name}</td>
+                )}
                 <td className="px-4 py-3 text-sm">
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${getRoleBadgeClass(user.role)}`}

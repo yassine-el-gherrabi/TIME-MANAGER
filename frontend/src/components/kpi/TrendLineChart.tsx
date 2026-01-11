@@ -37,14 +37,14 @@ interface TrendLineChartProps {
 }
 
 /**
- * Format date label for chart display
+ * Format date for multi-line display (used by CustomXAxisTick)
  */
 interface FormattedLabel {
   line1: string;
   line2?: string;
 }
 
-function formatDate(dateStr: string, granularity: Granularity): FormattedLabel {
+function formatDateMultiLine(dateStr: string, granularity: Granularity): FormattedLabel {
   if (!dateStr) return { line1: '' };
   try {
     const date = parseISO(dateStr);
@@ -53,7 +53,6 @@ function formatDate(dateStr: string, granularity: Granularity): FormattedLabel {
       case 'day':
         return { line1: format(date, 'dd MMM') };
       case 'week': {
-        // Week starts on Monday - split into two lines
         const weekNum = getWeek(date, { weekStartsOn: 1 });
         const monday = startOfWeek(date, { weekStartsOn: 1 });
         const sunday = endOfWeek(date, { weekStartsOn: 1 });
@@ -76,9 +75,22 @@ function formatDate(dateStr: string, granularity: Granularity): FormattedLabel {
 /**
  * Custom XAxis tick component for multi-line labels
  */
-function CustomXAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: FormattedLabel } }) {
+function CustomXAxisTick({
+  x,
+  y,
+  payload,
+  granularity
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+  granularity: Granularity;
+}) {
   if (!payload?.value) return null;
-  const { line1, line2 } = payload.value;
+
+  // Get the raw date from payload and format with multi-line support
+  const formatted = formatDateMultiLine(payload.value, granularity);
+  const { line1, line2 } = formatted;
 
   return (
     <g transform={`translate(${x},${y})`}>
@@ -111,16 +123,19 @@ function CustomXAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: 
 /**
  * Custom tooltip component
  */
-function CustomTooltip({ active, payload, label }: {
+function CustomTooltip({ active, payload, label, granularity }: {
   active?: boolean;
   payload?: Array<{ value: number; dataKey: string; color: string; stroke?: string }>;
-  label?: FormattedLabel;
+  label?: string;
+  granularity: Granularity;
 }) {
   if (!active || !payload || !payload.length) return null;
 
-  const labelStr = typeof label === 'object' && label
-    ? label.line2 ? `${label.line1} (${label.line2})` : label.line1
-    : String(label);
+  // Format the label using multi-line formatter for tooltip display
+  const formatted = formatDateMultiLine(label || '', granularity);
+  const labelStr = formatted.line2
+    ? `${formatted.line1} (${formatted.line2})`
+    : formatted.line1;
 
   const worked = payload.find((p) => p.dataKey === 'hours_worked');
   const expected = payload.find((p) => p.dataKey === 'theoretical_hours');
@@ -187,13 +202,13 @@ export function TrendLineChart({
   onNavigate,
   onGranularityChange,
 }: TrendLineChartProps) {
-  // Transform data for chart
+  // Transform data for chart - use raw date as name for Recharts compatibility
   const chartData = useMemo(() => {
     return data.map((point) => ({
       ...point,
-      name: formatDate(point.date, granularity),
+      name: point.date, // Keep raw date string - CustomXAxisTick handles formatting
     }));
-  }, [data, granularity]);
+  }, [data]);
 
   // Calculate summary stats
   const summary = useMemo(() => {
@@ -282,7 +297,7 @@ export function TrendLineChart({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="name"
-                  tick={<CustomXAxisTick />}
+                  tick={<CustomXAxisTick granularity={granularity} />}
                   tickLine={false}
                   axisLine={false}
                   height={granularity === 'week' ? 45 : 30}
@@ -294,7 +309,7 @@ export function TrendLineChart({
                   tickFormatter={(value) => `${value}h`}
                   className="text-muted-foreground"
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip granularity={granularity} />} />
                 <Legend
                   wrapperStyle={{ paddingTop: '10px' }}
                   formatter={(value) =>

@@ -291,15 +291,17 @@ export function DashboardPage() {
             Edit Profile
           </Button>
         </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <CardContent className={`grid gap-2 sm:grid-cols-2 ${user?.role === UserRole.SuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Email</p>
             <p className="text-sm">{user?.email}</p>
           </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Organization</p>
-            <p className="text-sm">{user?.organization_name}</p>
-          </div>
+          {user?.role === UserRole.SuperAdmin && (
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Organization</p>
+              <p className="text-sm">{user?.organization_name}</p>
+            </div>
+          )}
           <div>
             <p className="text-sm font-medium text-muted-foreground">Role</p>
             <p className="text-sm capitalize">{user?.role?.replace('_', ' ')}</p>

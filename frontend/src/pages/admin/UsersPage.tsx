@@ -329,6 +329,7 @@ export function UsersPage() {
             onResendInvite={handleResendInvite}
             onRestore={handleRestoreClick}
             isLoading={isInitialLoading}
+            showOrganization={currentUser?.role === UserRole.SuperAdmin}
           />
 
           {/* Infinite scroll elements */}
