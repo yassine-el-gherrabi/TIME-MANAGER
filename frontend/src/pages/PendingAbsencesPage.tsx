@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { logger } from '../utils/logger';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -28,7 +29,7 @@ export function PendingAbsencesPage() {
         const types = await absenceTypesApi.list();
         setAbsenceTypes(types);
       } catch (err) {
-        console.error('Failed to load absence types:', err);
+        logger.error('Failed to load absence types', err, { component: 'PendingAbsencesPage', action: 'loadTypes' });
       }
     };
     loadTypes();

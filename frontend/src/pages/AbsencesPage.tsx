@@ -8,6 +8,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Plus, Loader2, Calendar, Ban } from 'lucide-react';
+import { logger } from '../utils/logger';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
@@ -54,7 +55,7 @@ export function AbsencesPage() {
         setAbsenceTypes(types);
         setBalances(userBalances);
       } catch (err) {
-        console.error('Failed to load reference data:', err);
+        logger.error('Failed to load reference data', err, { component: 'AbsencesPage', action: 'loadReferenceData' });
         toast.error('Failed to load absence types');
       } finally {
         setLoadingRef(false);

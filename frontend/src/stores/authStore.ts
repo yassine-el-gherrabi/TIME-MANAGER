@@ -10,6 +10,7 @@ import { persist } from 'zustand/middleware';
 import { authApi } from '../api/auth';
 import { clearTokens, hasRefreshToken } from '../api/client';
 import { STORAGE_KEYS } from '../config/constants';
+import { logger } from '../utils/logger';
 import type {
   User,
   LoginRequest,
@@ -103,7 +104,7 @@ export const useAuthStore = create<AuthStore>()(
           await authApi.logout();
         } catch (error) {
           // Log but don't throw - user should still be logged out locally
-          console.error('Logout API call failed:', error);
+          logger.error('Logout API call failed', error, { component: 'authStore', action: 'logout' });
         } finally {
           // Always clear local auth state
           get().clearAuth();
@@ -120,7 +121,7 @@ export const useAuthStore = create<AuthStore>()(
           await authApi.logoutAll();
         } catch (error) {
           // Log but don't throw - user should still be logged out locally
-          console.error('Logout all API call failed:', error);
+          logger.error('Logout all API call failed', error, { component: 'authStore', action: 'logoutAll' });
         } finally {
           // Always clear local auth state
           get().clearAuth();

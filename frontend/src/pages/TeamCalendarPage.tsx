@@ -16,6 +16,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
+import { logger } from '../utils/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
@@ -83,7 +84,7 @@ export function TeamCalendarPage() {
 
         setUserAbsences(Array.from(userMap.values()));
       } catch (err) {
-        console.error('Failed to load calendar data:', err);
+        logger.error('Failed to load calendar data', err, { component: 'TeamCalendarPage', action: 'loadData' });
       } finally {
         setLoading(false);
       }

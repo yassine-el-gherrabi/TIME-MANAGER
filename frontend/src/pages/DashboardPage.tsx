@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, TrendingUp, Calendar, CheckCircle, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { logger } from '../utils/logger';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { ClockWidget } from '../components/clock';
@@ -112,7 +113,7 @@ export function DashboardPage() {
       await logout();
       navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
+      logger.error('Logout failed', error, { component: 'DashboardPage', action: 'logout' });
     }
   };
 
