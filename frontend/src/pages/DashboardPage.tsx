@@ -27,6 +27,11 @@ import { UserRole } from '../types/auth';
 
 type Granularity = 'day' | 'week' | 'month';
 
+/** Get current month name */
+const getCurrentMonthName = (): string => {
+  return new Date().toLocaleDateString('en-US', { month: 'long' });
+};
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -167,7 +172,7 @@ export function DashboardPage() {
         <div className="lg:col-span-2">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KPICard
-              title="Hours This Month"
+              title={`Hours in ${getCurrentMonthName()}`}
               value={hasClockData ? `${myKpis.total_hours_worked.toFixed(1)}h` : '—'}
               description={hasClockData ? `of ${myKpis.theoretical_hours.toFixed(0)}h expected` : 'No clock entries'}
               icon={<Clock className="h-5 w-5" />}
@@ -186,7 +191,7 @@ export function DashboardPage() {
             <KPICard
               title="Days Worked"
               value={myKpis?.days_worked ?? '—'}
-              description="This month"
+              description={`in ${getCurrentMonthName()}`}
               icon={<Calendar className="h-5 w-5" />}
             />
             <KPICard

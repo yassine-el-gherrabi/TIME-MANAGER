@@ -17,6 +17,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { useAuth } from '../../hooks/useAuth';
 import { usersApi } from '../../api/users';
 import { mapErrorToMessage } from '../../utils/errorHandling';
+import { UserRole } from '../../types/auth';
+
+/** Get role badge class (matches UsersTable styling) */
+const getRoleBadgeClass = (role: UserRole): string => {
+  switch (role) {
+    case UserRole.SuperAdmin:
+      return 'bg-amber-100 text-amber-800 border-amber-200';
+    case UserRole.Admin:
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    case UserRole.Manager:
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case UserRole.Employee:
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+/** Format role for display */
+const formatRole = (role: UserRole): string => {
+  switch (role) {
+    case UserRole.SuperAdmin:
+      return 'Super Admin';
+    case UserRole.Admin:
+      return 'Admin';
+    case UserRole.Manager:
+      return 'Manager';
+    case UserRole.Employee:
+    default:
+      return 'Employee';
+  }
+};
 
 interface FormData {
   first_name: string;
@@ -273,7 +304,11 @@ export const ProfilePage: FC = () => {
             <Shield className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium text-muted-foreground">Role</p>
-              <p className="mt-1 capitalize">{user.role?.replace(/([A-Z])/g, ' $1').trim()}</p>
+              <span
+                className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${getRoleBadgeClass(user.role)}`}
+              >
+                {formatRole(user.role)}
+              </span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground pt-2">

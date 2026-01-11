@@ -46,6 +46,12 @@ const getPresetFromFilters = (filters: ClockFilterState): DatePreset => {
 export function ClockFilters({ filters, onFiltersChange, onReset }: ClockFiltersProps) {
   const currentPreset = getPresetFromFilters(filters);
 
+  // Validate that FROM date is not after TO date
+  const hasDateError =
+    filters.startDate &&
+    filters.endDate &&
+    new Date(filters.startDate) > new Date(filters.endDate);
+
   const handlePresetChange = (preset: DatePreset) => {
     const now = new Date();
 
@@ -122,7 +128,9 @@ export function ClockFilters({ filters, onFiltersChange, onReset }: ClockFilters
             type="date"
             value={filters.startDate || ''}
             onChange={(e) => onFiltersChange({ startDate: e.target.value || null })}
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className={`flex h-9 w-full rounded-md border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+              hasDateError ? 'border-destructive' : 'border-input'
+            }`}
           />
         </div>
 
@@ -135,7 +143,9 @@ export function ClockFilters({ filters, onFiltersChange, onReset }: ClockFilters
             type="date"
             value={filters.endDate || ''}
             onChange={(e) => onFiltersChange({ endDate: e.target.value || null })}
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className={`flex h-9 w-full rounded-md border bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+              hasDateError ? 'border-destructive' : 'border-input'
+            }`}
           />
         </div>
 
@@ -162,6 +172,13 @@ export function ClockFilters({ filters, onFiltersChange, onReset }: ClockFilters
           </Button>
         )}
       </div>
+
+      {/* Date validation error */}
+      {hasDateError && (
+        <p className="text-sm text-destructive">
+          "From" date must be before "To" date
+        </p>
+      )}
     </div>
   );
 }

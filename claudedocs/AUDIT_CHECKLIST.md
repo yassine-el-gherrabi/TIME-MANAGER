@@ -58,8 +58,8 @@
 - [ ] **Define clock behavior per persona**: What makes sense for each user type?
 
 ### 2.2 KPIs Clarity
-- [ ] **Add date precision to KPIs**: "Hours This Month" → specify which month
-- [ ] **Clarify time periods**: Weekly? Monthly? Add clear labels
+- [x] **Add date precision to KPIs**: "Hours in January" format with dynamic month name
+- [x] **Clarify time periods**: Month name shown in KPI titles and descriptions
 
 ### 2.3 Hours Worked Graph
 - [ ] **Fix week mode first week**: Start from 1st of month, not previous month's last week
@@ -78,7 +78,7 @@
 ## 3. Clock History Page
 
 ### 3.1 Filters Validation
-- [ ] **Add frontend date validation**: FROM must be before TO date
+- [x] **Add frontend date validation**: FROM must be before TO date (red border + error message)
 
 ### 3.2 Entries Counter
 - [ ] **Show total entries count**: Not "X of Y displayed" but total entries (infinite scroll context)
@@ -161,7 +161,7 @@
 ## 10. Profile Page
 
 ### 10.1 Role Display
-- [ ] **Style role consistently**: Use same badge/color design as Users page
+- [x] **Style role consistently**: Uses same colored badge design as Users page
 
 ---
 
