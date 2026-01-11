@@ -30,3 +30,6 @@ logs/
 *.profdata
 tarpaulin-report.html
 cobertura.xml
+
+# JWT Keys (generated per environment)
+/keys/

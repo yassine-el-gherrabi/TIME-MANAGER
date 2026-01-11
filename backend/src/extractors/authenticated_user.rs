@@ -11,6 +11,7 @@ use axum_extra::{
 };
 use serde_json::json;
 
+use crate::config::AppState;
 use crate::models::Claims;
 use crate::utils::JwtService;
 
@@ -21,26 +22,24 @@ use crate::utils::JwtService;
 pub struct AuthenticatedUser(pub Claims);
 
 #[async_trait]
-impl<S> FromRequestParts<S> for AuthenticatedUser
-where
-    S: Send + Sync,
-{
+impl FromRequestParts<AppState> for AuthenticatedUser {
     type Rejection = AuthError;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         // Extract Authorization header
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await
             .map_err(|_| AuthError::MissingToken)?;
 
-        // Get JWT keys from environment
-        let jwt_private_key = std::env::var("JWT_PRIVATE_KEY").map_err(|_| AuthError::InvalidToken)?;
-        let jwt_public_key = std::env::var("JWT_PUBLIC_KEY").map_err(|_| AuthError::InvalidToken)?;
+        // Get JWT keys from AppState config (loaded from PEM files)
+        let jwt_service = JwtService::new(
+            &state.config.jwt_private_key,
+            &state.config.jwt_public_key,
+        )
+        .map_err(|_| AuthError::InvalidToken)?;
 
-        // Create JWT service and validate token
-        let jwt_service = JwtService::new(&jwt_private_key, &jwt_public_key)
-            .map_err(|_| AuthError::InvalidToken)?;
+        // Validate token
         let claims = jwt_service
             .validate_token(bearer.token())
             .map_err(|_| AuthError::InvalidToken)?;

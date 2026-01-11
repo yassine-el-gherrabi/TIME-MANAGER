@@ -7,6 +7,7 @@ use axum::{
 };
 use serde_json::json;
 
+use crate::config::AppState;
 use crate::domain::enums::UserRole;
 use crate::extractors::authenticated_user::AuthenticatedUser;
 
@@ -75,14 +76,13 @@ impl RequiredRole for Employee {
 }
 
 #[async_trait]
-impl<S, T> FromRequestParts<S> for RoleGuard<T>
+impl<T> FromRequestParts<AppState> for RoleGuard<T>
 where
-    S: Send + Sync,
     T: RequiredRole + Send + Sync,
 {
     type Rejection = RoleError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         // First authenticate the user
         let user = AuthenticatedUser::from_request_parts(parts, state)
             .await
