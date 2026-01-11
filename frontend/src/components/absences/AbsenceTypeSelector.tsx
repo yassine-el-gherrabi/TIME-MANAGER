@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
 import type { AbsenceType } from '../../types/absence';
 
@@ -25,9 +26,11 @@ export const AbsenceTypeSelector: FC<AbsenceTypeSelectorProps> = ({
   disabled = false,
   error,
   className,
-  placeholder = 'Select absence type',
+  placeholder,
 }) => {
-  const selectedType = types.find((t) => t.id === value);
+  const { t } = useTranslation();
+  const selectedType = types.find((type) => type.id === value);
+  const placeholderText = placeholder || t('absences.selectAbsenceType');
 
   return (
     <div className={cn('space-y-1', className)}>
@@ -52,10 +55,10 @@ export const AbsenceTypeSelector: FC<AbsenceTypeSelectorProps> = ({
             error && 'border-destructive focus-visible:ring-destructive'
           )}
         >
-          <option value="">{placeholder}</option>
-          {types.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.name} {type.affects_balance ? `(affects balance)` : ''}
+          <option value="">{placeholderText}</option>
+          {types.map((absenceType) => (
+            <option key={absenceType.id} value={absenceType.id}>
+              {absenceType.name} {absenceType.affects_balance ? `(${t('absences.affectsBalance')})` : ''}
             </option>
           ))}
         </select>
@@ -71,9 +74,9 @@ export const AbsenceTypeSelector: FC<AbsenceTypeSelectorProps> = ({
             style={{ backgroundColor: selectedType.color }}
           />
           <span>
-            {selectedType.requires_approval ? 'Requires approval' : 'Auto-approved'}
-            {selectedType.affects_balance && ' • Deducts from balance'}
-            {selectedType.is_paid && ' • Paid leave'}
+            {selectedType.requires_approval ? t('absences.requiresApproval') : t('absences.autoApproved')}
+            {selectedType.affects_balance && ` • ${t('absences.deductsFromBalance')}`}
+            {selectedType.is_paid && ` • ${t('absences.paidLeave')}`}
           </span>
         </div>
       )}

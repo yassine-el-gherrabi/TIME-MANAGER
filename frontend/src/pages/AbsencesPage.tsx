@@ -6,8 +6,11 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Plus, Loader2, Calendar, Ban } from 'lucide-react';
+import { Plus, Loader2, Calendar, Ban, Download } from 'lucide-react';
+import { reportsApi } from '../api/reports';
+import { mapErrorToMessage } from '../utils/errorHandling';
 import { logger } from '../utils/logger';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -28,13 +31,13 @@ import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { absencesApi } from '../api/absences';
 import { absenceTypesApi } from '../api/absenceTypes';
 import { balancesApi } from '../api/balances';
-import { mapErrorToMessage } from '../utils/errorHandling';
 import type { Absence, AbsenceType, LeaveBalance, CreateAbsenceRequest } from '../types/absence';
 import { AbsenceStatus } from '../types/absence';
 
 type FilterStatus = 'all' | AbsenceStatus;
 
 export function AbsencesPage() {
+  const { t } = useTranslation();
   // Filter state
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterTypeId, setFilterTypeId] = useState<string>('');
@@ -56,7 +59,7 @@ export function AbsencesPage() {
         setBalances(userBalances);
       } catch (err) {
         logger.error('Failed to load reference data', err, { component: 'AbsencesPage', action: 'loadReferenceData' });
-        toast.error('Failed to load absence types');
+        toast.error(t('errors.generic'));
       } finally {
         setLoadingRef(false);
       }
@@ -142,7 +145,7 @@ export function AbsencesPage() {
     setRequestDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       await absencesApi.create(data);
-      toast.success('Absence request submitted successfully');
+      toast.success(t('success.absenceRequested'));
       setRequestDrawer({ open: false, loading: false, error: '' });
       // Refresh balances
       const newBalances = await balancesApi.getMyBalances();
@@ -168,7 +171,7 @@ export function AbsencesPage() {
     setCancelDialog((prev) => ({ ...prev, loading: true }));
     try {
       await absencesApi.cancel(cancelDialog.absence.id);
-      toast.success('Absence request cancelled');
+      toast.success(t('success.absenceCancelled'));
       setRemovedIds((prev) => new Set(prev).add(cancelDialog.absence!.id));
       // Refresh balances
       const newBalances = await balancesApi.getMyBalances();
@@ -182,20 +185,41 @@ export function AbsencesPage() {
 
   const hasActiveFilters = filterStatus !== 'all' || filterTypeId !== '';
 
+  // Export state
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await reportsApi.exportCsv('absences');
+      toast.success(t('success.exported'));
+    } catch (err) {
+      toast.error(mapErrorToMessage(err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Absences</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('absences.myAbsences')}</h1>
           <p className="text-muted-foreground">
-            View your leave balances and absence requests
+            {t('absences.description')}
           </p>
         </div>
-        <Button onClick={handleRequestClick} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Request
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={exporting}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="ml-2">{t('common.export')}</span>
+          </Button>
+          <Button onClick={handleRequestClick} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t('absences.newRequest')}
+          </Button>
+        </div>
       </div>
 
       {/* Leave Balances */}
@@ -214,12 +238,12 @@ export function AbsencesPage() {
       {/* Filters */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filters</CardTitle>
+          <CardTitle className="text-base">{t('common.filters')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Status</label>
+              <label className="text-sm text-muted-foreground">{t('common.status')}</label>
               <select
                 value={filterStatus}
                 onChange={(e) => {
@@ -228,16 +252,16 @@ export function AbsencesPage() {
                 }}
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="all">All statuses</option>
-                <option value={AbsenceStatus.Pending}>Pending</option>
-                <option value={AbsenceStatus.Approved}>Approved</option>
-                <option value={AbsenceStatus.Rejected}>Rejected</option>
-                <option value={AbsenceStatus.Cancelled}>Cancelled</option>
+                <option value="all">{t('absences.allStatuses')}</option>
+                <option value={AbsenceStatus.Pending}>{t('absences.pending')}</option>
+                <option value={AbsenceStatus.Approved}>{t('absences.approved')}</option>
+                <option value={AbsenceStatus.Rejected}>{t('absences.rejected')}</option>
+                <option value={AbsenceStatus.Cancelled}>{t('absences.cancelled')}</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">Type</label>
+              <label className="text-sm text-muted-foreground">{t('common.type')}</label>
               <select
                 value={filterTypeId}
                 onChange={(e) => {
@@ -246,7 +270,7 @@ export function AbsencesPage() {
                 }}
                 className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="">All types</option>
+                <option value="">{t('absences.allTypes')}</option>
                 {absenceTypes.map((type) => (
                   <option key={type.id} value={type.id}>
                     {type.name}
@@ -266,7 +290,7 @@ export function AbsencesPage() {
                   setRemovedIds(new Set());
                 }}
               >
-                Clear filters
+                {t('common.clearFilters')}
               </Button>
             )}
           </div>
@@ -279,10 +303,10 @@ export function AbsencesPage() {
           <CardTitle className="flex items-center justify-between text-base">
             <span className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Absence Requests
+              {t('absences.absenceRequests')}
             </span>
             <span className="text-sm font-normal text-muted-foreground">
-              {total} requests {hasActiveFilters && '(filtered)'}
+              {hasActiveFilters ? t('absences.requestsCountFiltered', { total }) : t('absences.requestsCount', { total })}
             </span>
           </CardTitle>
         </CardHeader>
@@ -291,7 +315,7 @@ export function AbsencesPage() {
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}
               <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           )}
@@ -304,7 +328,7 @@ export function AbsencesPage() {
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
-                No absence requests found
+                {t('absences.noAbsences')}
               </p>
             </div>
           ) : (
@@ -323,7 +347,7 @@ export function AbsencesPage() {
                         className="gap-1 text-destructive hover:text-destructive"
                       >
                         <Ban className="h-4 w-4" />
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     )
                   }
@@ -343,7 +367,7 @@ export function AbsencesPage() {
               {/* End of list indicator */}
               {!hasMore && displayedAbsences.length > 0 && (
                 <p className="text-center text-sm text-muted-foreground py-4">
-                  All absences loaded
+                  {t('absences.allAbsencesLoaded')}
                 </p>
               )}
             </div>
@@ -355,9 +379,9 @@ export function AbsencesPage() {
       <Sheet open={requestDrawer.open} onOpenChange={(open) => !open && handleRequestCancel()}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Request Absence</SheetTitle>
+            <SheetTitle>{t('absences.requestAbsence')}</SheetTitle>
             <SheetDescription>
-              Submit a new absence request for approval.
+              {t('absences.submitRequest')}
             </SheetDescription>
           </SheetHeader>
           <AbsenceRequestForm
@@ -376,9 +400,9 @@ export function AbsencesPage() {
       <ConfirmDialog
         open={cancelDialog.open}
         onOpenChange={(open) => setCancelDialog((prev) => ({ ...prev, open }))}
-        title="Cancel Absence Request"
-        description="Are you sure you want to cancel this absence request? This action cannot be undone."
-        confirmText="Cancel Request"
+        title={t('absences.cancelAbsenceRequest')}
+        description={t('absences.cancelConfirmation')}
+        confirmText={t('absences.cancelRequest')}
         variant="destructive"
         onConfirm={handleCancelConfirm}
         loading={cancelDialog.loading}

@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import type { FC, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ export const RejectReasonModal: FC<RejectReasonModalProps> = ({
   userName,
   absenceType,
 }) => {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string>();
 
@@ -41,7 +43,7 @@ export const RejectReasonModal: FC<RejectReasonModalProps> = ({
     e.preventDefault();
 
     if (!reason.trim()) {
-      setError('Please provide a reason for rejection');
+      setError(t('pendingAbsences.provideReason'));
       return;
     }
 
@@ -60,18 +62,18 @@ export const RejectReasonModal: FC<RejectReasonModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Reject Absence Request</DialogTitle>
+          <DialogTitle>{t('pendingAbsences.rejectRequest')}</DialogTitle>
           <DialogDescription>
             {userName && absenceType
-              ? `Reject ${userName}'s ${absenceType} request. Please provide a reason.`
-              : 'Please provide a reason for rejecting this absence request.'}
+              ? t('pendingAbsences.rejectDescription', { userName, absenceType })
+              : t('pendingAbsences.reasonRequired')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="rejection-reason">Reason for Rejection</Label>
+              <Label htmlFor="rejection-reason">{t('pendingAbsences.reasonForRejection')}</Label>
               <textarea
                 id="rejection-reason"
                 value={reason}
@@ -80,7 +82,7 @@ export const RejectReasonModal: FC<RejectReasonModalProps> = ({
                   if (error) setError(undefined);
                 }}
                 disabled={loading}
-                placeholder="Enter the reason for rejection..."
+                placeholder={t('pendingAbsences.reasonPlaceholder')}
                 className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 autoFocus
               />
@@ -95,14 +97,14 @@ export const RejectReasonModal: FC<RejectReasonModalProps> = ({
               onClick={handleCancel}
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
               variant="destructive"
               disabled={loading}
             >
-              {loading ? 'Rejecting...' : 'Reject Request'}
+              {loading ? t('common.rejecting') : t('pendingAbsences.rejectRequest')}
             </Button>
           </DialogFooter>
         </form>

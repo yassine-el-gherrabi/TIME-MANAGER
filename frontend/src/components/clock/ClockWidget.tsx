@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback, type FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Clock, LogIn, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -44,6 +45,7 @@ const formatTime = (isoDate: string): string => {
 };
 
 export const ClockWidget: FC = () => {
+  const { t } = useTranslation();
   const {
     status,
     isLoading,
@@ -143,7 +145,7 @@ export const ClockWidget: FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Time Clock</CardTitle>
+              <CardTitle className="text-lg">{t('clock.title')}</CardTitle>
             </div>
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -152,12 +154,12 @@ export const ClockWidget: FC = () => {
                   : 'bg-gray-100 text-gray-800'
               }`}
             >
-              {isClockedIn ? 'Clocked In' : 'Clocked Out'}
+              {isClockedIn ? t('clock.clockedIn') : t('clock.clockedOut')}
             </span>
           </div>
           {isClockedIn && status?.current_entry && (
             <CardDescription>
-              Started at {formatTime(status.current_entry.clock_in)}
+              {t('clock.startedAt')} {formatTime(status.current_entry.clock_in)}
             </CardDescription>
           )}
         </CardHeader>
@@ -169,7 +171,7 @@ export const ClockWidget: FC = () => {
             </div>
             {isClockedIn && (
               <p className="text-sm text-muted-foreground mt-1">
-                Time worked today
+                {t('clock.timeWorkedToday')}
               </p>
             )}
           </div>
@@ -182,7 +184,7 @@ export const ClockWidget: FC = () => {
                 onClick={clearError}
                 className="text-xs text-destructive/80 underline mt-1"
               >
-                Dismiss
+                {t('common.dismiss')}
               </button>
             </div>
           )}
@@ -202,7 +204,7 @@ export const ClockWidget: FC = () => {
                 ) : (
                   <LogOut className="h-5 w-5" />
                 )}
-                {isClockingOut ? 'Clocking Out...' : 'Clock Out'}
+                {isClockingOut ? t('clock.clockingOut') : t('clock.clockOut')}
               </Button>
             ) : (
               <Button
@@ -216,7 +218,7 @@ export const ClockWidget: FC = () => {
                 ) : (
                   <LogIn className="h-5 w-5" />
                 )}
-                {isClockingIn ? 'Clocking In...' : 'Clock In'}
+                {isClockingIn ? t('clock.clockingIn') : t('clock.clockIn')}
               </Button>
             )}
           </div>
@@ -224,7 +226,7 @@ export const ClockWidget: FC = () => {
           {/* Debounce indicator */}
           {isDebounced && (
             <p className="text-xs text-center text-muted-foreground">
-              Please wait before clocking again...
+              {t('clock.pleaseWait')}
             </p>
           )}
         </CardContent>
@@ -234,21 +236,21 @@ export const ClockWidget: FC = () => {
       <AlertDialog open={showClockOutConfirm} onOpenChange={setShowClockOutConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Clock Out</AlertDialogTitle>
+            <AlertDialogTitle>{t('clock.confirmClockOut')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to clock out? You can add an optional note below.
+              {t('clock.confirmClockOutDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="py-2">
             <Label htmlFor="clock-out-note" className="text-sm font-medium">
-              Note (optional)
+              {t('clock.addNote')}
             </Label>
             <Textarea
               id="clock-out-note"
               value={clockOutNote}
               onChange={(e) => setClockOutNote(e.target.value)}
-              placeholder="Add a note for this clock entry..."
+              placeholder={t('clock.notePlaceholder')}
               className="mt-2 min-h-[80px] text-sm resize-none"
               maxLength={500}
             />
@@ -256,7 +258,7 @@ export const ClockWidget: FC = () => {
 
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleClockOutCancel} disabled={isClockingOut}>
-              Cancel
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClockOutConfirm}
@@ -266,10 +268,10 @@ export const ClockWidget: FC = () => {
               {isClockingOut ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Clocking Out...
+                  {t('clock.clockingOut')}
                 </>
               ) : (
-                'Clock Out'
+                t('clock.clockOut')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

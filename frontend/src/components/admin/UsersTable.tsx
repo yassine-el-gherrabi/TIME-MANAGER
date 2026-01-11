@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { InviteStatusBadge } from './InviteStatusBadge';
@@ -51,10 +52,12 @@ export const UsersTable: React.FC<UsersTableProps> = ({
   isLoading,
   showOrganization = false,
 }) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">Loading users...</div>
+        <div className="text-muted-foreground">{t('users.loadingUsers')}</div>
       </div>
     );
   }
@@ -62,7 +65,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
   if (users.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">No users found</div>
+        <div className="text-muted-foreground">{t('users.noUsers')}</div>
       </div>
     );
   }
@@ -73,24 +76,24 @@ export const UsersTable: React.FC<UsersTableProps> = ({
         <thead>
           <tr className="border-b bg-muted/50">
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Name
+              {t('common.name')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Email
+              {t('common.email')}
             </th>
             {showOrganization && (
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                Organization
+                {t('users.organization')}
               </th>
             )}
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Role
+              {t('users.role')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Status
+              {t('common.status')}
             </th>
             <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-              Actions
+              {t('common.actions')}
             </th>
           </tr>
         </thead>
@@ -126,7 +129,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                 <td className="px-4 py-3 text-sm">
                   <div className="flex items-center gap-2">
                     {isDeleted ? (
-                      <Badge variant="destructive">Deleted</Badge>
+                      <Badge variant="destructive">{t('users.deleted')}</Badge>
                     ) : (
                       <InviteStatusBadge hasPassword={user.has_password} />
                     )}
@@ -142,18 +145,18 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                           size="sm"
                           onClick={() => onRestore(user)}
                         >
-                          Restore
+                          {t('common.restore')}
                         </Button>
                       )
                     ) : (
                       // Active user actions
                       <>
                         <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
-                          Edit
+                          {t('common.edit')}
                         </Button>
                         {!user.has_password && (
                           <Button variant="outline" size="sm" onClick={() => onResendInvite(user)}>
-                            Resend Invite
+                            {t('users.resendInvite')}
                           </Button>
                         )}
                         {user.id !== currentUserId &&
@@ -165,7 +168,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                             className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/50"
                             onClick={() => onDelete(user)}
                           >
-                            Delete
+                            {t('common.delete')}
                           </Button>
                         )}
                       </>

@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle, AlertCircle, Building2, Users, Filter } from 'lucide-react';
 import { logger } from '../utils/logger';
@@ -33,6 +34,7 @@ import type { TeamResponse } from '../types/team';
 import { UserRole } from '../types/auth';
 
 export function PendingAbsencesPage() {
+  const { t } = useTranslation();
   const user = useCurrentUser();
 
   // Reference data
@@ -176,7 +178,7 @@ export function PendingAbsencesPage() {
     setActionLoading(absenceId);
     try {
       await absencesApi.approve(absenceId);
-      toast.success('Absence request approved');
+      toast.success(t('success.approved'));
       setRemovedIds((prev) => new Set(prev).add(absenceId));
     } catch (err) {
       toast.error(mapErrorToMessage(err));
@@ -198,7 +200,7 @@ export function PendingAbsencesPage() {
     setRejectDialog((prev) => ({ ...prev, loading: true }));
     try {
       await absencesApi.reject(rejectDialog.absence.id, { reason });
-      toast.success('Absence request rejected');
+      toast.success(t('success.rejected'));
       setRemovedIds((prev) => new Set(prev).add(rejectDialog.absence!.id));
       setRejectDialog({ open: false, absence: null, loading: false });
     } catch (err) {
@@ -211,9 +213,9 @@ export function PendingAbsencesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pending Absences</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('pendingAbsences.title')}</h1>
           <p className="text-muted-foreground">
-            Review and approve employee absence requests
+            {t('pendingAbsences.description')}
           </p>
         </div>
         <Card>
@@ -229,9 +231,9 @@ export function PendingAbsencesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pending Absences</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('pendingAbsences.title')}</h1>
         <p className="text-muted-foreground">
-          Review and approve employee absence requests
+          {t('pendingAbsences.description')}
         </p>
       </div>
 
@@ -241,14 +243,14 @@ export function PendingAbsencesPage() {
           <CardTitle className="flex items-center justify-between text-lg">
             <span className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-amber-500" />
-              Pending Approvals
+              {t('pendingAbsences.pendingApprovals')}
             </span>
             {displayTotal > 0 && (
-              <Badge variant="secondary">{displayTotal} pending</Badge>
+              <Badge variant="secondary">{t('pendingAbsences.pendingCount', { count: displayTotal })}</Badge>
             )}
           </CardTitle>
           <CardDescription>
-            Review and approve or reject absence requests from your team
+            {t('pendingAbsences.reviewDescription')}
           </CardDescription>
 
           {/* Filters */}
@@ -256,7 +258,7 @@ export function PendingAbsencesPage() {
             <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Filter className="h-4 w-4" />
-                <span>Filter by:</span>
+                <span>{t('pendingAbsences.filterBy')}</span>
               </div>
 
               {/* Organization filter - SuperAdmin only */}
@@ -271,7 +273,7 @@ export function PendingAbsencesPage() {
                     <SelectValue placeholder="All Organizations" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Organizations</SelectItem>
+                    <SelectItem value="all">{t('pendingAbsences.allOrganizations')}</SelectItem>
                     {organizations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>
                         {org.name}
@@ -293,7 +295,7 @@ export function PendingAbsencesPage() {
                     <SelectValue placeholder="All Teams" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Teams</SelectItem>
+                    <SelectItem value="all">{t('pendingAbsences.allTeams')}</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}
@@ -311,7 +313,7 @@ export function PendingAbsencesPage() {
                   onClick={clearFilters}
                   className="h-9"
                 >
-                  Clear filters
+                  {t('common.clearFilters')}
                 </Button>
               )}
             </div>
@@ -322,7 +324,7 @@ export function PendingAbsencesPage() {
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}
               <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           )}
@@ -331,7 +333,7 @@ export function PendingAbsencesPage() {
             <div className="text-center py-8">
               <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
-                No pending absence requests
+                {t('pendingAbsences.noPendingRequests')}
               </p>
             </div>
           ) : (
@@ -362,7 +364,7 @@ export function PendingAbsencesPage() {
               {/* End of list indicator */}
               {!hasMore && absences.length > 0 && (
                 <p className="text-center text-sm text-muted-foreground py-4">
-                  All pending requests loaded
+                  {t('pendingAbsences.allLoaded')}
                 </p>
               )}
             </div>

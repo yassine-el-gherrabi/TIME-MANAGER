@@ -5,7 +5,8 @@
  * Super Admin only.
  */
 
-import React from 'react';
+import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import type { OrganizationResponse } from '../../types/organization';
 
@@ -27,16 +28,18 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
+export const OrganizationsTable: FC<OrganizationsTableProps> = ({
   organizations,
   onEdit,
   onDelete,
   isLoading,
 }) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">Loading organizations...</div>
+        <div className="text-muted-foreground">{t('organizations.loadingOrganizations')}</div>
       </div>
     );
   }
@@ -44,7 +47,7 @@ export const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
   if (organizations.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">No organizations found</div>
+        <div className="text-muted-foreground">{t('organizations.noOrganizations')}</div>
       </div>
     );
   }
@@ -55,22 +58,22 @@ export const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
         <thead>
           <tr className="border-b bg-muted/50">
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Name
+              {t('common.name')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Slug
+              {t('organizations.slug')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Timezone
+              {t('organizations.timezone')}
             </th>
             <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
-              Users
+              {t('organizations.users')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Created
+              {t('common.created')}
             </th>
             <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-              Actions
+              {t('common.actions')}
             </th>
           </tr>
         </thead>
@@ -108,7 +111,7 @@ export const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
               <td className="px-4 py-3 text-sm text-right">
                 <div className="flex items-center justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={() => onEdit(organization)}>
-                    Edit
+                    {t('common.edit')}
                   </Button>
                   <Button
                     variant="outline"
@@ -118,11 +121,11 @@ export const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
                     disabled={(organization.user_count ?? 0) > 0}
                     title={
                       (organization.user_count ?? 0) > 0
-                        ? 'Cannot delete organization with users'
-                        : 'Delete organization'
+                        ? t('organizations.cannotDeleteWithUsers')
+                        : t('organizations.deleteOrganization')
                     }
                   >
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </div>
               </td>

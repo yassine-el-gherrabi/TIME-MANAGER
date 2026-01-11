@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Calendar, User } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -49,6 +50,7 @@ export const AbsenceCard: FC<AbsenceCardProps> = ({
   className,
   actions,
 }) => {
+  const { t } = useTranslation();
   const dateRange = formatDateRange(absence.start_date, absence.end_date);
 
   return (
@@ -66,7 +68,7 @@ export const AbsenceCard: FC<AbsenceCardProps> = ({
               {/* Header with type and status */}
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium">
-                  {absenceType?.name || 'Unknown Type'}
+                  {absenceType?.name || t('absences.unknownType')}
                 </p>
                 <AbsenceStatusBadge status={absence.status} />
               </div>
@@ -76,7 +78,7 @@ export const AbsenceCard: FC<AbsenceCardProps> = ({
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{dateRange}</span>
                 <span className="font-medium text-foreground">
-                  ({absence.days_count} {absence.days_count === 1 ? 'day' : 'days'})
+                  ({absence.days_count} {absence.days_count === 1 ? t('common.day') : t('common.days')})
                 </span>
               </div>
 
@@ -98,7 +100,7 @@ export const AbsenceCard: FC<AbsenceCardProps> = ({
               {/* Rejection reason if rejected */}
               {absence.rejection_reason && (
                 <p className="text-xs text-red-600 mt-1">
-                  Rejected: {absence.rejection_reason}
+                  {t('absences.rejectedReason', { message: absence.rejection_reason })}
                 </p>
               )}
             </div>

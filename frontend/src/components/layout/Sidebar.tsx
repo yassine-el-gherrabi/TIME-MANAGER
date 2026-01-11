@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Users,
@@ -24,11 +25,13 @@ import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
 import { ClockStatusIndicator } from '../clock/ClockStatusIndicator';
 import { NotificationBell } from '../notifications';
+import { LanguageSelector } from '../LanguageSelector';
 import { useAuthStore } from '../../stores/authStore';
 import { UserRole } from '../../types/auth';
 
 export const Sidebar: FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
@@ -44,38 +47,41 @@ export const Sidebar: FC = () => {
           <Clock className="h-6 w-6 text-primary" />
           <span className="text-lg font-semibold">Time Manager</span>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-1">
+          <LanguageSelector />
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
         <NavLink to="/" icon={<LayoutDashboard className="h-4 w-4" />} end>
-          Dashboard
+          {t('nav.dashboard')}
         </NavLink>
         <NavLink to="/clock" icon={<Timer className="h-4 w-4" />} end>
           <span className="flex items-center gap-2">
-            Time Clock
+            {t('nav.timeClock')}
             <ClockStatusIndicator />
           </span>
         </NavLink>
         <NavLink to="/absences" icon={<Briefcase className="h-4 w-4" />} end>
-          My Absences
+          {t('nav.myAbsences')}
         </NavLink>
 
         {/* Manager+ Section */}
         {(user?.role === UserRole.Manager || user?.role === UserRole.Admin || user?.role === UserRole.SuperAdmin) && (
           <div className="pt-4">
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Management
+              {t('nav.management')}
             </p>
             <NavLink to="/clock/pending" icon={<ClipboardCheck className="h-4 w-4" />}>
-              Clock Approvals
+              {t('nav.pendingClocks')}
             </NavLink>
             <NavLink to="/absences/pending" icon={<CalendarCheck className="h-4 w-4" />}>
-              Absence Approvals
+              {t('nav.pendingAbsences')}
             </NavLink>
             <NavLink to="/absences/calendar" icon={<CalendarDays className="h-4 w-4" />}>
-              Team Calendar
+              {t('nav.calendar')}
             </NavLink>
           </div>
         )}
@@ -84,22 +90,22 @@ export const Sidebar: FC = () => {
         {(user?.role === UserRole.Admin || user?.role === UserRole.SuperAdmin) && (
           <div className="pt-4">
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Admin
+              {t('nav.admin')}
             </p>
             <NavLink to="/admin/users" icon={<Users className="h-4 w-4" />}>
-              Users
+              {t('nav.users')}
             </NavLink>
             <NavLink to="/admin/teams" icon={<UsersRound className="h-4 w-4" />}>
-              Teams
+              {t('nav.teams')}
             </NavLink>
             <NavLink to="/admin/schedules" icon={<Calendar className="h-4 w-4" />}>
-              Schedules
+              {t('nav.workSchedules')}
             </NavLink>
             <NavLink to="/admin/absence-types" icon={<FileType className="h-4 w-4" />}>
-              Absence Types
+              {t('nav.absenceTypes')}
             </NavLink>
             <NavLink to="/admin/closed-days" icon={<PartyPopper className="h-4 w-4" />}>
-              Closed Days
+              {t('nav.closedDays')}
             </NavLink>
           </div>
         )}
@@ -111,10 +117,10 @@ export const Sidebar: FC = () => {
               Super Admin
             </p>
             <NavLink to="/admin/organizations" icon={<Building2 className="h-4 w-4" />}>
-              Organizations
+              {t('nav.organizations')}
             </NavLink>
             <NavLink to="/admin/audit-logs" icon={<ScrollText className="h-4 w-4" />}>
-              Audit Logs
+              {t('nav.auditLogs')}
             </NavLink>
           </div>
         )}
@@ -122,16 +128,16 @@ export const Sidebar: FC = () => {
         {/* Settings Section */}
         <div className="pt-4">
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Settings
+            {t('nav.settings')}
           </p>
           <NavLink to="/profile" icon={<User className="h-4 w-4" />}>
-            Profile
+            {t('nav.profile')}
           </NavLink>
           <NavLink to="/settings/password" icon={<KeyRound className="h-4 w-4" />}>
-            Change Password
+            {t('nav.password')}
           </NavLink>
           <NavLink to="/settings/sessions" icon={<MonitorSmartphone className="h-4 w-4" />}>
-            Sessions
+            {t('nav.sessions')}
           </NavLink>
         </div>
       </nav>
@@ -150,7 +156,7 @@ export const Sidebar: FC = () => {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          Logout
+          {t('auth.logout')}
         </Button>
       </div>
     </aside>

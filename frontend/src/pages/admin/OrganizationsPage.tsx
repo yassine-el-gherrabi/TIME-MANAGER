@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Loader2, Search } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -29,6 +30,7 @@ import type {
 } from '../../types/organization';
 
 export function OrganizationsPage() {
+  const { t } = useTranslation();
   // Filter state
   const [search, setSearch] = useState('');
 
@@ -111,7 +113,7 @@ export function OrganizationsPage() {
     setCreateDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       await organizationsApi.create(data);
-      toast.success(`Organization "${data.name}" has been created`);
+      toast.success(t('success.created'));
       setCreateDrawer({ open: false, loading: false, error: '' });
       setRemovedIds(new Set());
       reset();
@@ -138,7 +140,7 @@ export function OrganizationsPage() {
         name: data.name,
         timezone: data.timezone,
       });
-      toast.success(`Organization "${data.name}" has been updated`);
+      toast.success(t('success.saved'));
       setEditDrawer({ open: false, organization: null, loading: false, error: '' });
       setRemovedIds(new Set());
       reset();
@@ -162,7 +164,7 @@ export function OrganizationsPage() {
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
       await organizationsApi.delete(deleteDialog.organization.id);
-      toast.success(`Organization "${deleteDialog.organization.name}" has been deleted`);
+      toast.success(t('success.deleted'));
       setRemovedIds((prev) => new Set(prev).add(deleteDialog.organization!.id));
       setDeleteDialog({ open: false, organization: null, loading: false });
     } catch (err) {
@@ -177,24 +179,24 @@ export function OrganizationsPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center justify-between">
-              <span>Organizations</span>
+              <span>{t('organizations.title')}</span>
               {displayTotal > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-4">
-                  {displayedOrganizations.length} of {displayTotal}{' '}
-                  {hasActiveFilters && '(filtered)'}
+                  {displayedOrganizations.length} {t('common.of')} {displayTotal}{' '}
+                  {hasActiveFilters && `(${t('common.filtered')})`}
                 </span>
               )}
             </CardTitle>
-            <CardDescription>Manage multi-tenant organizations</CardDescription>
+            <CardDescription>{t('organizations.description')}</CardDescription>
           </div>
-          <Button onClick={handleCreateClick}>Add Organization</Button>
+          <Button onClick={handleCreateClick}>{t('organizations.addOrganization')}</Button>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}
               <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           )}
@@ -204,7 +206,7 @@ export function OrganizationsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search organizations..."
+                placeholder={t('common.search')}
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9"
@@ -235,7 +237,7 @@ export function OrganizationsPage() {
               {/* End of list indicator */}
               {!hasMore && (
                 <p className="text-center text-sm text-muted-foreground py-4">
-                  All organizations loaded
+                  {t('common.allLoaded')}
                 </p>
               )}
             </>
@@ -244,13 +246,13 @@ export function OrganizationsPage() {
           <ConfirmDialog
             open={deleteDialog.open}
             onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
-            title="Delete Organization"
+            title={t('organizations.deleteOrganization')}
             description={
               deleteDialog.organization
-                ? `Are you sure you want to delete "${deleteDialog.organization.name}"? This action cannot be undone.`
+                ? t('teams.deleteConfirmation', { name: deleteDialog.organization.name })
                 : ''
             }
-            confirmText="Delete"
+            confirmText={t('common.delete')}
             variant="destructive"
             onConfirm={handleDeleteConfirm}
             loading={deleteDialog.loading}
@@ -260,8 +262,8 @@ export function OrganizationsPage() {
           <Sheet open={createDrawer.open} onOpenChange={(open) => !open && handleCreateCancel()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Add Organization</SheetTitle>
-                <SheetDescription>Create a new organization for multi-tenant management.</SheetDescription>
+                <SheetTitle>{t('organizations.addOrganization')}</SheetTitle>
+                <SheetDescription>{t('organizations.addOrgDescription')}</SheetDescription>
               </SheetHeader>
               <OrganizationForm
                 onSubmit={handleCreateSubmit}
@@ -277,8 +279,8 @@ export function OrganizationsPage() {
           <Sheet open={editDrawer.open} onOpenChange={(open) => !open && handleEditCancel()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Edit Organization</SheetTitle>
-                <SheetDescription>Update organization information</SheetDescription>
+                <SheetTitle>{t('organizations.editOrganization')}</SheetTitle>
+                <SheetDescription>{t('organizations.editOrgDescription')}</SheetDescription>
               </SheetHeader>
               <OrganizationForm
                 organization={editDrawer.organization}

@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CalendarIcon, Filter, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -45,6 +46,8 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
   onClearFilters,
   hasActiveFilters,
 }) => {
+  const { t } = useTranslation();
+
   // Convert empty string to ALL_VALUE for Select, and back on change
   const handleEntityTypeChange = (value: string) => {
     onEntityTypeChange(value === ALL_VALUE ? '' : value);
@@ -58,7 +61,7 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
     <div className="mb-6 space-y-4">
       <div className="flex items-center gap-2">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Filters</span>
+        <span className="text-sm font-medium">{t('common.filters')}</span>
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -67,7 +70,7 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
             className="h-7 px-2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3 w-3 mr-1" />
-            Clear
+            {t('common.clear')}
           </Button>
         )}
       </div>
@@ -79,10 +82,10 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
           onValueChange={handleEntityTypeChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All entity types" />
+            <SelectValue placeholder={t('audit.allEntityTypes')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_VALUE}>All entity types</SelectItem>
+            <SelectItem value={ALL_VALUE}>{t('audit.allEntityTypes')}</SelectItem>
             {Object.entries(ENTITY_TYPE_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
@@ -97,10 +100,10 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
           onValueChange={handleActionChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All actions" />
+            <SelectValue placeholder={t('audit.allActions')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_VALUE}>All actions</SelectItem>
+            <SelectItem value={ALL_VALUE}>{t('audit.allActions')}</SelectItem>
             {Object.entries(ACTION_LABELS).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
@@ -116,7 +119,7 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
             type="date"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
-            placeholder="Start date"
+            placeholder={t('audit.startDate')}
             className="pl-10"
           />
         </div>
@@ -128,7 +131,7 @@ export const AuditLogFilters: FC<AuditLogFiltersProps> = ({
             type="date"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
-            placeholder="End date"
+            placeholder={t('audit.endDate')}
             className="pl-10"
           />
         </div>

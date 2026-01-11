@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, addDays, isWeekend } from 'date-fns';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -67,6 +68,7 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
   error,
   variant = 'card',
 }) => {
+  const { t } = useTranslation();
   const today = format(new Date(), 'yyyy-MM-dd');
 
   const [formData, setFormData] = useState<FormData>({
@@ -95,23 +97,23 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
     const newErrors: FormErrors = {};
 
     if (!formData.type_id) {
-      newErrors.type_id = 'Please select an absence type';
+      newErrors.type_id = t('absences.selectAbsenceType');
     }
 
     if (!formData.start_date) {
-      newErrors.start_date = 'Start date is required';
+      newErrors.start_date = t('absences.startDateRequired');
     }
 
     if (!formData.end_date) {
-      newErrors.end_date = 'End date is required';
+      newErrors.end_date = t('absences.endDateRequired');
     } else if (formData.start_date && formData.end_date < formData.start_date) {
-      newErrors.end_date = 'End date must be after start date';
+      newErrors.end_date = t('absences.endDateAfterStart');
     }
 
     // Check balance if type affects balance
     if (selectedType?.affects_balance && selectedBalance) {
       if (estimatedDays > selectedBalance.remaining) {
-        newErrors.type_id = `Insufficient balance. You have ${selectedBalance.remaining} days remaining.`;
+        newErrors.type_id = t('absences.insufficientBalance', { days: selectedBalance.remaining });
       }
     }
 
@@ -147,7 +149,7 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="type_id">Absence Type</Label>
+        <Label htmlFor="type_id">{t('common.type')}</Label>
         <AbsenceTypeSelector
           types={absenceTypes}
           value={formData.type_id}
@@ -161,15 +163,15 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
       {selectedBalance && selectedType?.affects_balance && (
         <div className="p-3 bg-muted rounded-md">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Available balance:</span>
-            <span className="font-medium">{selectedBalance.remaining} days</span>
+            <span className="text-muted-foreground">{t('absences.availableBalance')}</span>
+            <span className="font-medium">{selectedBalance.remaining} {t('common.days')}</span>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="start_date">Start Date</Label>
+          <Label htmlFor="start_date">{t('common.startDate')}</Label>
           <Input
             id="start_date"
             type="date"
@@ -182,7 +184,7 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="end_date">End Date</Label>
+          <Label htmlFor="end_date">{t('common.endDate')}</Label>
           <Input
             id="end_date"
             type="date"
@@ -198,22 +200,22 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
       {/* Estimated days */}
       <div className="p-3 bg-muted rounded-md">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Estimated working days:</span>
-          <span className="font-medium">{estimatedDays} {estimatedDays === 1 ? 'day' : 'days'}</span>
+          <span className="text-muted-foreground">{t('absences.estimatedWorkingDays')}</span>
+          <span className="font-medium">{estimatedDays} {estimatedDays === 1 ? t('common.day') : t('common.days')}</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Weekends excluded. Final count may differ if holidays are included.
+          {t('absences.weekendsExcluded')}
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="reason">Reason (optional)</Label>
+        <Label htmlFor="reason">{t('absences.reasonOptional')}</Label>
         <textarea
           id="reason"
           value={formData.reason}
           onChange={(e) => handleChange('reason', e.target.value)}
           disabled={isLoading}
-          placeholder="Add any additional notes..."
+          placeholder={t('absences.reasonPlaceholder')}
           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
@@ -223,10 +225,10 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
   const formButtons = (
     <>
       <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-        Cancel
+        {t('common.cancel')}
       </Button>
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? 'Submitting...' : 'Submit Request'}
+        {isLoading ? t('common.submitting') : t('common.submit')}
       </Button>
     </>
   );
@@ -249,9 +251,9 @@ export const AbsenceRequestForm: FC<AbsenceRequestFormProps> = ({
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardTitle>Request Absence</CardTitle>
+        <CardTitle>{t('absences.requestAbsence')}</CardTitle>
         <CardDescription>
-          Submit a new absence request for approval.
+          {t('absences.submitRequest')}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

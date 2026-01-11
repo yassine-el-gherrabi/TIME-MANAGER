@@ -6,6 +6,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Clock, TrendingUp, Calendar, CheckCircle, Users, Globe, History, CalendarDays, ClipboardCheck, Zap } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useOnboarding } from '../hooks/useOnboarding';
@@ -27,13 +28,14 @@ import { UserRole } from '../types/auth';
 
 type Granularity = 'day' | 'week' | 'month';
 
-/** Get current month name */
-const getCurrentMonthName = (): string => {
-  return new Date().toLocaleDateString('en-US', { month: 'long' });
+/** Get current month name based on locale */
+const getCurrentMonthName = (locale: string): string => {
+  return new Date().toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' });
 };
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { user, logout } = useAuth();
   const { myKpis, fetchMyKpis, charts, fetchCharts } = useKPIStore();
   const { showOnboarding, dismissOnboarding } = useOnboarding(user?.id);
@@ -151,10 +153,10 @@ export function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Welcome, {user?.first_name}!
+            {t('dashboard.welcome', { name: user?.first_name })}
           </h1>
           <div className="flex items-center gap-4 text-muted-foreground">
-            <span>Here&apos;s your time tracking overview</span>
+            <span>{t('dashboard.overview')}</span>
             {user?.organization_timezone && (
               <span className="flex items-center gap-1 text-sm">
                 <Globe className="h-3.5 w-3.5" />
@@ -164,7 +166,7 @@ export function DashboardPage() {
           </div>
         </div>
         <Button onClick={handleLogout} variant="outline">
-          Logout
+          {t('auth.logout')}
         </Button>
       </div>
 
@@ -179,36 +181,36 @@ export function DashboardPage() {
         <div className="lg:col-span-2">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KPICard
-              title={`Hours in ${getCurrentMonthName()}`}
+              title={t('dashboard.hoursThisMonth', { month: getCurrentMonthName(i18n.language) })}
               value={hasClockData ? `${myKpis.total_hours_worked.toFixed(1)}h` : '—'}
-              description={hasClockData ? `of ${myKpis.theoretical_hours.toFixed(0)}h expected` : 'No clock entries'}
+              description={hasClockData ? t('dashboard.ofExpected', { hours: myKpis.theoretical_hours.toFixed(0) }) : t('dashboard.noClockEntries')}
               icon={<Clock className="h-5 w-5" />}
             />
             <KPICard
-              title="Punctuality Rate"
+              title={t('dashboard.punctualityRate')}
               value={hasClockData ? `${myKpis.punctuality_rate.toFixed(0)}%` : '—'}
-              description={hasClockData ? `${myKpis.days_late} late days` : 'No clock entries'}
+              description={hasClockData ? t('dashboard.lateDays', { days: myKpis.days_late }) : t('dashboard.noClockEntries')}
               icon={<CheckCircle className="h-5 w-5" />}
               trend={hasClockData ? {
                 value: myKpis.punctuality_rate >= 95 ? 5 : myKpis.punctuality_rate >= 90 ? 0 : -5,
-                label: 'target 95%',
+                label: `${t('common.target')} 95%`,
                 isPositive: myKpis.punctuality_rate >= 95,
               } : undefined}
             />
             <KPICard
-              title="Days Worked"
+              title={t('dashboard.daysWorked')}
               value={myKpis?.days_worked ?? '—'}
-              description={`in ${getCurrentMonthName()}`}
+              description={`${t('common.in')} ${getCurrentMonthName(i18n.language)}`}
               icon={<Calendar className="h-5 w-5" />}
             />
             <KPICard
-              title="Hours Variance"
+              title={t('dashboard.hoursVariance')}
               value={hasClockData ? `${myKpis.hours_variance >= 0 ? '+' : ''}${myKpis.hours_variance.toFixed(1)}h` : '—'}
-              description={hasClockData ? 'vs expected' : 'No clock entries'}
+              description={hasClockData ? t('dashboard.vsExpected') : t('dashboard.noClockEntries')}
               icon={<TrendingUp className="h-5 w-5" />}
               trend={hasClockData ? {
                 value: Math.round(myKpis.hours_variance),
-                label: 'difference',
+                label: t('common.difference'),
                 isPositive: myKpis.hours_variance >= 0,
               } : undefined}
             />
@@ -220,7 +222,7 @@ export function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <HoursBarChart
           data={charts?.data ?? []}
-          title="Hours Worked"
+          title={t('dashboard.hoursWorked')}
           periodLabel={periodLabel}
           granularity={chartGranularity}
           periodStart={chartDateRange.start_date}
@@ -230,7 +232,7 @@ export function DashboardPage() {
         />
         <TrendLineChart
           data={charts?.data ?? []}
-          title="Hours Trend"
+          title={t('dashboard.hoursTrend')}
           periodLabel={periodLabel}
           granularity={chartGranularity}
           periodStart={chartDateRange.start_date}
@@ -250,10 +252,10 @@ export function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Zap className="h-5 w-5" />
-              Quick Actions
+              {t('dashboard.quickActions')}
             </CardTitle>
             <CardDescription>
-              {isAdmin ? 'Management & personal shortcuts' : isManager ? 'Team management' : 'Personal shortcuts'}
+              {isAdmin ? t('dashboard.managementShortcuts') : isManager ? t('dashboard.teamManagement') : t('dashboard.personalShortcuts')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -264,7 +266,7 @@ export function DashboardPage() {
               onClick={() => navigate('/clock/history')}
             >
               <History className="h-4 w-4" />
-              View Clock History
+              {t('dashboard.viewClockHistory')}
             </Button>
             <Button
               variant="outline"
@@ -272,7 +274,7 @@ export function DashboardPage() {
               onClick={() => navigate('/absences')}
             >
               <CalendarDays className="h-4 w-4" />
-              Request Absence
+              {t('dashboard.requestAbsence')}
             </Button>
             <Button
               variant="outline"
@@ -280,7 +282,7 @@ export function DashboardPage() {
               onClick={() => navigate('/calendar')}
             >
               <Calendar className="h-4 w-4" />
-              Team Calendar
+              {t('dashboard.teamCalendar')}
             </Button>
 
             {/* Manager actions */}
@@ -293,7 +295,7 @@ export function DashboardPage() {
                   onClick={() => navigate('/clock/pending')}
                 >
                   <ClipboardCheck className="h-4 w-4" />
-                  Pending Clock Approvals
+                  {t('dashboard.pendingClockApprovals')}
                 </Button>
                 <Button
                   variant="outline"
@@ -301,7 +303,7 @@ export function DashboardPage() {
                   onClick={() => navigate('/absences/pending')}
                 >
                   <CheckCircle className="h-4 w-4" />
-                  Pending Absence Requests
+                  {t('dashboard.pendingAbsenceRequests')}
                 </Button>
               </>
             )}
@@ -316,7 +318,7 @@ export function DashboardPage() {
                   onClick={() => navigate('/admin/users')}
                 >
                   <Users className="h-4 w-4" />
-                  Manage Users
+                  {t('dashboard.manageUsers')}
                 </Button>
                 <Button
                   variant="outline"
@@ -324,7 +326,7 @@ export function DashboardPage() {
                   onClick={() => navigate('/admin/teams')}
                 >
                   <Users className="h-4 w-4" />
-                  Manage Teams
+                  {t('dashboard.manageTeams')}
                 </Button>
               </>
             )}
@@ -335,34 +337,34 @@ export function DashboardPage() {
       {/* User Info Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Your Profile</CardTitle>
+          <CardTitle className="text-lg">{t('dashboard.yourProfile')}</CardTitle>
           <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-            Edit Profile
+            {t('dashboard.editProfile')}
           </Button>
         </CardHeader>
         <CardContent className={`grid gap-2 sm:grid-cols-2 ${user?.role === UserRole.SuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Email</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('common.email')}</p>
             <p className="text-sm">{user?.email}</p>
           </div>
           {user?.role === UserRole.SuperAdmin && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Organization</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('users.organization')}</p>
               <p className="text-sm">{user?.organization_name}</p>
             </div>
           )}
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Role</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('users.role')}</p>
             <p className="text-sm capitalize">{user?.role?.replace('_', ' ')}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Avg Daily Hours</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('dashboard.avgDailyHours')}</p>
             <p className="text-sm">
               {hasClockData ? `${myKpis.average_daily_hours.toFixed(1)}h` : '—'}
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Settings</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('nav.settings')}</p>
             <div className="flex gap-2 mt-1">
               <Button
                 variant="link"
@@ -370,7 +372,7 @@ export function DashboardPage() {
                 className="h-auto p-0"
                 onClick={() => navigate('/settings/password')}
               >
-                Change Password
+                {t('dashboard.changePassword')}
               </Button>
               <span className="text-muted-foreground">•</span>
               <Button
@@ -379,7 +381,7 @@ export function DashboardPage() {
                 className="h-auto p-0"
                 onClick={() => navigate('/settings/sessions')}
               >
-                Sessions
+                {t('nav.sessions')}
               </Button>
             </div>
           </div>

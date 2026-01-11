@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '../ui/card';
 import { cn } from '../../lib/utils';
 import type { LeaveBalance } from '../../types/absence';
@@ -37,6 +38,7 @@ export const LeaveBalanceCard: FC<LeaveBalanceCardProps> = ({
   balance,
   className,
 }) => {
+  const { t } = useTranslation();
   const { type_name, initial_balance, used, adjustment, remaining } = balance;
   const usedPercentage = calculatePercentage(used, initial_balance);
   const colorClass = getColorClass(remaining, initial_balance);
@@ -63,11 +65,11 @@ export const LeaveBalanceCard: FC<LeaveBalanceCardProps> = ({
           {/* Details */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              Used: {used} / {initial_balance}
+              {t('absences.usedOf', { used, initial: initial_balance })}
             </span>
             {adjustment !== 0 && (
               <span className={adjustment > 0 ? 'text-green-600' : 'text-red-600'}>
-                {adjustment > 0 ? '+' : ''}{adjustment} adj.
+                {adjustment > 0 ? '+' : ''}{adjustment} {t('absences.adjustment')}
               </span>
             )}
           </div>

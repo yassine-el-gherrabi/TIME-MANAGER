@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { logger } from '../../utils/logger';
@@ -35,6 +36,7 @@ import type { UserResponse } from '../../types/user';
 import { UserRole } from '../../types/auth';
 
 export function TeamsPage() {
+  const { t } = useTranslation();
   // Org filter state (no team filter since this is the teams list)
   const {
     selectedOrgId,
@@ -195,7 +197,7 @@ export function TeamsPage() {
     setCreateDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       await teamsApi.create(data);
-      toast.success(`Team "${data.name}" has been created`);
+      toast.success(t('success.created'));
       setCreateDrawer({ open: false, loading: false, error: '' });
       setRemovedIds(new Set());
       reset();
@@ -219,7 +221,7 @@ export function TeamsPage() {
     setEditDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       await teamsApi.update(editDrawer.team.id, data);
-      toast.success(`Team "${data.name}" has been updated`);
+      toast.success(t('success.saved'));
       setEditDrawer({ open: false, team: null, loading: false, error: '' });
       setRemovedIds(new Set());
       reset();
@@ -244,7 +246,7 @@ export function TeamsPage() {
   // Delete handlers
   const handleDeleteClick = (team: TeamResponse) => {
     if (team.member_count > 0) {
-      toast.error('Remove all members before deleting the team');
+      toast.error(t('teams.removeMembersFirst'));
       return;
     }
     setDeleteDialog({ open: true, team, loading: false });
@@ -256,7 +258,7 @@ export function TeamsPage() {
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
       await teamsApi.delete(deleteDialog.team.id);
-      toast.success(`Team "${deleteDialog.team.name}" has been deleted`);
+      toast.success(t('success.deleted'));
       setRemovedIds((prev) => new Set(prev).add(deleteDialog.team!.id));
       setDeleteDialog({ open: false, team: null, loading: false });
     } catch (err) {
@@ -271,23 +273,23 @@ export function TeamsPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center justify-between">
-              <span>Teams</span>
+              <span>{t('teams.title')}</span>
               {displayTotal > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-4">
-                  {displayTotal} teams {hasActiveFilters && '(filtered)'}
+                  {hasActiveFilters ? t('teams.teamsCountFiltered', { count: displayTotal }) : t('teams.teamsCount', { count: displayTotal })}
                 </span>
               )}
             </CardTitle>
-            <CardDescription>Manage teams in your organization</CardDescription>
+            <CardDescription>{t('teams.description')}</CardDescription>
           </div>
-          <Button onClick={handleCreateClick}>Add Team</Button>
+          <Button onClick={handleCreateClick}>{t('teams.addTeam')}</Button>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}
               <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           )}
@@ -331,7 +333,7 @@ export function TeamsPage() {
 
               {!hasMore && (
                 <p className="text-center text-sm text-muted-foreground py-4">
-                  All teams loaded
+                  {t('teams.allTeamsLoaded')}
                 </p>
               )}
             </>
@@ -340,13 +342,13 @@ export function TeamsPage() {
           <ConfirmDialog
             open={deleteDialog.open}
             onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
-            title="Delete Team"
+            title={t('teams.deleteTeam')}
             description={
               deleteDialog.team
-                ? `Are you sure you want to delete "${deleteDialog.team.name}"? This action cannot be undone.`
+                ? t('teams.deleteConfirmation', { name: deleteDialog.team.name })
                 : ''
             }
-            confirmText="Delete"
+            confirmText={t('common.delete')}
             variant="destructive"
             onConfirm={handleDeleteConfirm}
             loading={deleteDialog.loading}
@@ -356,9 +358,9 @@ export function TeamsPage() {
           <Sheet open={createDrawer.open} onOpenChange={(open) => !open && handleCreateCancel()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Add Team</SheetTitle>
+                <SheetTitle>{t('teams.addTeam')}</SheetTitle>
                 <SheetDescription>
-                  Create a new team for your organization.
+                  {t('teams.addTeamDescription')}
                 </SheetDescription>
               </SheetHeader>
               <TeamForm
@@ -377,9 +379,9 @@ export function TeamsPage() {
           <Sheet open={editDrawer.open} onOpenChange={(open) => !open && handleEditCancel()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Edit Team</SheetTitle>
+                <SheetTitle>{t('teams.editTeam')}</SheetTitle>
                 <SheetDescription>
-                  Update team information
+                  {t('teams.editTeamDescription')}
                 </SheetDescription>
               </SheetHeader>
               <TeamForm
@@ -399,9 +401,9 @@ export function TeamsPage() {
           <Sheet open={membersDrawer.open} onOpenChange={(open) => !open && handleMembersClose()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Team Members</SheetTitle>
+                <SheetTitle>{t('teams.teamMembers')}</SheetTitle>
                 <SheetDescription>
-                  Manage members of {membersDrawer.team?.name}
+                  {t('teams.manageMembersOf', { name: membersDrawer.team?.name })}
                 </SheetDescription>
               </SheetHeader>
               <TeamMembersPanel

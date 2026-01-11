@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { CheckCircle, XCircle, Clock, Ban } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -33,12 +34,12 @@ const absenceStatusVariants = cva(
 
 const STATUS_CONFIG: Record<
   AbsenceStatus,
-  { label: string; Icon: typeof CheckCircle }
+  { labelKey: string; Icon: typeof CheckCircle }
 > = {
-  [AbsenceStatus.Pending]: { label: 'Pending', Icon: Clock },
-  [AbsenceStatus.Approved]: { label: 'Approved', Icon: CheckCircle },
-  [AbsenceStatus.Rejected]: { label: 'Rejected', Icon: XCircle },
-  [AbsenceStatus.Cancelled]: { label: 'Cancelled', Icon: Ban },
+  [AbsenceStatus.Pending]: { labelKey: 'absences.pending', Icon: Clock },
+  [AbsenceStatus.Approved]: { labelKey: 'absences.approved', Icon: CheckCircle },
+  [AbsenceStatus.Rejected]: { labelKey: 'absences.rejected', Icon: XCircle },
+  [AbsenceStatus.Cancelled]: { labelKey: 'absences.cancelled', Icon: Ban },
 };
 
 export interface AbsenceStatusBadgeProps
@@ -53,13 +54,14 @@ export const AbsenceStatusBadge: FC<AbsenceStatusBadgeProps> = ({
   className,
   showIcon = true,
 }) => {
+  const { t } = useTranslation();
   const config = STATUS_CONFIG[status];
   const Icon = config.Icon;
 
   return (
     <span className={cn(absenceStatusVariants({ status }), className)}>
       {showIcon && <Icon className="h-3 w-3" />}
-      {config.label}
+      {t(config.labelKey)}
     </span>
   );
 };

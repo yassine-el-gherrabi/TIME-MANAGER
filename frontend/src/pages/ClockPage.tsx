@@ -6,7 +6,11 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { List, Calendar, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { List, Calendar, Loader2, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { reportsApi } from '../api/reports';
+import { mapErrorToMessage } from '../utils/errorHandling';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
@@ -26,6 +30,7 @@ const initialFilters: ClockFilterState = {
 };
 
 export function ClockPage() {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ClockViewMode>('list');
   const [filters, setFilters] = useState<ClockFilterState>(initialFilters);
 
@@ -78,37 +83,61 @@ export function ClockPage() {
     filters.endDate !== null ||
     filters.status !== 'all';
 
+  // Export state
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await reportsApi.exportCsv('clocks', {
+        start_date: filters.startDate || undefined,
+        end_date: filters.endDate || undefined,
+      });
+      toast.success(t('success.exported'));
+    } catch (err) {
+      toast.error(mapErrorToMessage(err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with View Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clock History</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('nav.clockHistory')}</h1>
           <p className="text-muted-foreground">
-            View and manage your time tracking records
+            {t('clock.historyDescription')}
           </p>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-            className="gap-2"
-          >
-            <List className="h-4 w-4" />
-            List
+        {/* View Toggle and Export */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="ml-2">{t('common.export')}</span>
           </Button>
-          <Button
-            variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('calendar')}
-            className="gap-2"
-          >
-            <Calendar className="h-4 w-4" />
-            Calendar
-          </Button>
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="gap-2"
+            >
+              <List className="h-4 w-4" />
+              {t('clock.list')}
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              className="gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              {t('clock.calendar')}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -118,7 +147,7 @@ export function ClockPage() {
       {/* Filters */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filters</CardTitle>
+          <CardTitle className="text-base">{t('common.filters')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ClockFilters
@@ -134,9 +163,9 @@ export function ClockPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-base">
-              <span>Entries</span>
+              <span>{t('clock.entries')}</span>
               <span className="text-sm font-normal text-muted-foreground">
-                {total} entries {hasActiveFilters && '(filtered)'}
+                {t('clock.entriesCount', { total })} {hasActiveFilters && `(${t('common.filtered')})`}
               </span>
             </CardTitle>
           </CardHeader>
@@ -147,7 +176,7 @@ export function ClockPage() {
               </div>
             ) : entries.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-8">
-                No clock entries found
+                {t('clock.noEntries')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -168,7 +197,7 @@ export function ClockPage() {
                 {/* End of list indicator */}
                 {!hasMore && entries.length > 0 && (
                   <p className="text-center text-sm text-muted-foreground py-4">
-                    All entries loaded
+                    {t('common.allLoaded')}
                   </p>
                 )}
               </div>

@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import {
@@ -22,9 +23,9 @@ interface AuditLogsTableProps {
   onRowClick: (log: AuditLog) => void;
 }
 
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString: string, locale: string): string => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('fr-FR', {
+  return new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -52,6 +53,8 @@ export const AuditLogsTable: FC<AuditLogsTableProps> = ({
   isLoading,
   onRowClick,
 }) => {
+  const { t, i18n } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -63,7 +66,7 @@ export const AuditLogsTable: FC<AuditLogsTableProps> = ({
   if (logs.length === 0) {
     return (
       <div className="py-12 text-center text-muted-foreground">
-        No audit logs found
+        {t('audit.noLogs')}
       </div>
     );
   }
@@ -74,19 +77,19 @@ export const AuditLogsTable: FC<AuditLogsTableProps> = ({
         <thead>
           <tr className="border-b">
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-              Date
+              {t('audit.date')}
             </th>
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-              User
+              {t('audit.user')}
             </th>
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-              Action
+              {t('audit.action')}
             </th>
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-              Entity
+              {t('audit.entity')}
             </th>
             <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-              IP
+              {t('audit.ip')}
             </th>
           </tr>
         </thead>
@@ -98,7 +101,7 @@ export const AuditLogsTable: FC<AuditLogsTableProps> = ({
               className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
             >
               <td className="py-3 px-4">
-                <span className="text-sm">{formatDate(log.created_at)}</span>
+                <span className="text-sm">{formatDate(log.created_at, i18n.language)}</span>
               </td>
               <td className="py-3 px-4">
                 {log.user ? (
@@ -111,7 +114,7 @@ export const AuditLogsTable: FC<AuditLogsTableProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <span className="text-sm text-muted-foreground">System</span>
+                  <span className="text-sm text-muted-foreground">{t('audit.system')}</span>
                 )}
               </td>
               <td className="py-3 px-4">

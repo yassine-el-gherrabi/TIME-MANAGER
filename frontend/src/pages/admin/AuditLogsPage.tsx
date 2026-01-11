@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Loader2, Download, ScrollText } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -24,6 +25,8 @@ import type { AuditLog, AuditLogFilter } from '../../types/audit';
 import { AuditAction } from '../../types/audit';
 
 export function AuditLogsPage() {
+  const { t } = useTranslation();
+
   // Org filter state (no team filter since audit logs show user actions, not team-based)
   const {
     selectedOrgId,
@@ -131,7 +134,7 @@ export function AuditLogsPage() {
     setIsExporting(true);
     try {
       await auditLogsApi.exportCsv(fetchParams);
-      toast.success('Export started - file download will begin shortly');
+      toast.success(t('success.exported'));
     } catch (err) {
       toast.error(mapErrorToMessage(err));
     } finally {
@@ -146,15 +149,15 @@ export function AuditLogsPage() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <ScrollText className="h-5 w-5" />
-              <span>Audit Logs</span>
+              <span>{t('audit.title')}</span>
               {total > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
-                  {logs.length} of {total} entries {hasActiveFilters && '(filtered)'}
+                  {logs.length} {t('common.of')} {total} {hasActiveFilters && `(${t('common.filtered')})`}
                 </span>
               )}
             </CardTitle>
             <CardDescription>
-              System activity audit trail for compliance and security monitoring
+              {t('audit.description')}
             </CardDescription>
           </div>
           <Button
@@ -167,7 +170,7 @@ export function AuditLogsPage() {
             ) : (
               <Download className="h-4 w-4 mr-2" />
             )}
-            Export CSV
+            {t('common.export')}
           </Button>
         </CardHeader>
         <CardContent>
@@ -175,7 +178,7 @@ export function AuditLogsPage() {
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}
               <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           )}
@@ -224,7 +227,7 @@ export function AuditLogsPage() {
               {/* End of list indicator */}
               {!hasMore && (
                 <p className="text-center text-sm text-muted-foreground py-4">
-                  All audit logs loaded
+                  {t('audit.allLoaded')}
                 </p>
               )}
             </>

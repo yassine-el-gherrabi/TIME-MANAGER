@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -79,6 +80,7 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
   error,
   variant = 'card',
 }) => {
+  const { t } = useTranslation();
   const isEditing = !!organization;
 
   const [formData, setFormData] = useState<FormData>({
@@ -112,22 +114,22 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Organization name is required';
+      newErrors.name = t('organizations.nameRequired');
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = t('organizations.nameMinLength');
     } else if (formData.name.trim().length > 100) {
-      newErrors.name = 'Name must be at most 100 characters';
+      newErrors.name = t('organizations.nameMaxLength');
     }
 
     if (!isEditing) {
       if (!formData.slug.trim()) {
-        newErrors.slug = 'Slug is required';
+        newErrors.slug = t('organizations.slugRequired');
       } else if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(formData.slug)) {
-        newErrors.slug = 'Slug must contain only lowercase letters, numbers, and hyphens';
+        newErrors.slug = t('organizations.slugFormat');
       } else if (formData.slug.length < 2) {
-        newErrors.slug = 'Slug must be at least 2 characters';
+        newErrors.slug = t('organizations.slugMinLength');
       } else if (formData.slug.length > 50) {
-        newErrors.slug = 'Slug must be at most 50 characters';
+        newErrors.slug = t('organizations.slugMaxLength');
       }
     }
 
@@ -179,7 +181,7 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="org-name">Organization Name *</Label>
+        <Label htmlFor="org-name">{t('organizations.organizationName')} *</Label>
         <Input
           id="org-name"
           type="text"
@@ -187,15 +189,15 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
           onChange={(e) => handleChange('name', e.target.value)}
           error={errors.name}
           disabled={isLoading}
-          placeholder="e.g., Acme Corporation"
+          placeholder={t('organizations.namePlaceholder')}
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="org-slug">
-          Slug *
+          {t('organizations.slug')} *
           {isEditing && (
-            <span className="ml-2 text-xs text-muted-foreground">(cannot be changed)</span>
+            <span className="ml-2 text-xs text-muted-foreground">({t('organizations.cannotChange')})</span>
           )}
         </Label>
         <Input
@@ -205,15 +207,15 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
           onChange={(e) => handleSlugChange(e.target.value)}
           error={errors.slug}
           disabled={isLoading || isEditing}
-          placeholder="e.g., acme-corporation"
+          placeholder={t('organizations.slugPlaceholder')}
         />
         <p className="text-xs text-muted-foreground">
-          URL-friendly identifier. Only lowercase letters, numbers, and hyphens.
+          {t('organizations.slugDescription')}
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="org-timezone">Timezone</Label>
+        <Label htmlFor="org-timezone">{t('organizations.timezone')}</Label>
         <select
           id="org-timezone"
           value={formData.timezone}
@@ -234,10 +236,10 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
   const formButtons = (
     <>
       <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-        Cancel
+        {t('common.cancel')}
       </Button>
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save' : 'Create'}
+        {isLoading ? (isEditing ? t('common.saving') : t('common.creating')) : isEditing ? t('common.save') : t('common.create')}
       </Button>
     </>
   );
@@ -256,11 +258,11 @@ export const OrganizationForm: FC<OrganizationFormProps> = ({
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Organization' : 'Create Organization'}</CardTitle>
+        <CardTitle>{isEditing ? t('organizations.editOrganization') : t('organizations.addOrganization')}</CardTitle>
         <CardDescription>
           {isEditing
-            ? 'Update organization information'
-            : 'Create a new organization for multi-tenant management.'}
+            ? t('organizations.editOrgDescription')
+            : t('organizations.addOrgDescription')}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

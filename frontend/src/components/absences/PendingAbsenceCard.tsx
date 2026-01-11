@@ -5,6 +5,7 @@
  */
 
 import type { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Calendar, User, CheckCircle, XCircle, Building2, Users } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -51,6 +52,7 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
   isRejecting = false,
   className,
 }) => {
+  const { t } = useTranslation();
   const dateRange = formatDateRange(absence.start_date, absence.end_date);
   const isLoading = isApproving || isRejecting;
 
@@ -74,7 +76,7 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
                 </div>
                 <span className="text-muted-foreground">•</span>
                 <span className="text-sm" style={{ color: absenceType?.color }}>
-                  {absenceType?.name || 'Unknown Type'}
+                  {absenceType?.name || t('absences.unknownType')}
                 </span>
               </div>
               {/* Organization and Team info */}
@@ -98,7 +100,7 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{dateRange}</span>
                 <span className="font-medium text-foreground">
-                  ({absence.days_count} {absence.days_count === 1 ? 'day' : 'days'})
+                  ({absence.days_count} {absence.days_count === 1 ? t('common.day') : t('common.days')})
                 </span>
               </div>
 
@@ -111,7 +113,7 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
 
               {/* Submitted date */}
               <p className="text-xs text-muted-foreground">
-                Submitted {format(new Date(absence.created_at), 'MMM d, yyyy \'at\' HH:mm')}
+                {t('absences.submitted', { date: format(new Date(absence.created_at), 'MMM d, yyyy HH:mm') })}
               </p>
             </div>
           </div>
@@ -125,7 +127,7 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
               className="gap-1"
             >
               <CheckCircle className="h-4 w-4" />
-              {isApproving ? 'Approving...' : 'Approve'}
+              {isApproving ? t('common.approving') : t('common.approve')}
             </Button>
             <Button
               size="sm"
@@ -135,7 +137,7 @@ export const PendingAbsenceCard: FC<PendingAbsenceCardProps> = ({
               className="gap-1 text-destructive hover:text-destructive"
             >
               <XCircle className="h-4 w-4" />
-              {isRejecting ? 'Rejecting...' : 'Reject'}
+              {isRejecting ? t('common.rejecting') : t('common.reject')}
             </Button>
           </div>
         </div>

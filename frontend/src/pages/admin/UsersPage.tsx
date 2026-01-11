@@ -7,8 +7,10 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
+import { reportsApi } from '../../api/reports';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { ConfirmDialog } from '../../components/ui/confirm-dialog';
@@ -31,6 +33,7 @@ import type { ScheduleOption } from '../../components/admin/UserForm';
 import { UserRole } from '../../types/auth';
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const currentUser = useAuthStore((state) => state.user);
 
   // Org/Team filter state
@@ -164,7 +167,7 @@ export function UsersPage() {
     setCreateDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       await usersApi.create(data);
-      toast.success(`${data.first_name} ${data.last_name} has been invited`);
+      toast.success(t('success.created'));
       setCreateDrawer({ open: false, loading: false, error: '' });
       // Reset the list to show the new user
       setRemovedIds(new Set());
@@ -189,7 +192,7 @@ export function UsersPage() {
     setEditDrawer((prev) => ({ ...prev, loading: true, error: '' }));
     try {
       await usersApi.update(editDrawer.user.id, data);
-      toast.success(`${data.first_name} ${data.last_name} has been updated`);
+      toast.success(t('success.saved'));
       setEditDrawer({ open: false, user: null, loading: false, error: '' });
       // Reset the list to refresh with updated data
       setRemovedIds(new Set());
@@ -214,7 +217,7 @@ export function UsersPage() {
     setDeleteDialog((prev) => ({ ...prev, loading: true }));
     try {
       await usersApi.delete(deleteDialog.user.id);
-      toast.success(`${deleteDialog.user.first_name} ${deleteDialog.user.last_name} has been deleted`);
+      toast.success(t('success.deleted'));
       // Optimistic removal from local list (unless showing deleted)
       if (!filters.showDeleted) {
         setRemovedIds((prev) => new Set(prev).add(deleteDialog.user!.id));
@@ -240,7 +243,7 @@ export function UsersPage() {
     setRestoreDialog((prev) => ({ ...prev, loading: true }));
     try {
       await usersApi.restore(restoreDialog.user.id);
-      toast.success(`${restoreDialog.user.first_name} ${restoreDialog.user.last_name} has been restored`);
+      toast.success(t('success.restored'));
       // Reset the list to refresh with restored user
       setRemovedIds(new Set());
       reset();
@@ -254,7 +257,7 @@ export function UsersPage() {
   const handleResendInvite = async (user: UserResponse) => {
     try {
       await usersApi.resendInvite(user.id);
-      toast.success(`Invitation resent to ${user.email}`);
+      toast.success(t('success.inviteResent'));
     } catch (err) {
       toast.error(mapErrorToMessage(err));
     }
@@ -265,13 +268,28 @@ export function UsersPage() {
     try {
       if (scheduleId === null) {
         await schedulesApi.unassignFromUser(userId);
-        toast.success('Schedule removed successfully');
+        toast.success(t('success.saved'));
       } else {
         await schedulesApi.assignToUser(userId, { schedule_id: scheduleId });
-        toast.success('Schedule assigned successfully');
+        toast.success(t('success.saved'));
       }
     } catch (err) {
       toast.error(mapErrorToMessage(err));
+    }
+  };
+
+  // Export state
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await reportsApi.exportCsv('users');
+      toast.success(t('success.exported'));
+    } catch (err) {
+      toast.error(mapErrorToMessage(err));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -281,23 +299,29 @@ export function UsersPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center justify-between">
-              <span>Users</span>
+              <span>{t('users.title')}</span>
               {displayTotal > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-4">
-                  {displayTotal} users {hasActiveFilters && '(filtered)'}
+                  {hasActiveFilters ? t('users.usersCountFiltered', { count: displayTotal }) : t('users.usersCount', { count: displayTotal })}
                 </span>
               )}
             </CardTitle>
-            <CardDescription>Manage users in your organization</CardDescription>
+            <CardDescription>{t('users.description')}</CardDescription>
           </div>
-          <Button onClick={handleCreateClick}>Add User</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={exporting}>
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span className="ml-2">{t('common.export')}</span>
+            </Button>
+            <Button onClick={handleCreateClick}>{t('users.addUser')}</Button>
+          </div>
         </CardHeader>
         <CardContent>
           {error && (
             <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
               {error.message}
               <Button variant="outline" size="sm" className="ml-2" onClick={reset}>
-                Try again
+                {t('common.tryAgain')}
               </Button>
             </div>
           )}
@@ -348,7 +372,7 @@ export function UsersPage() {
               {/* End of list indicator */}
               {!hasMore && (
                 <p className="text-center text-sm text-muted-foreground py-4">
-                  All users loaded
+                  {t('users.allUsersLoaded')}
                 </p>
               )}
             </>
@@ -358,13 +382,13 @@ export function UsersPage() {
           <ConfirmDialog
             open={deleteDialog.open}
             onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
-            title="Delete User"
+            title={t('users.deleteUser')}
             description={
               deleteDialog.user
-                ? `Are you sure you want to delete ${deleteDialog.user.first_name} ${deleteDialog.user.last_name}? The user will be soft-deleted and can be restored later.`
+                ? t('users.deleteConfirmation', { name: `${deleteDialog.user.first_name} ${deleteDialog.user.last_name}` })
                 : ''
             }
-            confirmText="Delete"
+            confirmText={t('common.delete')}
             variant="destructive"
             onConfirm={handleDeleteConfirm}
             loading={deleteDialog.loading}
@@ -374,13 +398,13 @@ export function UsersPage() {
           <ConfirmDialog
             open={restoreDialog.open}
             onOpenChange={(open) => setRestoreDialog((prev) => ({ ...prev, open }))}
-            title="Restore User"
+            title={t('users.restoreUser')}
             description={
               restoreDialog.user
-                ? `Are you sure you want to restore ${restoreDialog.user.first_name} ${restoreDialog.user.last_name}? They will be able to access the system again.`
+                ? t('users.restoreConfirmation', { name: `${restoreDialog.user.first_name} ${restoreDialog.user.last_name}` })
                 : ''
             }
-            confirmText="Restore"
+            confirmText={t('common.restore')}
             onConfirm={handleRestoreConfirm}
             loading={restoreDialog.loading}
           />
@@ -389,9 +413,9 @@ export function UsersPage() {
           <Sheet open={createDrawer.open} onOpenChange={(open) => !open && handleCreateCancel()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Add User</SheetTitle>
+                <SheetTitle>{t('users.addUser')}</SheetTitle>
                 <SheetDescription>
-                  Create a new user. They will receive an invitation email.
+                  {t('users.addUserDescription')}
                 </SheetDescription>
               </SheetHeader>
               <UserForm
@@ -408,9 +432,9 @@ export function UsersPage() {
           <Sheet open={editDrawer.open} onOpenChange={(open) => !open && handleEditCancel()}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Edit User</SheetTitle>
+                <SheetTitle>{t('users.editUser')}</SheetTitle>
                 <SheetDescription>
-                  Update user information
+                  {t('users.editUserDescription')}
                 </SheetDescription>
               </SheetHeader>
               <UserForm

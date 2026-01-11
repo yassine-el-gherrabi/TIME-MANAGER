@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -48,6 +49,7 @@ export const TeamForm: FC<TeamFormProps> = ({
   managers = [],
   schedules = [],
 }) => {
+  const { t } = useTranslation();
   const isEditing = !!team;
 
   const [formData, setFormData] = useState<FormData>({
@@ -81,7 +83,7 @@ export const TeamForm: FC<TeamFormProps> = ({
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Team name is required';
+      newErrors.name = t('validation.teamNameRequired');
     }
 
     setErrors(newErrors);
@@ -127,7 +129,7 @@ export const TeamForm: FC<TeamFormProps> = ({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="team-name">Team Name *</Label>
+        <Label htmlFor="team-name">{t('teams.teamName')} *</Label>
         <Input
           id="team-name"
           type="text"
@@ -135,24 +137,24 @@ export const TeamForm: FC<TeamFormProps> = ({
           onChange={(e) => handleChange('name', e.target.value)}
           error={errors.name}
           disabled={isLoading}
-          placeholder="e.g., Engineering, Marketing"
+          placeholder={t('teams.teamNamePlaceholder')}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="team-description">Description</Label>
+        <Label htmlFor="team-description">{t('common.description')}</Label>
         <Input
           id="team-description"
           type="text"
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
           disabled={isLoading}
-          placeholder="Optional team description"
+          placeholder={t('teams.descriptionPlaceholder')}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="team-manager">Manager</Label>
+        <Label htmlFor="team-manager">{t('teams.manager')}</Label>
         <select
           id="team-manager"
           value={formData.manager_id}
@@ -160,7 +162,7 @@ export const TeamForm: FC<TeamFormProps> = ({
           disabled={isLoading}
           className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <option value="">No manager assigned</option>
+          <option value="">{t('teams.noManagerAssigned')}</option>
           {managers.map((manager) => (
             <option key={manager.id} value={manager.id}>
               {manager.name}
@@ -171,7 +173,7 @@ export const TeamForm: FC<TeamFormProps> = ({
 
       {schedules.length > 0 && (
         <div className="space-y-2">
-          <Label htmlFor="team-schedule">Default Schedule</Label>
+          <Label htmlFor="team-schedule">{t('teams.defaultSchedule')}</Label>
           <select
             id="team-schedule"
             value={formData.work_schedule_id}
@@ -179,7 +181,7 @@ export const TeamForm: FC<TeamFormProps> = ({
             disabled={isLoading}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="">No default schedule</option>
+            <option value="">{t('teams.noDefaultSchedule')}</option>
             {schedules.map((schedule) => (
               <option key={schedule.id} value={schedule.id}>
                 {schedule.name}
@@ -194,10 +196,10 @@ export const TeamForm: FC<TeamFormProps> = ({
   const formButtons = (
     <>
       <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-        Cancel
+        {t('common.cancel')}
       </Button>
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save' : 'Create'}
+        {isLoading ? (isEditing ? t('common.saving') : t('common.creating')) : isEditing ? t('common.save') : t('common.create')}
       </Button>
     </>
   );
@@ -220,11 +222,11 @@ export const TeamForm: FC<TeamFormProps> = ({
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Team' : 'Create Team'}</CardTitle>
+        <CardTitle>{isEditing ? t('teams.editTeam') : t('teams.addTeam')}</CardTitle>
         <CardDescription>
           {isEditing
-            ? 'Update team information'
-            : 'Create a new team for your organization.'}
+            ? t('teams.editTeamDescription')
+            : t('teams.addTeamDescription')}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

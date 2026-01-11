@@ -1,8 +1,10 @@
 import { Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LoginForm, AuthLayout } from '../components/auth';
 import { useAuth } from '../hooks/useAuth';
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const { needsSetup, isAuthenticated } = useAuth();
 
   // Redirect to setup wizard if system needs initial setup
@@ -16,7 +18,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome Back">
+    <AuthLayout title={t('auth.welcomeBack')}>
       <LoginForm />
     </AuthLayout>
   );

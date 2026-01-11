@@ -1,8 +1,9 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { withTranslation, type WithTranslation } from 'react-i18next';
 import { Button } from './ui/button';
 import { logger } from '../utils/logger';
 
-interface ErrorBoundaryProps {
+interface ErrorBoundaryProps extends WithTranslation {
   children: ReactNode;
   fallback?: ReactNode;
 }
@@ -16,7 +17,7 @@ interface ErrorBoundaryState {
  * Error Boundary component to catch JavaScript errors in child components
  * and display a fallback UI instead of crashing the entire application.
  */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -42,6 +43,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   };
 
   render(): ReactNode {
+    const { t } = this.props;
+
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
@@ -51,9 +54,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="flex min-h-screen items-center justify-center bg-background p-4">
           <div className="w-full max-w-md space-y-6 text-center">
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t('errors.somethingWentWrong')}</h1>
               <p className="text-muted-foreground">
-                An unexpected error occurred. Please try again.
+                {t('errors.unexpectedError')}
               </p>
             </div>
 
@@ -67,10 +70,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             <div className="flex justify-center gap-4">
               <Button variant="outline" onClick={this.handleReset}>
-                Try Again
+                {t('common.tryAgain')}
               </Button>
               <Button onClick={this.handleReload}>
-                Reload Page
+                {t('common.reloadPage')}
               </Button>
             </div>
           </div>
@@ -81,3 +84,5 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return this.props.children;
   }
 }
+
+export const ErrorBoundary = withTranslation()(ErrorBoundaryClass);

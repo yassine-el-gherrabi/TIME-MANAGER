@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FC, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building2, Users } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -71,6 +72,7 @@ export const UserForm: FC<UserFormProps> = ({
   onScheduleAssign,
   onTeamAssign,
 }) => {
+  const { t } = useTranslation();
   const currentUser = useCurrentUser();
   const isEditing = !!user;
   const isSuperAdmin = currentUser?.role === UserRole.SuperAdmin;
@@ -155,17 +157,17 @@ export const UserForm: FC<UserFormProps> = ({
     const newErrors: FormErrors = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = t('validation.invalidEmail');
     }
 
     if (!formData.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
+      newErrors.first_name = t('validation.firstNameRequired');
     }
 
     if (!formData.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
+      newErrors.last_name = t('validation.lastNameRequired');
     }
 
     setErrors(newErrors);
@@ -220,7 +222,7 @@ export const UserForm: FC<UserFormProps> = ({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('common.email')}</Label>
         <Input
           id="email"
           type="email"
@@ -234,7 +236,7 @@ export const UserForm: FC<UserFormProps> = ({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="first_name">First Name</Label>
+          <Label htmlFor="first_name">{t('users.firstName')}</Label>
           <Input
             id="first_name"
             type="text"
@@ -247,7 +249,7 @@ export const UserForm: FC<UserFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="last_name">Last Name</Label>
+          <Label htmlFor="last_name">{t('users.lastName')}</Label>
           <Input
             id="last_name"
             type="text"
@@ -261,7 +263,7 @@ export const UserForm: FC<UserFormProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="role">Role</Label>
+        <Label htmlFor="role">{t('users.role')}</Label>
         <select
           id="role"
           value={formData.role}
@@ -269,10 +271,10 @@ export const UserForm: FC<UserFormProps> = ({
           disabled={isLoading}
           className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <option value={UserRole.Employee}>Employee</option>
-          <option value={UserRole.Manager}>Manager</option>
-          <option value={UserRole.Admin}>Admin</option>
-          <option value={UserRole.SuperAdmin}>Super Admin</option>
+          <option value={UserRole.Employee}>{t('roles.employee')}</option>
+          <option value={UserRole.Manager}>{t('roles.manager')}</option>
+          <option value={UserRole.Admin}>{t('roles.admin')}</option>
+          <option value={UserRole.SuperAdmin}>{t('roles.superAdmin')}</option>
         </select>
       </div>
 
@@ -281,7 +283,7 @@ export const UserForm: FC<UserFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="organization" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            Organization
+            {t('users.organization')}
           </Label>
           {isSuperAdmin ? (
             <select
@@ -291,7 +293,7 @@ export const UserForm: FC<UserFormProps> = ({
               disabled={isLoading || loadingOrgs}
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="">Select organization...</option>
+              <option value="">{t('users.selectOrganization')}</option>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.name}
@@ -301,7 +303,7 @@ export const UserForm: FC<UserFormProps> = ({
           ) : (
             <div className="flex items-center gap-2 h-9">
               <Badge variant="secondary" className="text-sm">
-                {currentUser?.organization_name || 'Your Organization'}
+                {currentUser?.organization_name || t('users.yourOrganization')}
               </Badge>
             </div>
           )}
@@ -313,7 +315,7 @@ export const UserForm: FC<UserFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="team" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Team (Optional)
+            {t('users.teamOptional')}
           </Label>
           <select
             id="team"
@@ -322,7 +324,7 @@ export const UserForm: FC<UserFormProps> = ({
             disabled={isLoading || loadingTeams || teams.length === 0}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="">No team assignment</option>
+            <option value="">{t('users.noTeamAssignment')}</option>
             {teams.map((team) => (
               <option key={team.id} value={team.id}>
                 {team.name}
@@ -330,7 +332,7 @@ export const UserForm: FC<UserFormProps> = ({
             ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            {loadingTeams ? 'Loading teams...' : teams.length === 0 ? 'No teams available' : 'Assign to a team for schedule inheritance'}
+            {loadingTeams ? t('users.loadingTeams') : teams.length === 0 ? t('users.noTeamsAvailable') : t('users.assignToTeam')}
           </p>
         </div>
       )}
@@ -338,7 +340,7 @@ export const UserForm: FC<UserFormProps> = ({
       {/* Schedule assignment - show in both create and edit modes */}
       {schedules.length > 0 && (
         <div className="space-y-2">
-          <Label htmlFor="schedule">Personal Schedule</Label>
+          <Label htmlFor="schedule">{t('users.personalSchedule')}</Label>
           <select
             id="schedule"
             value={formData.schedule_id}
@@ -346,8 +348,8 @@ export const UserForm: FC<UserFormProps> = ({
             disabled={isLoading}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="">{isEditing ? '— No change —' : 'Use team/org default'}</option>
-            {isEditing && <option value="none">Remove personal schedule</option>}
+            <option value="">{isEditing ? t('users.noChange') : t('users.useTeamDefault')}</option>
+            {isEditing && <option value="none">{t('users.removePersonalSchedule')}</option>}
             {schedules.map((schedule) => (
               <option key={schedule.id} value={schedule.id}>
                 {schedule.name}
@@ -355,7 +357,7 @@ export const UserForm: FC<UserFormProps> = ({
             ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            {isEditing ? 'Personal schedules override team defaults' : 'Assign a personal schedule (overrides team default)'}
+            {isEditing ? t('users.personalScheduleOverride') : t('users.assignPersonalSchedule')}
           </p>
         </div>
       )}
@@ -365,10 +367,10 @@ export const UserForm: FC<UserFormProps> = ({
   const formButtons = (
     <>
       <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-        Cancel
+        {t('common.cancel')}
       </Button>
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save' : 'Create'}
+        {isLoading ? (isEditing ? t('common.saving') : t('common.creating')) : isEditing ? t('common.save') : t('common.create')}
       </Button>
     </>
   );
@@ -391,11 +393,11 @@ export const UserForm: FC<UserFormProps> = ({
   return (
     <Card className="w-full max-w-lg">
       <CardHeader>
-        <CardTitle>{isEditing ? 'Edit User' : 'Create User'}</CardTitle>
+        <CardTitle>{isEditing ? t('users.editUser') : t('users.addUser')}</CardTitle>
         <CardDescription>
           {isEditing
-            ? 'Update user information'
-            : 'Create a new user. They will receive an invitation email.'}
+            ? t('users.editUserDescription')
+            : t('users.addUserDescription')}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

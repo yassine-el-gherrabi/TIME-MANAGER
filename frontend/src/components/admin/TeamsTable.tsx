@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import type { TeamResponse } from '../../types/team';
 
@@ -26,10 +27,12 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
   isLoading,
   managerNames = {},
 }) => {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">Loading teams...</div>
+        <div className="text-muted-foreground">{t('teams.loadingTeams')}</div>
       </div>
     );
   }
@@ -37,7 +40,7 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
   if (teams.length === 0) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-muted-foreground">No teams found</div>
+        <div className="text-muted-foreground">{t('teams.noTeams')}</div>
       </div>
     );
   }
@@ -48,19 +51,19 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
         <thead>
           <tr className="border-b bg-muted/50">
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Name
+              {t('common.name')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Description
+              {t('common.description')}
             </th>
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-              Manager
+              {t('teams.manager')}
             </th>
             <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
-              Members
+              {t('teams.members')}
             </th>
             <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-              Actions
+              {t('common.actions')}
             </th>
           </tr>
         </thead>
@@ -71,15 +74,15 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
                 <div className="font-medium">{team.name}</div>
               </td>
               <td className="px-4 py-3 text-sm text-muted-foreground">
-                {team.description || <span className="italic">No description</span>}
+                {team.description || <span className="italic">{t('teams.noDescription')}</span>}
               </td>
               <td className="px-4 py-3 text-sm text-muted-foreground">
                 {team.manager_id ? (
                   managerNames[team.manager_id] || (
-                    <span className="text-xs text-muted-foreground/70">Loading...</span>
+                    <span className="text-xs text-muted-foreground/70">{t('common.loading')}</span>
                   )
                 ) : (
-                  <span className="italic">No manager</span>
+                  <span className="italic">{t('teams.noManager')}</span>
                 )}
               </td>
               <td className="px-4 py-3 text-sm text-center">
@@ -96,10 +99,10 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
               <td className="px-4 py-3 text-sm text-right">
                 <div className="flex items-center justify-end gap-2">
                   <Button variant="outline" size="sm" onClick={() => onEdit(team)}>
-                    Edit
+                    {t('common.edit')}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => onManageMembers(team)}>
-                    Members
+                    {t('teams.members')}
                   </Button>
                   <Button
                     variant="outline"
@@ -107,9 +110,9 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
                     className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/50"
                     onClick={() => onDelete(team)}
                     disabled={team.member_count > 0}
-                    title={team.member_count > 0 ? 'Remove all members first' : 'Delete team'}
+                    title={team.member_count > 0 ? t('teams.removeMembersFirst') : t('teams.deleteTeam')}
                   >
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </div>
               </td>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -15,6 +16,7 @@ export interface LoginFormProps {
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/dashboard' }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
@@ -27,13 +29,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
     const newErrors: Partial<Record<keyof LoginRequest, string>> = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('validation.required');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = t('validation.invalidEmail');
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validation.required');
     }
 
     setErrors(newErrors);
@@ -67,8 +69,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>Enter your credentials to access your account</CardDescription>
+        <CardTitle>{t('auth.login')}</CardTitle>
+        <CardDescription>{t('auth.enterCredentials')}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} noValidate>
         <CardContent className="space-y-4">
@@ -79,7 +81,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email')}</Label>
             <Input
               id="email"
               name="email"
@@ -93,7 +95,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <Input
               id="password"
               name="password"
@@ -109,10 +111,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, redirectTo = '/
 
         <CardFooter className="flex flex-col space-y-2">
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? t('common.loading') : t('auth.signIn')}
           </Button>
           <a href="/password-reset-request" className="text-sm text-primary hover:underline">
-            Forgot password?
+            {t('auth.forgotPassword')}
           </a>
         </CardFooter>
       </form>

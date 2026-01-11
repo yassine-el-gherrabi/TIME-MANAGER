@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../../api/auth';
 import { Button } from '../ui/button';
@@ -9,6 +10,7 @@ import { PasswordRequirements, isPasswordValid } from '../ui/password-requiremen
 import { mapErrorToMessage } from '../../utils/errorHandling';
 
 export const PasswordResetForm: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
@@ -23,15 +25,15 @@ export const PasswordResetForm: React.FC = () => {
     const newErrors = { password: '', confirmPassword: '' };
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validation.passwordRequired');
     } else if (!isPasswordValid(password)) {
-      newErrors.password = 'Password does not meet all requirements';
+      newErrors.password = t('validation.passwordRequirements');
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = t('validation.confirmPasswordRequired');
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('validation.passwordMismatch');
     }
 
     setErrors(newErrors);
@@ -43,7 +45,7 @@ export const PasswordResetForm: React.FC = () => {
     setApiError('');
 
     if (!token) {
-      setApiError('Invalid reset token');
+      setApiError(t('auth.invalidResetToken'));
       return;
     }
 
@@ -52,7 +54,7 @@ export const PasswordResetForm: React.FC = () => {
     setIsLoading(true);
     try {
       await authApi.resetPassword({ reset_token: token, new_password: password });
-      navigate('/login', { state: { message: 'Password reset successful. Please log in.' } });
+      navigate('/login', { state: { message: t('auth.passwordResetSuccess') } });
     } catch (err) {
       setApiError(mapErrorToMessage(err));
     } finally {
@@ -63,8 +65,8 @@ export const PasswordResetForm: React.FC = () => {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create New Password</CardTitle>
-        <CardDescription>Enter your new password below</CardDescription>
+        <CardTitle>{t('auth.createNewPassword')}</CardTitle>
+        <CardDescription>{t('auth.enterNewPassword')}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -74,7 +76,7 @@ export const PasswordResetForm: React.FC = () => {
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="password">New Password</Label>
+            <Label htmlFor="password">{t('auth.newPassword')}</Label>
             <Input
               id="password"
               type="password"
@@ -86,7 +88,7 @@ export const PasswordResetForm: React.FC = () => {
             {password && <PasswordRequirements password={password} />}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -99,7 +101,7 @@ export const PasswordResetForm: React.FC = () => {
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Resetting...' : 'Reset Password'}
+            {isLoading ? t('auth.resetting') : t('auth.resetPassword')}
           </Button>
         </CardFooter>
       </form>
