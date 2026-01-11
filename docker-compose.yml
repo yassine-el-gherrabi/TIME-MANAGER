@@ -100,10 +100,11 @@ services:
     networks:
       - timemanager-network
 
-  # ========== MAILPIT (toujours actif) ==========
+  # ========== MAILPIT (dev profile) ==========
   mailpit:
     image: axllent/mailpit:latest
     container_name: timemanager-mailpit
+    profiles: ["dev"]
     ports:
       - "8025:8025"
       - "1025:1025"
@@ -113,10 +114,11 @@ services:
     networks:
       - timemanager-network
 
-  # ========== PGADMIN (UI PostgreSQL) ==========
+  # ========== PGADMIN (dev profile) ==========
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: timemanager-pgadmin
+    profiles: ["dev"]
     ports:
       - "5050:80"
     environment:
@@ -130,10 +132,11 @@ services:
     networks:
       - timemanager-network
 
-  # ========== PROMETHEUS (toujours actif) ==========
+  # ========== PROMETHEUS (monitoring profile) ==========
   prometheus:
     image: prom/prometheus:latest
     container_name: timemanager-prometheus
+    profiles: ["monitoring"]
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -146,10 +149,11 @@ services:
       - timemanager-network
     restart: unless-stopped
 
-  # ========== LOKI (toujours actif) ==========
+  # ========== LOKI (monitoring profile) ==========
   loki:
     image: grafana/loki:latest
     container_name: timemanager-loki
+    profiles: ["monitoring"]
     command: -config.file=/etc/loki/loki-config.yml
     ports:
       - "3100:3100"
@@ -160,10 +164,11 @@ services:
       - timemanager-network
     restart: unless-stopped
 
-  # ========== PROMTAIL (log collector for Loki) ==========
+  # ========== PROMTAIL (monitoring profile) ==========
   promtail:
     image: grafana/promtail:latest
     container_name: timemanager-promtail
+    profiles: ["monitoring"]
     command: -config.file=/etc/promtail/promtail.yml
     volumes:
       - "./infrastructure/promtail/promtail.yml:/etc/promtail/promtail.yml:ro"
@@ -174,10 +179,11 @@ services:
       - loki
     restart: unless-stopped
 
-  # ========== TEMPO (distributed tracing) ==========
+  # ========== TEMPO (monitoring profile) ==========
   tempo:
     image: grafana/tempo:latest
     container_name: timemanager-tempo
+    profiles: ["monitoring"]
     command: ["-config.file=/etc/tempo/tempo.yml"]
     user: "0:0"
     ports:
@@ -191,10 +197,11 @@ services:
       - timemanager-network
     restart: unless-stopped
 
-  # ========== CADVISOR (container metrics) ==========
+  # ========== CADVISOR (monitoring profile) ==========
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: timemanager-cadvisor
+    profiles: ["monitoring"]
     ports:
       - "8082:8080"
     volumes:
@@ -206,10 +213,11 @@ services:
       - timemanager-network
     restart: unless-stopped
 
-  # ========== GRAFANA (toujours actif) ==========
+  # ========== GRAFANA (monitoring profile) ==========
   grafana:
     image: grafana/grafana:latest
     container_name: timemanager-grafana
+    profiles: ["monitoring"]
     ports:
       - "3001:3000"
     environment:
