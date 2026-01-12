@@ -21,6 +21,24 @@ services:
     networks:
       - timemanager-network
 
+  # ========== DATABASE INIT (Seed) ==========
+  db-init:
+    image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
+    container_name: timemanager-db-init
+    entrypoint: ["/bin/bash", "/app/scripts/init-seed.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: timemanager
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: timemanager
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - timemanager-network
+    restart: "no"
+
   # ========== BACKEND ==========
   backend:
     image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
@@ -49,6 +67,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api`)"
