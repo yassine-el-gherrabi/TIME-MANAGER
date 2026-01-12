@@ -49,7 +49,7 @@ if [ -n "$NO_SEED" ]; then
 else
     echo ""
     echo "🌱 Seeding database with demo data..."
-    SEED_FILE="/app/scripts/seed.sql"
+    SEED_FILE="/app/scripts/demo-seed.sql"
 
     if [ -f "$SEED_FILE" ]; then
         if psql "$DATABASE_URL" -f "$SEED_FILE" 2>/dev/null; then
@@ -72,10 +72,12 @@ if [ -n "$NO_SEED" ]; then
     echo "   Bootstrap: POST /api/v1/auth/bootstrap"
 else
     echo "🔐 Demo Users (password: Password123!):"
-    echo "   - superadmin@demo.com (Super Admin)"
-    echo "   - admin@demo.com      (Admin)"
-    echo "   - manager@demo.com    (Manager)"
-    echo "   - employee@demo.com   (Employee)"
+    echo "   - demo@timemanager.com      (Super Admin)"
+    echo "   - sophie.bernard@demo.com   (Admin - HR)"
+    echo "   - jean.dupont@demo.com      (Manager - Tech)"
+    echo "   - marie.martin@demo.com     (Employee - Tech)"
+    echo ""
+    echo "📊 Data: 45 users, 6 teams, 6 months history"
 fi
 echo ""
 echo "🔗 Services:"
