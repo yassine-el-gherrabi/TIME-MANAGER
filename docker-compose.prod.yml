@@ -1,0 +1,251 @@
+# Production Docker Compose for Hetzner deployment
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  # ========== DATABASE ==========
+  postgres:
+    image: postgres:16-alpine
+    container_name: timemanager-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: timemanager
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: timemanager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U timemanager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - timemanager-network
+
+  # ========== DATABASE INIT (Seed) ==========
+  db-init:
+    image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
+    container_name: timemanager-db-init
+    entrypoint: ["/bin/bash", "/app/scripts/init-seed.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: timemanager
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: timemanager
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - timemanager-network
+    restart: "no"
+
+  # ========== BACKEND ==========
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
+    container_name: timemanager-backend
+    restart: unless-stopped
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      DATABASE_URL: postgres://timemanager:${POSTGRES_PASSWORD}@postgres:5432/timemanager
+      RUST_LOG: ${RUST_LOG:-info}
+      JWT_KEYS_PATH: /app/keys
+      JWT_ACCESS_TOKEN_EXPIRY_SECONDS: ${JWT_ACCESS_TOKEN_EXPIRY_SECONDS:-900}
+      JWT_REFRESH_TOKEN_EXPIRY_SECONDS: ${JWT_REFRESH_TOKEN_EXPIRY_SECONDS:-604800}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://${DOMAIN:-localhost}}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@timemanager.local}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Time Manager}
+      FRONTEND_URL: ${FRONTEND_URL:-https://${DOMAIN:-localhost}}
+    volumes:
+      - ./keys:/app/keys:ro
+    # Health check defined in Dockerfile.prod (curl to /health)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend.middlewares=strip-api-prefix@file,security-headers@file,rate-limit-global@file"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+      # HTTP redirect
+      - "traefik.http.routers.backend-http.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-http.entrypoints=web"
+      - "traefik.http.routers.backend-http.middlewares=redirect-to-https@file"
+    networks:
+      - timemanager-network
+
+  # ========== FRONTEND ==========
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/frontend:${IMAGE_TAG:-latest}
+    container_name: timemanager-frontend
+    restart: unless-stopped
+    # Health check defined in Dockerfile.prod (wget to /)
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.middlewares=security-headers@file"
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
+      # HTTP redirect
+      - "traefik.http.routers.frontend-http.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend-http.entrypoints=web"
+      - "traefik.http.routers.frontend-http.middlewares=redirect-to-https@file"
+    networks:
+      - timemanager-network
+
+  # ========== POSTGRES BACKUP (Daily backups) ==========
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local:16-alpine
+    container_name: timemanager-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: timemanager
+      POSTGRES_USER: timemanager
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SCHEDULE: "@daily"                    # Backup every day at midnight
+      BACKUP_KEEP_DAYS: 7                   # Keep 7 daily backups
+      BACKUP_KEEP_WEEKS: 4                  # Keep 4 weekly backups
+      BACKUP_KEEP_MONTHS: 6                 # Keep 6 monthly backups
+      HEALTHCHECK_PORT: 8080
+    volumes:
+      - postgres_backups:/backups
+    networks:
+      - timemanager-network
+
+  # ========== TRAEFIK (Reverse Proxy + HTTPS) ==========
+  traefik:
+    image: traefik:v2.11
+    container_name: timemanager-traefik
+    restart: unless-stopped
+    command:
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./infrastructure/traefik/traefik-prod.yml:/etc/traefik/traefik.yml:ro"
+      - "./infrastructure/traefik/dynamic-prod.yml:/etc/traefik/dynamic.yml:ro"
+      - "letsencrypt_data:/letsencrypt"
+    networks:
+      - timemanager-network
+
+  # ========== MONITORING STACK (optional, use --profile monitoring) ==========
+
+  # Prometheus - Metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: timemanager-prometheus
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - "./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - prometheus_data:/prometheus
+    networks:
+      - timemanager-network
+
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: timemanager-loki
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - "./infrastructure/loki/loki-config.yml:/etc/loki/loki-config.yml:ro"
+      - loki_data:/loki
+    networks:
+      - timemanager-network
+
+  # Promtail - Log collector
+  promtail:
+    image: grafana/promtail:latest
+    container_name: timemanager-promtail
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - "./infrastructure/promtail/promtail.yml:/etc/promtail/promtail.yml:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    depends_on:
+      - loki
+    networks:
+      - timemanager-network
+
+  # Tempo - Distributed tracing
+  tempo:
+    image: grafana/tempo:latest
+    container_name: timemanager-tempo
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - "./infrastructure/tempo/tempo.yml:/etc/tempo/tempo.yml:ro"
+      - tempo_data:/var/tempo
+    networks:
+      - timemanager-network
+
+  # Grafana - Dashboards and visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: timemanager-grafana
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://${DOMAIN:-localhost}/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - "./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro"
+      - "./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards:ro"
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/grafana`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    networks:
+      - timemanager-network
+
+volumes:
+  postgres_data:
+  postgres_backups:
+  letsencrypt_data:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+  grafana_data:
+
+networks:
+  timemanager-network:
+    driver: bridge

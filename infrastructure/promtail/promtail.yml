@@ -1,0 +1,48 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Keep only timemanager containers
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/timemanager-(.*)'
+        action: keep
+      # Extract service name from container name (e.g., "backend" from "timemanager-backend")
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/timemanager-(.*)'
+        target_label: service
+        replacement: '$1'
+      # Add container label with full name (for Grafana queries)
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container
+        replacement: '$1'
+      # Add stream label (stdout/stderr)
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: stream
+      # Add container_id label
+      - source_labels: ['__meta_docker_container_id']
+        target_label: container_id
+    # Pipeline to parse JSON logs from backend
+    pipeline_stages:
+      - match:
+          selector: '{service="backend"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  message: message
+                  target: target
+            - labels:
+                level:

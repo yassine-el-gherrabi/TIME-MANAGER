@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+README.md
+LICENSE
+docs/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Rust
+target/
+**/*.rs.bk
+
+# Logs
+*.log
+
+# Environment
+.env*
+!.env.example
+
+# Testing
+tests/
+benches/
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*

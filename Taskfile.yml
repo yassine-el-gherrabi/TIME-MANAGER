@@ -1,0 +1,135 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmd: task --list
+
+  # ============ DOCKER COMPOSE ============
+  up:
+    desc: Start core services (postgres, backend, frontend, traefik)
+    cmd: docker compose up -d
+
+  up:noseed:
+    desc: Start core services without database seed (for testing bootstrap)
+    cmd: NO_SEED=1 docker compose up -d
+
+  up:dev:
+    desc: Start core + dev tools (mailpit, pgadmin)
+    cmd: docker compose --profile dev up -d
+
+  up:monitoring:
+    desc: Start core + monitoring stack (prometheus, grafana, loki, tempo)
+    cmd: docker compose --profile monitoring up -d
+
+  up:all:
+    desc: Start all services (core + dev + monitoring)
+    cmd: docker compose --profile dev --profile monitoring up -d
+
+  down:
+    desc: Stop all services
+    cmd: docker compose --profile dev --profile monitoring down
+
+  down:clean:
+    desc: Stop all services and remove volumes
+    cmd: docker compose --profile dev --profile monitoring down -v
+
+  restart:
+    desc: Restart all running services
+    cmd: docker compose --profile dev --profile monitoring restart
+
+  # ============ BUILD ============
+  build:
+    desc: Build all images
+    cmd: docker compose --profile dev --profile monitoring build
+
+  build:backend:
+    desc: Build backend image only
+    cmd: docker compose build backend
+
+  build:frontend:
+    desc: Build frontend image only
+    cmd: docker compose build frontend
+
+  # ============ LOGS ============
+  logs:
+    desc: Follow logs for all services
+    cmd: docker compose --profile dev --profile monitoring logs -f
+
+  logs:backend:
+    desc: Follow backend logs
+    cmd: docker compose logs -f backend
+
+  logs:frontend:
+    desc: Follow frontend logs
+    cmd: docker compose logs -f frontend
+
+  logs:postgres:
+    desc: Follow PostgreSQL logs
+    cmd: docker compose logs -f postgres
+
+  logs:traefik:
+    desc: Follow Traefik logs
+    cmd: docker compose logs -f traefik
+
+  # ============ STATUS ============
+  ps:
+    desc: Show running containers
+    cmd: docker compose --profile dev --profile monitoring ps
+
+  # ============ DATABASE ============
+  db:shell:
+    desc: Open PostgreSQL shell
+    cmd: docker compose exec postgres psql -U timemanager -d timemanager
+
+  db:migrate:
+    desc: Run database migrations
+    cmd: docker compose exec backend diesel migration run
+
+  db:migrate:redo:
+    desc: Rollback and re-run last migration
+    cmd: docker compose exec backend diesel migration redo
+
+  db:reset:
+    desc: Reset database (drop + recreate + migrate)
+    cmds:
+      - docker compose exec postgres psql -U timemanager -d postgres -c "DROP DATABASE IF EXISTS timemanager;"
+      - docker compose exec postgres psql -U timemanager -d postgres -c "CREATE DATABASE timemanager;"
+      - task db:migrate
+
+  # ============ SHELLS ============
+  shell:backend:
+    desc: Open shell in backend container
+    cmd: docker compose exec backend sh
+
+  shell:frontend:
+    desc: Open shell in frontend container
+    cmd: docker compose exec frontend sh
+
+  # ============ TESTS ============
+  test:
+    desc: Run all tests
+    cmds:
+      - task test:backend
+      - task test:frontend
+
+  test:backend:
+    desc: Run backend tests
+    dir: backend
+    cmd: cargo test
+
+  test:frontend:
+    desc: Run frontend tests
+    dir: frontend
+    cmd: npm run ci
+
+  # ============ CLEANUP ============
+  clean:
+    desc: Remove all containers, volumes, and local images
+    cmds:
+      - docker compose --profile dev --profile monitoring down -v --rmi local
+      - docker system prune -f
+
+  prune:
+    desc: Full Docker cleanup (WARNING - removes ALL Docker resources)
+    cmd: docker system prune -a --volumes -f

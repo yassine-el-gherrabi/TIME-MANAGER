@@ -1,0 +1,64 @@
+name: Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  schedule:
+    - cron: '0 9 * * 1'
+
+concurrency:
+  group: security-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cargo-audit:
+    name: "Backend · cargo audit (security)"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo-audit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: ${{ runner.os }}-cargo-audit-v0.18
+
+      - name: Install cargo-audit
+        run: which cargo-audit || cargo install cargo-audit
+
+      - name: Run cargo audit
+        run: |
+          if ! cargo audit; then
+            echo "::warning::Cargo audit found security vulnerabilities"
+            exit 0
+          fi
+
+  npm-audit:
+    name: "Frontend · npm audit (security)"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run npm audit
+        run: |
+          if ! npm audit --audit-level=high; then
+            echo "::warning::NPM audit found security vulnerabilities"
+            exit 0
+          fi

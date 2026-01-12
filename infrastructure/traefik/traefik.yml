@@ -1,0 +1,50 @@
+# Traefik Static Configuration
+# NOTE: Production settings are controlled via environment variables in docker-compose
+# Set TRAEFIK_DASHBOARD=false in .env.prod for production deployments
+
+# API and Dashboard (defaults for development)
+api:
+  dashboard: true  # Overridden by TRAEFIK_API_DASHBOARD env var
+  insecure: true   # DEVELOPMENT ONLY - dashboard on :8080 without auth
+
+# Entry Points
+entryPoints:
+  web:
+    address: ":80"
+    # Forward real client IP headers from proxies
+    forwardedHeaders:
+      # Trust all IPs for forwarded headers (for development)
+      # In production, use trustedIPs with specific proxy IPs instead
+      insecure: true
+  metrics:
+    address: ":8082"
+
+# Prometheus Metrics
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+
+# Providers
+providers:
+  # Docker provider for service discovery
+  docker:
+    exposedByDefault: false
+    network: timemanager-network
+
+  # File provider for static middleware configuration
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+# Logging
+log:
+  level: INFO
+
+# Access Logs
+accessLog:
+  filePath: /var/log/traefik/access.log
+  format: json
+  bufferingSize: 100

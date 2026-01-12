@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'timemanager-monitor'
+
+# Scrape configurations
+scrape_configs:
+  # Backend metrics
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:8080']
+        labels:
+          service: 'timemanager-backend'
+          environment: 'development'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # cAdvisor - Container metrics (CPU, memory, network)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          environment: 'development'
+
+  # Traefik metrics (enabled in traefik config)
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:8082']
+        labels:
+          service: 'traefik'
+          environment: 'development'

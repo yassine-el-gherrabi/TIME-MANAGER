@@ -1,0 +1,45 @@
+name: Dockerfile
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '**/Dockerfile*'
+      - '**/docker-compose*.yml'
+      - '.github/workflows/docker-lint.yml'
+  pull_request:
+    paths:
+      - '**/Dockerfile*'
+      - '**/docker-compose*.yml'
+
+concurrency:
+  group: docker-lint-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hadolint:
+    name: "hadolint · ${{ matrix.dockerfile }} (lint)"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile:
+          - backend/Dockerfile.dev
+          - backend/Dockerfile.prod
+          - frontend/Dockerfile.dev
+          - frontend/Dockerfile.prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          failure-threshold: warning
+
+  compose-validate:
+    name: "docker compose config (validate)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet

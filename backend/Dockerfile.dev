@@ -1,0 +1,44 @@
+# ============================================
+# Dockerfile.dev - Development with hot reload
+# Auto-seeds database on startup
+# ============================================
+FROM rust:1.92-slim-bookworm
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install cargo-watch for hot reload
+RUN cargo install cargo-watch
+
+# Install diesel_cli for migrations (PostgreSQL only)
+RUN cargo install diesel_cli --no-default-features --features postgres
+
+WORKDIR /app
+
+# Copy manifests first (cache dependencies)
+COPY Cargo.toml Cargo.lock ./
+
+# Pre-build dependencies
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build && \
+    rm -rf src
+
+# Copy diesel configuration
+COPY diesel.toml ./
+
+# Copy scripts directory (entrypoint + seed)
+COPY scripts/ ./scripts/
+
+# Make entrypoint executable
+RUN chmod +x ./scripts/entrypoint.dev.sh
+
+EXPOSE 8080
+
+# Use entrypoint for auto-migration and seeding
+ENTRYPOINT ["/bin/bash", "./scripts/entrypoint.dev.sh"]

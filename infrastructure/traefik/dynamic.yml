@@ -1,0 +1,66 @@
+http:
+  middlewares:
+    # Rate Limiting Middlewares
+    rate-limit-global:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 50
+
+    rate-limit-auth:
+      rateLimit:
+        average: 5
+        period: 1m
+        burst: 2
+
+    rate-limit-register:
+      rateLimit:
+        average: 1
+        period: 5m
+        burst: 1
+
+    # Security Headers Middleware
+    security-headers:
+      headers:
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "DENY"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        # DEV: Permissive CSP for Vite HMR. PROD: Remove 'unsafe-inline' 'unsafe-eval' and ws: wss:
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:*; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+
+    # CORS Middleware
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "http://localhost:8000"
+          - "https://your-domain.com"
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+          - "X-Requested-With"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 3600
+
+    # Strip API Prefix Middleware
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+        forceSlash: true

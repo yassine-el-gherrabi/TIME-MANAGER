@@ -1,0 +1,35 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Diesel
+diesel.toml.bak
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+*.profraw
+*.profdata
+tarpaulin-report.html
+cobertura.xml
+
+# JWT Keys (generated per environment)
+/keys/

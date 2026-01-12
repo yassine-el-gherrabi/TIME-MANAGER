@@ -1,0 +1,81 @@
+# ============================================
+# Stage 1: Dependencies - Cache layer for dependencies
+# ============================================
+FROM rust:1.92-slim-bookworm AS dependencies
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Build dependencies only (cached layer)
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
+
+# ============================================
+# Stage 2: Builder - Compile application
+# ============================================
+FROM dependencies AS builder
+
+# Copy source code
+COPY . .
+
+# Build application with optimizations
+RUN cargo build --release --locked && \
+    strip target/release/timemanager-backend
+
+# ============================================
+# Stage 3: Runtime - Minimal image (distroless-like)
+# ============================================
+FROM debian:bookworm-slim
+
+# OCI Image Labels
+LABEL org.opencontainers.image.title="TimeManager Backend" \
+      org.opencontainers.image.description="Rust backend API for TimeManager application" \
+      org.opencontainers.image.authors="TimeManager Team" \
+      org.opencontainers.image.source="https://github.com/timemanager/timemanager" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="TimeManager"
+
+# Install runtime dependencies (curl for health checks, postgresql-client for init seed)
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libpq5 \
+    curl \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder --chown=appuser:appuser /app/target/release/timemanager-backend /app/timemanager-backend
+
+# Copy seed scripts for init container
+COPY --chown=appuser:appuser scripts/demo-seed.sql /app/scripts/demo-seed.sql
+COPY --chown=appuser:appuser scripts/init-seed.sh /app/scripts/init-seed.sh
+RUN chmod +x /app/scripts/init-seed.sh
+
+# Switch to non-root user
+USER appuser
+
+EXPOSE 8080
+
+# Health check using curl to /health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl --fail --silent http://localhost:8080/health || exit 1
+
+# Run binary
+CMD ["/app/timemanager-backend"]

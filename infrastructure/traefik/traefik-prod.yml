@@ -1,0 +1,41 @@
+# Traefik Production Configuration with Let's Encrypt HTTPS
+
+# API (disabled in production)
+api:
+  dashboard: false
+
+# Entry Points
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+# Certificate Resolvers (Let's Encrypt)
+# Note: email is set via CLI in docker-compose.prod.yml
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# Providers
+providers:
+  docker:
+    exposedByDefault: false
+    network: timemanager_timemanager-network
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+# Logging
+log:
+  level: DEBUG
+
+# Access Logs (optional, can be verbose)
+accessLog:
+  bufferingSize: 100
+  filters:
+    statusCodes:
+      - "400-599"
