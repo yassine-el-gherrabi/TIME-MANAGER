@@ -1,0 +1,2553 @@
+openapi: 3.0.3
+info:
+  title: Time Manager API
+  description: |
+    API REST pour la plateforme SaaS de gestion du temps de travail.
+
+    ## Authentification
+    L'API utilise JWT Bearer tokens. Après login, incluez le token dans le header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+
+    ## Rôles
+    - **Employee**: Accès basique (pointage, absences personnelles)
+    - **Manager**: + Approbations équipe, KPIs équipe
+    - **Admin**: + Gestion utilisateurs, configuration
+    - **SuperAdmin**: + Multi-tenant, audit logs
+  version: 1.0.0
+  contact:
+    name: Trinity Team
+    email: trinity@epitech.eu
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Développement local
+  - url: https://api.timemanager.com/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentification et gestion de session
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Teams
+    description: Gestion des équipes
+  - name: Clocks
+    description: Pointage (clock in/out)
+  - name: Absences
+    description: Gestion des absences
+  - name: AbsenceTypes
+    description: Types d'absence configurables
+  - name: Schedules
+    description: Plannings de travail
+  - name: Balances
+    description: Soldes de congés
+  - name: ClosedDays
+    description: Jours fériés et fermés
+  - name: ClockRestrictions
+    description: Restrictions de pointage
+  - name: Breaks
+    description: Gestion des pauses
+  - name: KPIs
+    description: Indicateurs et analytics
+  - name: Notifications
+    description: Notifications utilisateur
+  - name: Organizations
+    description: Gestion multi-tenant (SuperAdmin)
+  - name: AuditLogs
+    description: Journaux d'audit (SuperAdmin)
+  - name: Reports
+    description: Exports et rapports
+  - name: System
+    description: Santé et métriques système
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================
+  # SYSTEM
+  # ============================================
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Service opérationnel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /system/status:
+    get:
+      tags: [System]
+      summary: Statut système détaillé
+      security: []
+      responses:
+        '200':
+          description: Statut des composants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+
+  # ============================================
+  # AUTH
+  # ============================================
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion utilisateur
+      description: |
+        Authentifie l'utilisateur et retourne un access token.
+        Le refresh token est envoyé via cookie HttpOnly.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Connexion réussie
+          headers:
+            Set-Cookie:
+              description: Refresh token (HttpOnly) et CSRF token
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rafraîchir le token
+      description: Utilise le refresh token (cookie) pour obtenir un nouveau access token
+      security: []
+      responses:
+        '200':
+          description: Token rafraîchi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Déconnexion
+      description: Révoque le refresh token actuel
+      responses:
+        '200':
+          description: Déconnexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/logout-all:
+    post:
+      tags: [Auth]
+      summary: Déconnexion de tous les appareils
+      description: Révoque tous les refresh tokens de l'utilisateur
+      responses:
+        '200':
+          description: Toutes les sessions révoquées
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Profil utilisateur connecté
+      responses:
+        '200':
+          description: Informations utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /auth/change-password:
+    put:
+      tags: [Auth]
+      summary: Changer son mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Mot de passe changé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/sessions:
+    get:
+      tags: [Auth]
+      summary: Lister ses sessions actives
+      responses:
+        '200':
+          description: Liste des sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionInfo'
+
+  /auth/sessions/{id}:
+    delete:
+      tags: [Auth]
+      summary: Révoquer une session spécifique
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Session révoquée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/accept-invite:
+    post:
+      tags: [Auth]
+      summary: Accepter une invitation
+      description: Définit le mot de passe et active le compte
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInviteRequest'
+      responses:
+        '200':
+          description: Compte activé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptInviteResponse'
+
+  /auth/verify-invite:
+    post:
+      tags: [Auth]
+      summary: Vérifier un token d'invitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Validité du token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  message:
+                    type: string
+
+  /auth/bootstrap:
+    post:
+      tags: [Auth]
+      summary: Setup initial (première organisation)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapRequest'
+      responses:
+        '201':
+          description: Organisation et admin créés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapResponse'
+
+  /auth/password/request-reset:
+    post:
+      tags: [Auth]
+      summary: Demander réinitialisation mot de passe
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Email envoyé (si compte existe)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      summary: Réinitialiser mot de passe
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Mot de passe réinitialisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # USERS
+  # ============================================
+  /users:
+    get:
+      tags: [Users]
+      summary: Lister les utilisateurs
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: search
+          in: query
+          description: Recherche par nom ou email
+          schema:
+            type: string
+        - name: team_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUsers'
+
+    post:
+      tags: [Users]
+      summary: Créer un utilisateur
+      description: Admin+ requis. Envoie une invitation par email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Utilisateur créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Détails utilisateur
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Users]
+      summary: Modifier un utilisateur
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Utilisateur modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+    delete:
+      tags: [Users]
+      summary: Supprimer un utilisateur (soft delete)
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Utilisateur supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /users/{id}/resend-invite:
+    post:
+      tags: [Users]
+      summary: Renvoyer l'invitation
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Invitation renvoyée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /users/{id}/restore:
+    put:
+      tags: [Users]
+      summary: Restaurer un utilisateur supprimé
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Utilisateur restauré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  # ============================================
+  # TEAMS
+  # ============================================
+  /teams:
+    get:
+      tags: [Teams]
+      summary: Lister les équipes
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Liste des équipes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTeams'
+
+    post:
+      tags: [Teams]
+      summary: Créer une équipe
+      description: Admin+ requis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamRequest'
+      responses:
+        '201':
+          description: Équipe créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+
+  /teams/my:
+    get:
+      tags: [Teams]
+      summary: Mes équipes
+      responses:
+        '200':
+          description: Équipes de l'utilisateur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamResponse'
+
+  /teams/{id}:
+    get:
+      tags: [Teams]
+      summary: Détails équipe
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Équipe trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+
+    put:
+      tags: [Teams]
+      summary: Modifier une équipe
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeamRequest'
+      responses:
+        '200':
+          description: Équipe modifiée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+
+    delete:
+      tags: [Teams]
+      summary: Supprimer une équipe
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Équipe supprimée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /teams/{id}/members:
+    post:
+      tags: [Teams]
+      summary: Ajouter un membre
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Membre ajouté
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /teams/{team_id}/members/{user_id}:
+    delete:
+      tags: [Teams]
+      summary: Retirer un membre
+      description: Admin+ requis
+      parameters:
+        - name: team_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Membre retiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # CLOCKS
+  # ============================================
+  /clocks/in:
+    post:
+      tags: [Clocks]
+      summary: Pointer l'arrivée
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClockInRequest'
+      responses:
+        '201':
+          description: Pointage enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockEntryResponse'
+
+  /clocks/out:
+    post:
+      tags: [Clocks]
+      summary: Pointer le départ
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Départ enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockEntryResponse'
+
+  /clocks/status:
+    get:
+      tags: [Clocks]
+      summary: Statut de pointage actuel
+      responses:
+        '200':
+          description: Statut courant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockStatusResponse'
+
+  /clocks/history:
+    get:
+      tags: [Clocks]
+      summary: Historique des pointages
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: user_id
+          in: query
+          description: Filtrer par utilisateur (Manager+)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClockEntries'
+
+  /clocks/pending:
+    get:
+      tags: [Clocks]
+      summary: Pointages en attente d'approbation
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Liste des pointages pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClockEntries'
+
+  /clocks/{id}/approve:
+    post:
+      tags: [Clocks]
+      summary: Approuver un pointage
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Pointage approuvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockEntryResponse'
+
+  /clocks/{id}/reject:
+    post:
+      tags: [Clocks]
+      summary: Rejeter un pointage
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Pointage rejeté
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockEntryResponse'
+
+  # ============================================
+  # ABSENCES
+  # ============================================
+  /absences:
+    get:
+      tags: [Absences]
+      summary: Lister les absences
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/AbsenceStatus'
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAbsences'
+
+    post:
+      tags: [Absences]
+      summary: Créer une demande d'absence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAbsenceRequest'
+      responses:
+        '201':
+          description: Demande créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+
+  /absences/pending:
+    get:
+      tags: [Absences]
+      summary: Absences en attente d'approbation
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Liste des absences pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAbsences'
+
+  /absences/{id}:
+    get:
+      tags: [Absences]
+      summary: Détails absence
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Absence trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+
+  /absences/{id}/approve:
+    post:
+      tags: [Absences]
+      summary: Approuver une absence
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Absence approuvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+
+  /absences/{id}/reject:
+    post:
+      tags: [Absences]
+      summary: Rejeter une absence
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Absence rejetée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+
+  /absences/{id}/cancel:
+    post:
+      tags: [Absences]
+      summary: Annuler une absence
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Absence annulée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceResponse'
+
+  # ============================================
+  # ABSENCE TYPES
+  # ============================================
+  /absence-types:
+    get:
+      tags: [AbsenceTypes]
+      summary: Lister les types d'absence
+      responses:
+        '200':
+          description: Liste des types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AbsenceTypeResponse'
+
+    post:
+      tags: [AbsenceTypes]
+      summary: Créer un type d'absence
+      description: Admin+ requis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAbsenceTypeRequest'
+      responses:
+        '201':
+          description: Type créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceTypeResponse'
+
+  /absence-types/{id}:
+    get:
+      tags: [AbsenceTypes]
+      summary: Détails type d'absence
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Type trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceTypeResponse'
+
+    put:
+      tags: [AbsenceTypes]
+      summary: Modifier un type d'absence
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAbsenceTypeRequest'
+      responses:
+        '200':
+          description: Type modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenceTypeResponse'
+
+    delete:
+      tags: [AbsenceTypes]
+      summary: Supprimer un type d'absence
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Type supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # BALANCES
+  # ============================================
+  /balances:
+    get:
+      tags: [Balances]
+      summary: Lister tous les soldes
+      description: Admin+ requis
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des soldes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveBalanceResponse'
+
+  /balances/me:
+    get:
+      tags: [Balances]
+      summary: Mes soldes de congés
+      responses:
+        '200':
+          description: Soldes utilisateur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveBalanceResponse'
+
+  /balances/{id}/adjust:
+    put:
+      tags: [Balances]
+      summary: Ajuster un solde
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustBalanceRequest'
+      responses:
+        '200':
+          description: Solde ajusté
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveBalanceResponse'
+
+  # ============================================
+  # SCHEDULES
+  # ============================================
+  /schedules:
+    get:
+      tags: [Schedules]
+      summary: Lister les plannings
+      responses:
+        '200':
+          description: Liste des plannings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkScheduleResponse'
+
+    post:
+      tags: [Schedules]
+      summary: Créer un planning
+      description: Admin+ requis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+      responses:
+        '201':
+          description: Planning créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkScheduleResponse'
+
+  /schedules/me:
+    get:
+      tags: [Schedules]
+      summary: Mon planning
+      responses:
+        '200':
+          description: Planning de l'utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkScheduleResponse'
+
+  /schedules/{id}:
+    get:
+      tags: [Schedules]
+      summary: Détails planning
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Planning trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkScheduleResponse'
+
+    put:
+      tags: [Schedules]
+      summary: Modifier un planning
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleRequest'
+      responses:
+        '200':
+          description: Planning modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkScheduleResponse'
+
+    delete:
+      tags: [Schedules]
+      summary: Supprimer un planning
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Planning supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # CLOSED DAYS
+  # ============================================
+  /closed-days:
+    get:
+      tags: [ClosedDays]
+      summary: Lister les jours fermés
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des jours fermés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClosedDayResponse'
+
+    post:
+      tags: [ClosedDays]
+      summary: Créer un jour fermé
+      description: Admin+ requis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClosedDayRequest'
+      responses:
+        '201':
+          description: Jour fermé créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosedDayResponse'
+
+  /closed-days/{id}:
+    put:
+      tags: [ClosedDays]
+      summary: Modifier un jour fermé
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClosedDayRequest'
+      responses:
+        '200':
+          description: Jour fermé modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosedDayResponse'
+
+    delete:
+      tags: [ClosedDays]
+      summary: Supprimer un jour fermé
+      description: Admin+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Jour fermé supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # KPIs
+  # ============================================
+  /kpis/me:
+    get:
+      tags: [KPIs]
+      summary: Mes KPIs
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: KPIs utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserKPIs'
+
+  /kpis/users/{id}:
+    get:
+      tags: [KPIs]
+      summary: KPIs d'un utilisateur
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: KPIs utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserKPIs'
+
+  /kpis/teams/{id}:
+    get:
+      tags: [KPIs]
+      summary: KPIs d'une équipe
+      description: Manager+ requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: KPIs équipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamKPIs'
+
+  /kpis/organization:
+    get:
+      tags: [KPIs]
+      summary: KPIs organisation
+      description: Admin+ requis
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: KPIs organisation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationKPIs'
+
+  /kpis/presence:
+    get:
+      tags: [KPIs]
+      summary: Statistiques de présence
+      description: Manager+ requis
+      responses:
+        '200':
+          description: Stats présence temps réel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresenceStats'
+
+  /kpis/charts:
+    get:
+      tags: [KPIs]
+      summary: Données pour graphiques
+      description: Manager+ requis
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: granularity
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+      responses:
+        '200':
+          description: Données charts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+
+  # ============================================
+  # NOTIFICATIONS
+  # ============================================
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Lister mes notifications
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Liste des notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotifications'
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Nombre de notifications non lues
+      responses:
+        '200':
+          description: Compteur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /notifications/{id}/read:
+    put:
+      tags: [Notifications]
+      summary: Marquer comme lue
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Notification marquée lue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /notifications/read-all:
+    put:
+      tags: [Notifications]
+      summary: Marquer toutes comme lues
+      responses:
+        '200':
+          description: Toutes marquées lues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # ORGANIZATIONS (SuperAdmin)
+  # ============================================
+  /organizations:
+    get:
+      tags: [Organizations]
+      summary: Lister les organisations
+      description: SuperAdmin requis
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrganizations'
+
+    post:
+      tags: [Organizations]
+      summary: Créer une organisation
+      description: SuperAdmin requis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+      responses:
+        '201':
+          description: Organisation créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+
+  /organizations/{id}:
+    get:
+      tags: [Organizations]
+      summary: Détails organisation
+      description: SuperAdmin requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Organisation trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+
+    put:
+      tags: [Organizations]
+      summary: Modifier une organisation
+      description: SuperAdmin requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+      responses:
+        '200':
+          description: Organisation modifiée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+
+    delete:
+      tags: [Organizations]
+      summary: Supprimer une organisation
+      description: SuperAdmin requis
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Organisation supprimée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ============================================
+  # AUDIT LOGS (SuperAdmin)
+  # ============================================
+  /audit-logs:
+    get:
+      tags: [AuditLogs]
+      summary: Lister les logs d'audit
+      description: SuperAdmin requis
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/PerPageQuery'
+        - name: action
+          in: query
+          schema:
+            $ref: '#/components/schemas/AuditAction'
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste paginée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogs'
+
+  /audit-logs/export:
+    get:
+      tags: [AuditLogs]
+      summary: Exporter les logs d'audit
+      description: SuperAdmin requis. Retourne un CSV.
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Fichier CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  # ============================================
+  # REPORTS
+  # ============================================
+  /reports/export:
+    get:
+      tags: [Reports]
+      summary: Exporter des données
+      description: Admin+ requis
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [users, clocks, absences]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+      responses:
+        '200':
+          description: Données exportées
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+# ============================================
+# COMPONENTS
+# ============================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageQuery:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PerPageQuery:
+      name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Accès refusé
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Erreur de validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflit (ressource existe déjà)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Trop de requêtes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ========== COMMON ==========
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          example: ValidationError
+        message:
+          type: string
+          example: Invalid email format
+        details:
+          type: array
+          items:
+            type: string
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    SystemStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        database:
+          type: string
+        version:
+          type: string
+
+    # ========== ENUMS ==========
+    UserRole:
+      type: string
+      enum: [employee, manager, admin, super_admin]
+
+    AbsenceStatus:
+      type: string
+      enum: [pending, approved, rejected, cancelled]
+
+    ClockEntryStatus:
+      type: string
+      enum: [pending, approved, rejected]
+
+    AuditAction:
+      type: string
+      enum: [create, update, delete]
+
+    NotificationType:
+      type: string
+      enum:
+        - absence_approved
+        - absence_rejected
+        - absence_pending
+        - clock_approved
+        - clock_rejected
+        - clock_correction
+
+    # ========== AUTH ==========
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 1
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (15 min)
+
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password:
+          type: string
+        new_password:
+          type: string
+          minLength: 8
+          description: Min 8 chars, uppercase, lowercase, digit, special char
+
+    AcceptInviteRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    AcceptInviteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, new_password]
+      properties:
+        token:
+          type: string
+        new_password:
+          type: string
+          minLength: 8
+
+    BootstrapRequest:
+      type: object
+      required: [organization_name, email, password, first_name, last_name]
+      properties:
+        organization_name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        first_name:
+          type: string
+        last_name:
+          type: string
+
+    BootstrapResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        organization:
+          $ref: '#/components/schemas/OrganizationResponse'
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        access_token:
+          type: string
+
+    SessionInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_agent:
+          type: string
+        ip_address:
+          type: string
+        last_used_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    # ========== USERS ==========
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        phone:
+          type: string
+          nullable: true
+        has_password:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required: [email, first_name, last_name, role]
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/UserRole'
+        organization_id:
+          type: string
+          format: uuid
+          description: SuperAdmin only
+
+    CreateUserResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        invite_token:
+          type: string
+          description: Token (ou [sent via email] si email activé)
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        phone:
+          type: string
+
+    PaginatedUsers:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ========== TEAMS ==========
+    TeamResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        manager_id:
+          type: string
+          format: uuid
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        created_at:
+          type: string
+          format: date-time
+
+    CreateTeamRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        manager_id:
+          type: string
+          format: uuid
+
+    UpdateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        manager_id:
+          type: string
+          format: uuid
+
+    PaginatedTeams:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ========== CLOCKS ==========
+    ClockInRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+          nullable: true
+
+    ClockEntryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        clock_in:
+          type: string
+          format: date-time
+        clock_out:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ClockEntryStatus'
+        notes:
+          type: string
+          nullable: true
+        duration_minutes:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ClockStatusResponse:
+      type: object
+      properties:
+        is_clocked_in:
+          type: boolean
+        current_entry:
+          $ref: '#/components/schemas/ClockEntryResponse'
+        today_total_minutes:
+          type: integer
+
+    PaginatedClockEntries:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClockEntryResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ========== ABSENCES ==========
+    AbsenceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        absence_type:
+          $ref: '#/components/schemas/AbsenceTypeResponse'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/AbsenceStatus'
+        reason:
+          type: string
+          nullable: true
+        working_days:
+          type: number
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CreateAbsenceRequest:
+      type: object
+      required: [absence_type_id, start_date, end_date]
+      properties:
+        absence_type_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        reason:
+          type: string
+
+    PaginatedAbsences:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbsenceResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ========== ABSENCE TYPES ==========
+    AbsenceTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        color:
+          type: string
+        requires_approval:
+          type: boolean
+        affects_balance:
+          type: boolean
+        default_balance:
+          type: number
+          nullable: true
+
+    CreateAbsenceTypeRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        color:
+          type: string
+          default: "#3B82F6"
+        requires_approval:
+          type: boolean
+          default: true
+        affects_balance:
+          type: boolean
+          default: true
+        default_balance:
+          type: number
+
+    UpdateAbsenceTypeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        color:
+          type: string
+        requires_approval:
+          type: boolean
+        affects_balance:
+          type: boolean
+        default_balance:
+          type: number
+
+    # ========== BALANCES ==========
+    LeaveBalanceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        absence_type:
+          $ref: '#/components/schemas/AbsenceTypeResponse'
+        year:
+          type: integer
+        initial_balance:
+          type: number
+        used:
+          type: number
+        remaining:
+          type: number
+
+    AdjustBalanceRequest:
+      type: object
+      required: [adjustment]
+      properties:
+        adjustment:
+          type: number
+          description: Valeur positive ou négative
+        reason:
+          type: string
+
+    # ========== SCHEDULES ==========
+    WorkScheduleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleDayResponse'
+        is_default:
+          type: boolean
+
+    ScheduleDayResponse:
+      type: object
+      properties:
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        is_working_day:
+          type: boolean
+
+    CreateScheduleRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        days:
+          type: array
+          items:
+            type: object
+            properties:
+              day_of_week:
+                type: integer
+              start_time:
+                type: string
+              end_time:
+                type: string
+              is_working_day:
+                type: boolean
+
+    UpdateScheduleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    # ========== CLOSED DAYS ==========
+    ClosedDayResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        is_recurring:
+          type: boolean
+
+    CreateClosedDayRequest:
+      type: object
+      required: [date, name]
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        is_recurring:
+          type: boolean
+          default: false
+
+    UpdateClosedDayRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        is_recurring:
+          type: boolean
+
+    # ========== KPIs ==========
+    UserKPIs:
+      type: object
+      properties:
+        total_hours:
+          type: number
+        expected_hours:
+          type: number
+        overtime_hours:
+          type: number
+        absence_days:
+          type: number
+        attendance_rate:
+          type: number
+        average_daily_hours:
+          type: number
+
+    TeamKPIs:
+      type: object
+      properties:
+        total_members:
+          type: integer
+        present_today:
+          type: integer
+        absent_today:
+          type: integer
+        average_attendance_rate:
+          type: number
+        total_overtime_hours:
+          type: number
+
+    OrganizationKPIs:
+      type: object
+      properties:
+        total_employees:
+          type: integer
+        total_teams:
+          type: integer
+        global_attendance_rate:
+          type: number
+        total_hours_worked:
+          type: number
+        pending_approvals:
+          type: integer
+
+    PresenceStats:
+      type: object
+      properties:
+        present:
+          type: integer
+        absent:
+          type: integer
+        remote:
+          type: integer
+        on_leave:
+          type: integer
+
+    ChartData:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        datasets:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              data:
+                type: array
+                items:
+                  type: number
+
+    # ========== NOTIFICATIONS ==========
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+        message:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    PaginatedNotifications:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ========== ORGANIZATIONS ==========
+    OrganizationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreateOrganizationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        timezone:
+          type: string
+          default: Europe/Paris
+
+    UpdateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        timezone:
+          type: string
+
+    PaginatedOrganizations:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ========== AUDIT LOGS ==========
+    AuditLogResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        action:
+          $ref: '#/components/schemas/AuditAction'
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+          format: uuid
+        changes:
+          type: object
+        ip_address:
+          type: string
+        user_agent:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    PaginatedAuditLogs:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
