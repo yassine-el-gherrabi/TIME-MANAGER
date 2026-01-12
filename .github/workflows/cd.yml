@@ -147,9 +147,9 @@ jobs:
             # Login to GHCR
             echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
 
-            # Pull and deploy
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            # Pull and deploy (including monitoring stack)
+            docker compose -f docker-compose.prod.yml --profile monitoring pull
+            docker compose -f docker-compose.prod.yml --profile monitoring up -d --remove-orphans
 
             # Cleanup old images
             docker image prune -f
