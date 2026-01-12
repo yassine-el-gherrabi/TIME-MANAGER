@@ -278,6 +278,7 @@ docker compose ps
 **Accéder à l'application** : http://localhost:8000
 
 **Caractéristiques du mode dev :**
+
 | Caractéristique | Description |
 |-----------------|-------------|
 | Hot reload backend | cargo-watch |
@@ -313,12 +314,13 @@ docker compose ps
 ```
 
 **Caractéristiques du mode prod :**
-| Caractéristique | Description |
-|-----------------|-------------|
+
+| Caractéristique | Description                   |
+|-----------------|-------------------------------|
 | Images | Multi-stage builds optimisées |
-| Logs | `RUST_LOG=info` |
-| Traefik Dashboard | Désactivé |
-| SMTP | Externe (Brevo/SendGrid) |
+| Logs | `RUST_LOG=info`               |
+| Traefik Dashboard | Désactivé                     |
+| SMTP | Externe (Resend)              |
 
 ---
 
