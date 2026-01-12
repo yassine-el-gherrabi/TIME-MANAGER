@@ -225,7 +225,7 @@ impl AbsenceService {
 
         // Create notification for the employee
         let notification_service = NotificationService::new(self.absence_repo.pool().clone());
-        let _ = notification_service
+        if let Err(e) = notification_service
             .create_notification(
                 org_id,
                 absence.user_id,
@@ -239,7 +239,15 @@ impl AbsenceService {
                 ),
                 None,
             )
-            .await;
+            .await
+        {
+            tracing::warn!(
+                user_id = %absence.user_id,
+                absence_id = %absence_id,
+                error = %e,
+                "Failed to create approval notification"
+            );
+        }
 
         self.build_response(&updated).await
     }
@@ -295,7 +303,7 @@ impl AbsenceService {
             .find_by_id(org_id, absence.type_id)
             .await?;
         let notification_service = NotificationService::new(self.absence_repo.pool().clone());
-        let _ = notification_service
+        if let Err(e) = notification_service
             .create_notification(
                 org_id,
                 absence.user_id,
@@ -310,7 +318,15 @@ impl AbsenceService {
                 ),
                 None,
             )
-            .await;
+            .await
+        {
+            tracing::warn!(
+                user_id = %absence.user_id,
+                absence_id = %absence_id,
+                error = %e,
+                "Failed to create rejection notification"
+            );
+        }
 
         self.build_response(&updated).await
     }

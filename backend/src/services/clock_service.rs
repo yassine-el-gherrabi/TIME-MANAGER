@@ -311,7 +311,7 @@ impl ClockService {
         // Create notification for the employee
         let notification_service = NotificationService::new(self.clock_repo.pool().clone());
         let clock_in_str = entry.clock_in.format("%Y-%m-%d %H:%M").to_string();
-        let _ = notification_service
+        if let Err(e) = notification_service
             .create_notification(
                 org_id,
                 entry.user_id,
@@ -320,7 +320,15 @@ impl ClockService {
                 format!("Your clock entry from {} has been approved.", clock_in_str),
                 None,
             )
-            .await;
+            .await
+        {
+            tracing::warn!(
+                user_id = %entry.user_id,
+                entry_id = %entry_id,
+                error = %e,
+                "Failed to create clock approval notification"
+            );
+        }
 
         Ok(approved)
     }
@@ -382,7 +390,7 @@ impl ClockService {
         // Create notification for the employee
         let notification_service = NotificationService::new(self.clock_repo.pool().clone());
         let clock_in_str = entry.clock_in.format("%Y-%m-%d %H:%M").to_string();
-        let _ = notification_service
+        if let Err(e) = notification_service
             .create_notification(
                 org_id,
                 entry.user_id,
@@ -394,7 +402,15 @@ impl ClockService {
                 ),
                 None,
             )
-            .await;
+            .await
+        {
+            tracing::warn!(
+                user_id = %entry.user_id,
+                entry_id = %entry_id,
+                error = %e,
+                "Failed to create clock rejection notification"
+            );
+        }
 
         Ok(rejected)
     }

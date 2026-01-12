@@ -640,7 +640,7 @@ impl ClockRestrictionService {
 
         for team in teams {
             if let Some(manager_id) = team.manager_id {
-                let _ = notification_service
+                if let Err(e) = notification_service
                     .create_notification(
                         org_id,
                         manager_id,
@@ -650,7 +650,15 @@ impl ClockRestrictionService {
                             .to_string(),
                         None,
                     )
-                    .await;
+                    .await
+                {
+                    tracing::warn!(
+                        manager_id = %manager_id,
+                        user_id = %user_id,
+                        error = %e,
+                        "Failed to create override request notification for manager"
+                    );
+                }
             }
         }
     }
@@ -683,8 +691,16 @@ impl ClockRestrictionService {
             _ => return,
         };
 
-        let _ = notification_service
+        if let Err(e) = notification_service
             .create_notification(org_id, request.user_id, notification_type, title, message, None)
-            .await;
+            .await
+        {
+            tracing::warn!(
+                user_id = %request.user_id,
+                request_id = %request.id,
+                error = %e,
+                "Failed to create override review result notification"
+            );
+        }
     }
 }
