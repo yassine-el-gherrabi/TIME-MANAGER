@@ -79,6 +79,7 @@ wiremock = "0.6"
 serial_test = "3.0"
 testcontainers = "0.15"
 testcontainers-modules = { version = "0.3", features = ["postgres"] }
+http-body-util = "0.1"
 
 [profile.release]
 opt-level = 3

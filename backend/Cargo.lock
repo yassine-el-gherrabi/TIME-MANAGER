@@ -2988,7 +2988,7 @@ dependencies = [
  "dotenvy",
  "fake",
  "hex",
- "hyper",
+ "http-body-util",
  "jsonwebtoken",
  "lazy_static",
  "lettre",
