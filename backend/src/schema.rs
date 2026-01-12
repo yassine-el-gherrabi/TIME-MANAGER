@@ -471,4 +471,29 @@ diesel::joinable!(work_schedule_days -> work_schedules (work_schedule_id));
 diesel::joinable!(work_schedules -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    absence_types,absences,audit_logs,break_entries,break_policies,break_windows,clock_entries,clock_override_requests,clock_restrictions,closed_days,holidays,invite_tokens,leave_balances,login_attempts,notifications,organizations,password_history,password_reset_tokens,refresh_tokens,team_members,teams,user_sessions,users,work_schedule_days,work_schedules,);
+    absence_types,
+    absences,
+    audit_logs,
+    break_entries,
+    break_policies,
+    break_windows,
+    clock_entries,
+    clock_override_requests,
+    clock_restrictions,
+    closed_days,
+    holidays,
+    invite_tokens,
+    leave_balances,
+    login_attempts,
+    notifications,
+    organizations,
+    password_history,
+    password_reset_tokens,
+    refresh_tokens,
+    team_members,
+    teams,
+    user_sessions,
+    users,
+    work_schedule_days,
+    work_schedules,
+);

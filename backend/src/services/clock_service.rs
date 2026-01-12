@@ -8,7 +8,10 @@ use crate::models::{
     ClockEntry, ClockEntryResponse, ClockFilter, ClockStatus, ClockValidationResult,
     PaginatedClockEntries, Pagination, PendingClockFilter,
 };
-use crate::repositories::{ClockRepository, ClockRestrictionRepository, OrganizationRepository, TeamRepository, WorkScheduleRepository};
+use crate::repositories::{
+    ClockRepository, ClockRestrictionRepository, OrganizationRepository, TeamRepository,
+    WorkScheduleRepository,
+};
 use crate::services::NotificationService;
 
 /// Service for clock in/out operations
@@ -79,9 +82,13 @@ impl ClockService {
             .await?;
 
         // Validate clock restrictions
-        let validation = self.validate_clock_action(org_id, user_id, "clock_in").await?;
+        let validation = self
+            .validate_clock_action(org_id, user_id, "clock_in")
+            .await?;
         if !validation.allowed {
-            let message = validation.message.unwrap_or_else(|| "Clock in is not allowed at this time".to_string());
+            let message = validation
+                .message
+                .unwrap_or_else(|| "Clock in is not allowed at this time".to_string());
             if validation.can_request_override {
                 return Err(AppError::ValidationError(format!(
                     "{}. You can request an override with justification.",
@@ -125,9 +132,13 @@ impl ClockService {
             .await?;
 
         // Validate clock restrictions
-        let validation = self.validate_clock_action(org_id, user_id, "clock_out").await?;
+        let validation = self
+            .validate_clock_action(org_id, user_id, "clock_out")
+            .await?;
         if !validation.allowed {
-            let message = validation.message.unwrap_or_else(|| "Clock out is not allowed at this time".to_string());
+            let message = validation
+                .message
+                .unwrap_or_else(|| "Clock out is not allowed at this time".to_string());
             if validation.can_request_override {
                 return Err(AppError::ValidationError(format!(
                     "{}. You can request an override with justification.",
@@ -193,7 +204,11 @@ impl ClockService {
         let mut responses = Vec::with_capacity(entries.len());
         for entry in &entries {
             let (user_name, user_email) = self.clock_repo.get_user_info(entry.user_id).await?;
-            let teams = self.team_repo.get_user_teams(org_id, entry.user_id).await.unwrap_or_default();
+            let teams = self
+                .team_repo
+                .get_user_teams(org_id, entry.user_id)
+                .await
+                .unwrap_or_default();
             let team_id = teams.first().map(|t| t.id);
             let team_name = teams.first().map(|t| t.name.clone());
             let approver_name = if let Some(approver_id) = entry.approved_by {
@@ -235,7 +250,11 @@ impl ClockService {
         let entry = self.clock_repo.find_by_id(org_id, entry_id).await?;
         let organization = self.org_repo.find_by_id(org_id).await?;
         let (user_name, user_email) = self.clock_repo.get_user_info(entry.user_id).await?;
-        let teams = self.team_repo.get_user_teams(org_id, entry.user_id).await.unwrap_or_default();
+        let teams = self
+            .team_repo
+            .get_user_teams(org_id, entry.user_id)
+            .await
+            .unwrap_or_default();
         let team_id = teams.first().map(|t| t.id);
         let team_name = teams.first().map(|t| t.name.clone());
         let approver_name = if let Some(approver_id) = entry.approved_by {
@@ -475,7 +494,11 @@ impl ClockService {
                 if let Some(filter_team_id) = filter.team_id {
                     let mut filtered = Vec::new();
                     for entry in entries {
-                        if self.team_repo.is_member(filter_team_id, entry.user_id).await? {
+                        if self
+                            .team_repo
+                            .is_member(filter_team_id, entry.user_id)
+                            .await?
+                        {
                             filtered.push(entry);
                         }
                     }
@@ -500,14 +523,18 @@ impl ClockService {
         let mut responses = Vec::with_capacity(filtered_entries.len());
         for entry in &filtered_entries {
             let (user_name, user_email) = self.clock_repo.get_user_info(entry.user_id).await?;
-            let teams = self.team_repo.get_user_teams(org_id, entry.user_id).await.unwrap_or_default();
+            let teams = self
+                .team_repo
+                .get_user_teams(org_id, entry.user_id)
+                .await
+                .unwrap_or_default();
             let team_id = teams.first().map(|t| t.id);
             let team_name = teams.first().map(|t| t.name.clone());
 
             // Get override info if this entry was made via override
-            let override_info = overrides_map.get(&entry.id).map(|o| {
-                (o.id, o.reason.clone(), o.status)
-            });
+            let override_info = overrides_map
+                .get(&entry.id)
+                .map(|o| (o.id, o.reason.clone(), o.status));
 
             // Calculate theoretical hours for this entry's day from user's schedule
             let theoretical_hours = self
@@ -515,15 +542,33 @@ impl ClockService {
                 .get_theoretical_hours(
                     org_id,
                     entry.user_id,
-                    entry.clock_in.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc(),
-                    entry.clock_in.date_naive().and_hms_opt(23, 59, 59).unwrap().and_utc(),
+                    entry
+                        .clock_in
+                        .date_naive()
+                        .and_hms_opt(0, 0, 0)
+                        .unwrap()
+                        .and_utc(),
+                    entry
+                        .clock_in
+                        .date_naive()
+                        .and_hms_opt(23, 59, 59)
+                        .unwrap()
+                        .and_utc(),
                 )
                 .await
                 .ok()
                 .filter(|h| *h > 0.0);
 
             responses.push(ClockEntryResponse::from_entry(
-                entry, org_name.clone(), user_name, user_email, team_id, team_name, None, theoretical_hours, override_info,
+                entry,
+                org_name.clone(),
+                user_name,
+                user_email,
+                team_id,
+                team_name,
+                None,
+                theoretical_hours,
+                override_info,
             ));
         }
 
@@ -582,8 +627,8 @@ impl ClockService {
 
         // Get current time
         let now = Utc::now();
-        let current_time = NaiveTime::from_hms_opt(now.hour(), now.minute(), now.second())
-            .unwrap_or_default();
+        let current_time =
+            NaiveTime::from_hms_opt(now.hour(), now.minute(), now.second()).unwrap_or_default();
 
         // Check time window based on action
         let (earliest, latest) = if action == "clock_in" {
@@ -652,7 +697,9 @@ impl ClockService {
     ) -> Result<Option<ClockValidationResult>, AppError> {
         // Return both clock_in and clock_out validation status
         // For simplicity, we return the clock_in validation
-        let validation = self.validate_clock_action(org_id, user_id, "clock_in").await?;
+        let validation = self
+            .validate_clock_action(org_id, user_id, "clock_in")
+            .await?;
         Ok(Some(validation))
     }
 
@@ -689,7 +736,11 @@ impl ClockService {
                 )
             }
             (Some(e), None) => {
-                format!("{} is not allowed before {}", action_name, e.format("%H:%M"))
+                format!(
+                    "{} is not allowed before {}",
+                    action_name,
+                    e.format("%H:%M")
+                )
             }
             (None, Some(l)) => {
                 format!("{} is not allowed after {}", action_name, l.format("%H:%M"))

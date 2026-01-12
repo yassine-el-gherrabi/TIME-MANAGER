@@ -481,7 +481,9 @@ impl ClockRestrictionRepository {
             status: Some(ClockOverrideStatus::AutoApproved),
             reviewed_by: None,
             reviewed_at: Some(Some(Utc::now())),
-            review_notes: Some(Some("Auto-approved based on restriction policy".to_string())),
+            review_notes: Some(Some(
+                "Auto-approved based on restriction policy".to_string(),
+            )),
         };
 
         self.update_override_request(org_id, request_id, update)

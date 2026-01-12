@@ -213,12 +213,8 @@ impl ClockRestrictionService {
 
         // Get current time
         let now = Utc::now();
-        let current_time = NaiveTime::from_hms_opt(
-            now.hour(),
-            now.minute(),
-            now.second(),
-        )
-        .unwrap_or_default();
+        let current_time =
+            NaiveTime::from_hms_opt(now.hour(), now.minute(), now.second()).unwrap_or_default();
 
         // Check time window based on action
         let (earliest, latest) = if action == "clock_in" {
@@ -415,7 +411,13 @@ impl ClockRestrictionService {
 
         let updated = if review.approved {
             self.restriction_repo
-                .approve_override_request(org_id, request_id, reviewer_id, review.review_notes, None)
+                .approve_override_request(
+                    org_id,
+                    request_id,
+                    reviewer_id,
+                    review.review_notes,
+                    None,
+                )
                 .await?
         } else {
             self.restriction_repo
@@ -559,7 +561,11 @@ impl ClockRestrictionService {
                 )
             }
             (Some(e), None) => {
-                format!("{} is not allowed before {}", action_name, e.format("%H:%M"))
+                format!(
+                    "{} is not allowed before {}",
+                    action_name,
+                    e.format("%H:%M")
+                )
             }
             (None, Some(l)) => {
                 format!("{} is not allowed after {}", action_name, l.format("%H:%M"))
@@ -572,7 +578,10 @@ impl ClockRestrictionService {
         &self,
         restriction: &ClockRestriction,
     ) -> Result<ClockRestrictionResponse, AppError> {
-        let org = self.org_repo.find_by_id(restriction.organization_id).await?;
+        let org = self
+            .org_repo
+            .find_by_id(restriction.organization_id)
+            .await?;
 
         let team_name = if let Some(team_id) = restriction.team_id {
             let team = self
@@ -692,7 +701,14 @@ impl ClockRestrictionService {
         };
 
         if let Err(e) = notification_service
-            .create_notification(org_id, request.user_id, notification_type, title, message, None)
+            .create_notification(
+                org_id,
+                request.user_id,
+                notification_type,
+                title,
+                message,
+                None,
+            )
             .await
         {
             tracing::warn!(

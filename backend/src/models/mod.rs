@@ -34,6 +34,13 @@ pub use audit_log::{
     AuditContext, AuditLog, AuditLogFilter, AuditLogResponse, AuditUserInfo, NewAuditLog,
     PaginatedAuditLogs,
 };
+pub use break_policy::{
+    BreakDeduction, BreakEntry, BreakEntryFilter, BreakEntryResponse, BreakEntryUpdate,
+    BreakPolicy, BreakPolicyFilter, BreakPolicyResponse, BreakPolicyUpdate, BreakStatus,
+    BreakWindow, BreakWindowResponse, CreateBreakPolicyRequest, CreateBreakWindowRequest,
+    EffectiveBreakPolicy, EndBreakRequest, NewBreakEntry, NewBreakPolicy, NewBreakWindow,
+    PaginatedBreakEntries, PaginatedBreakPolicies, StartBreakRequest, UpdateBreakPolicyRequest,
+};
 pub use claims::Claims;
 pub use clock_entry::{
     ClockEntry, ClockEntryResponse, ClockEntryUpdate, ClockFilter, ClockStatus, NewClockEntry,
@@ -74,11 +81,4 @@ pub use user_session::{NewUserSession, UserSession};
 pub use work_schedule::{
     DayConfig, NewWorkSchedule, NewWorkScheduleDay, WorkSchedule, WorkScheduleDay,
     WorkScheduleDayUpdate, WorkScheduleUpdate, WorkScheduleWithDays,
-};
-pub use break_policy::{
-    BreakDeduction, BreakEntry, BreakEntryFilter, BreakEntryResponse, BreakEntryUpdate,
-    BreakPolicy, BreakPolicyFilter, BreakPolicyResponse, BreakPolicyUpdate, BreakStatus,
-    BreakWindow, BreakWindowResponse, CreateBreakPolicyRequest, CreateBreakWindowRequest,
-    EffectiveBreakPolicy, EndBreakRequest, NewBreakEntry, NewBreakPolicy, NewBreakWindow,
-    PaginatedBreakEntries, PaginatedBreakPolicies, StartBreakRequest, UpdateBreakPolicyRequest,
 };

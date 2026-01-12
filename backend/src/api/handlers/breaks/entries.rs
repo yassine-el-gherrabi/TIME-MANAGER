@@ -75,9 +75,7 @@ pub async fn get_break_status(
 ) -> Result<impl IntoResponse, AppError> {
     let service = BreakService::new(state.db_pool.clone());
 
-    let status = service
-        .get_break_status(claims.org_id, claims.sub)
-        .await?;
+    let status = service.get_break_status(claims.org_id, claims.sub).await?;
 
     Ok((StatusCode::OK, Json(status)))
 }
@@ -129,7 +127,9 @@ pub async fn list_entries(
         per_page: query.per_page,
     };
 
-    let entries = service.list_entries(claims.org_id, filter, pagination).await?;
+    let entries = service
+        .list_entries(claims.org_id, filter, pagination)
+        .await?;
 
     Ok((StatusCode::OK, Json(entries)))
 }

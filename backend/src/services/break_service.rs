@@ -7,12 +7,13 @@ use crate::error::AppError;
 use crate::models::{
     BreakDeduction, BreakEntry, BreakEntryFilter, BreakEntryResponse, BreakEntryUpdate,
     BreakPolicy, BreakPolicyFilter, BreakPolicyResponse, BreakPolicyUpdate, BreakStatus,
-    BreakWindowResponse, CreateBreakPolicyRequest, CreateBreakWindowRequest,
-    EffectiveBreakPolicy, EndBreakRequest, NewBreakEntry, NewBreakPolicy, NewBreakWindow,
-    PaginatedBreakEntries, PaginatedBreakPolicies, Pagination, StartBreakRequest,
-    UpdateBreakPolicyRequest,
+    BreakWindowResponse, CreateBreakPolicyRequest, CreateBreakWindowRequest, EffectiveBreakPolicy,
+    EndBreakRequest, NewBreakEntry, NewBreakPolicy, NewBreakWindow, PaginatedBreakEntries,
+    PaginatedBreakPolicies, Pagination, StartBreakRequest, UpdateBreakPolicyRequest,
 };
-use crate::repositories::{BreakRepository, OrganizationRepository, TeamRepository, UserRepository};
+use crate::repositories::{
+    BreakRepository, OrganizationRepository, TeamRepository, UserRepository,
+};
 
 /// Service for break policies, windows, and entries
 pub struct BreakService {
@@ -332,7 +333,8 @@ impl BreakService {
             }
             None => {
                 return Err(AppError::ValidationError(
-                    "No break policy is configured for you. Contact your administrator.".to_string(),
+                    "No break policy is configured for you. Contact your administrator."
+                        .to_string(),
                 ));
             }
         }

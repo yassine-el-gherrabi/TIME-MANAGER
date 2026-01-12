@@ -16,7 +16,6 @@ use super::handlers::breaks;
 use super::handlers::clock_restrictions;
 use super::handlers::clocks;
 use super::handlers::closed_days;
-use super::handlers::system;
 use super::handlers::health::health_check;
 use super::handlers::kpis;
 use super::handlers::metrics;
@@ -25,6 +24,7 @@ use super::handlers::organizations;
 use super::handlers::password;
 use super::handlers::reports;
 use super::handlers::schedules;
+use super::handlers::system;
 use super::handlers::teams;
 use super::handlers::users;
 use crate::config::AppState;
@@ -239,7 +239,10 @@ pub fn create_router(state: AppState) -> Router {
             "/overrides/pending",
             get(clock_restrictions::list_pending_overrides),
         )
-        .route("/overrides/me", get(clock_restrictions::list_user_overrides))
+        .route(
+            "/overrides/me",
+            get(clock_restrictions::list_user_overrides),
+        )
         .route(
             "/overrides/:id/review",
             post(clock_restrictions::review_override_request),

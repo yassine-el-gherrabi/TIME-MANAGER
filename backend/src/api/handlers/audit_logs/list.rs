@@ -63,7 +63,9 @@ pub async fn list_audit_logs(
     };
 
     // Super Admin can filter by organization or see all
-    let audit_logs = service.list(query.organization_id, filter, pagination).await?;
+    let audit_logs = service
+        .list(query.organization_id, filter, pagination)
+        .await?;
 
     // Log access for audit trail (optional - could be omitted for audit log reads)
     tracing::info!(

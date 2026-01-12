@@ -549,7 +549,11 @@ impl ClockRepository {
     ) -> Result<i64, AppError> {
         use diesel::dsl::count;
 
-        let mut conn = self.pool.get().await.map_err(|e| AppError::PoolError(e.to_string()))?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Calculate start and end of day in UTC
         let start_of_day = date.and_hms_opt(0, 0, 0).unwrap().and_utc();

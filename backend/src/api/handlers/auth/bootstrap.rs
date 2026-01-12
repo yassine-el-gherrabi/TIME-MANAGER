@@ -15,7 +15,11 @@ use crate::utils::{JwtService, PasswordService};
 /// Bootstrap request payload
 #[derive(Debug, Deserialize, Validate)]
 pub struct BootstrapRequest {
-    #[validate(length(min = 2, max = 100, message = "Organization name must be 2-100 characters"))]
+    #[validate(length(
+        min = 2,
+        max = 100,
+        message = "Organization name must be 2-100 characters"
+    ))]
     pub organization_name: String,
 
     #[validate(length(min = 2, max = 50, message = "Slug must be 2-50 characters"))]
@@ -106,7 +110,9 @@ pub async fn bootstrap(
     let new_org = NewOrganization {
         name: payload.organization_name.clone(),
         slug: payload.organization_slug.to_lowercase(),
-        timezone: payload.timezone.unwrap_or_else(|| "Europe/Paris".to_string()),
+        timezone: payload
+            .timezone
+            .unwrap_or_else(|| "Europe/Paris".to_string()),
     };
 
     let organization = org_repo.create(new_org).await?;
@@ -129,11 +135,8 @@ pub async fn bootstrap(
 
     // Generate access token for immediate login
     let jwt_service = JwtService::new(&state.config.jwt_private_key, &state.config.jwt_public_key)?;
-    let access_token = jwt_service.generate_access_token(
-        user.id,
-        user.organization_id,
-        user.role,
-    )?;
+    let access_token =
+        jwt_service.generate_access_token(user.id, user.organization_id, user.role)?;
 
     tracing::info!(
         "Bootstrap completed: organization '{}' created with superadmin '{}'",

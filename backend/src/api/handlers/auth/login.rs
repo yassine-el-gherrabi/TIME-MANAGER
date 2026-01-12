@@ -113,10 +113,7 @@ pub async fn login(
 
     // Check if email is rate limited
     // Use generic message to prevent user enumeration
-    if brute_force_service
-        .is_email_rate_limited(&email)
-        .await?
-    {
+    if brute_force_service.is_email_rate_limited(&email).await? {
         return Err(AppError::TooManyRequests(
             "Too many requests. Please try again later.".to_string(),
         ));

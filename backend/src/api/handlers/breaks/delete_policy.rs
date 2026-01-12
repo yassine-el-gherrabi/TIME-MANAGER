@@ -25,7 +25,9 @@ pub async fn delete_policy(
 ) -> Result<impl IntoResponse, AppError> {
     let service = BreakService::new(state.db_pool.clone());
 
-    service.delete_policy(claims.org_id, id, claims.role).await?;
+    service
+        .delete_policy(claims.org_id, id, claims.role)
+        .await?;
 
     Ok(StatusCode::NO_CONTENT)
 }

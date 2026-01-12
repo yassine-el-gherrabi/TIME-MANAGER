@@ -587,10 +587,7 @@ impl BreakRepository {
     ) -> Result<i32, AppError> {
         let entries = self.get_entries_for_clock_entry(clock_entry_id).await?;
 
-        let total = entries
-            .iter()
-            .filter_map(|e| e.duration_minutes)
-            .sum();
+        let total = entries.iter().filter_map(|e| e.duration_minutes).sum();
 
         Ok(total)
     }
