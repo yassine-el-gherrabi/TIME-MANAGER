@@ -116,9 +116,10 @@ JWT_REFRESH_TOKEN_EXPIRY_SECONDS=604800
 CORS_ALLOWED_ORIGINS=https://time-manager.app
 
 # === Email (Production SMTP) ===
+# Note: Use port 587 (STARTTLS) - port 465 is often blocked by hosting providers
 EMAIL_ENABLED=true
 SMTP_HOST=smtp.resend.com
-SMTP_PORT=465
+SMTP_PORT=587
 SMTP_USERNAME=resend
 SMTP_PASSWORD=<api-key>
 EMAIL_FROM=noreply@time-manager.app
