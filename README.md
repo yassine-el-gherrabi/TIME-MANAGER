@@ -64,6 +64,52 @@ Plateforme SaaS de gestion du temps de travail. Pointage, absences, équipes, pl
 
 ---
 
+## Personas
+
+L'application supporte 4 rôles avec droits cascadés : `SUPER_ADMIN > ADMIN > MANAGER > EMPLOYEE`
+
+### Employé
+| Fonctionnalité | Description | Statut |
+|----------------|-------------|--------|
+| Pointer arrivée/départ | Toggle clock in/out en 1 clic avec notes optionnelles | ✅ |
+| Consulter heures | Historique pointages, statistiques journalières/hebdomadaires | ✅ |
+| Consulter soldes congés | Affichage des balances par type d'absence | ✅ |
+| Soumettre absence | Formulaire avec type, dates, calcul jours ouvrés automatique | ✅ |
+| Demander correction | Demande d'override avec justification si hors plage horaire | ✅ |
+
+### Manager
+*Hérite de toutes les fonctionnalités Employé, plus :*
+
+| Fonctionnalité | Description | Statut |
+|----------------|-------------|--------|
+| Voir pointages équipe | Liste des pointages avec filtres par équipe | ✅ |
+| Voir absences équipe | Calendrier d'équipe, historique des demandes | ✅ |
+| Valider/refuser demandes | Approbation pointages et absences avec motif | ✅ |
+| Dashboard équipe | KPIs équipe, widget présence temps réel | ✅ |
+
+### Admin (RH)
+*Hérite de toutes les fonctionnalités Manager sur toute l'organisation, plus :*
+
+| Fonctionnalité | Description | Statut |
+|----------------|-------------|--------|
+| CRUD utilisateurs | Création, modification, suppression (soft-delete) | ✅ |
+| CRUD équipes | Gestion équipes et membres | ✅ |
+| Config horaires | Modèles horaires hebdomadaires avec tolérance | ✅ |
+| Config types absences | CP, RTT, maladie avec règles (solde, approbation) | ✅ |
+| Config jours fériés | Jours fermés récurrents ou ponctuels | ✅ |
+| Export données | Export CSV pour paie (pointages, absences, users) | ✅ |
+
+### Super Admin
+*Hérite de toutes les fonctionnalités Admin, plus :*
+
+| Fonctionnalité | Description | Statut |
+|----------------|-------------|--------|
+| Config organisation | Nom, timezone, paramètres globaux | ✅ |
+| Logs d'audit | Consultation et export de tous les événements | ✅ |
+| Multi-tenant | Création et gestion de plusieurs organisations | ✅ |
+
+---
+
 ## Prérequis
 
 ### Docker & Docker Compose
