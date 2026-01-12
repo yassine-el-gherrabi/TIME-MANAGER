@@ -1,0 +1,44 @@
+http:
+  middlewares:
+    # HTTPS Redirect
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+    # Rate Limiting
+    rate-limit-global:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 50
+
+    rate-limit-auth:
+      rateLimit:
+        average: 5
+        period: 1m
+        burst: 2
+
+    # Security Headers (Production)
+    security-headers:
+      headers:
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "DENY"
+          Referrer-Policy: "strict-origin-when-cross-origin"
+          Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+
+    # Strip API Prefix
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+        forceSlash: true

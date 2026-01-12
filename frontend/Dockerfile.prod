@@ -3,6 +3,10 @@
 # ============================================
 FROM node:20-alpine AS builder
 
+# Build argument for API URL (required at build time for Vite)
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 WORKDIR /app
 
 # Copy package files
@@ -14,7 +18,7 @@ RUN npm ci && npm cache clean --force
 # Copy source code
 COPY . .
 
-# Build application
+# Build application with environment variable
 RUN npm run build
 
 # ============================================
