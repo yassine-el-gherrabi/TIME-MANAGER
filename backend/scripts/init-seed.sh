@@ -32,8 +32,23 @@ until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -q;
 done
 echo "  PostgreSQL is ready!"
 
+# Check if schema exists (migrations must have run)
+echo "[2/4] Checking if database schema exists..."
+SCHEMA_CHECK=$(PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'organizations')" 2>/dev/null || echo "f")
+SCHEMA_CHECK=$(echo "$SCHEMA_CHECK" | tr -d '[:space:]')
+
+if [ "$SCHEMA_CHECK" != "t" ]; then
+    echo "  Schema not ready (organizations table missing)"
+    echo "  Waiting for backend to run migrations..."
+    echo "=========================================="
+    echo "Initialization skipped (schema not ready)"
+    echo "=========================================="
+    exit 1
+fi
+echo "  Schema is ready!"
+
 # Check if already seeded (idempotent check)
-echo "[2/3] Checking if database is already seeded..."
+echo "[3/4] Checking if database is already seeded..."
 SEED_CHECK=$(PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "SELECT COUNT(*) FROM users WHERE email = 'demo@timemanager.com'" 2>/dev/null || echo "0")
 SEED_CHECK=$(echo "$SEED_CHECK" | tr -d '[:space:]')
 
@@ -47,7 +62,7 @@ if [ "$SEED_CHECK" != "0" ] && [ "$SEED_CHECK" != "" ]; then
 fi
 
 # Run seed
-echo "[3/3] Running demo seed..."
+echo "[4/4] Running demo seed..."
 echo "  Loading /app/scripts/demo-seed.sql..."
 
 PGPASSWORD="$POSTGRES_PASSWORD" psql \

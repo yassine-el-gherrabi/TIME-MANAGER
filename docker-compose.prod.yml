@@ -21,24 +21,6 @@ services:
     networks:
       - timemanager-network
 
-  # ========== DATABASE INIT (Seed) ==========
-  db-init:
-    image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
-    container_name: timemanager-db-init
-    entrypoint: ["/bin/bash", "/app/scripts/init-seed.sh"]
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: timemanager
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: timemanager
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - timemanager-network
-    restart: "no"
-
   # ========== BACKEND ==========
   backend:
     image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
@@ -63,12 +45,15 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-https://${DOMAIN:-localhost}}
     volumes:
       - ./keys:/app/keys:ro
-    # Health check defined in Dockerfile.prod (curl to /health)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
-      db-init:
-        condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api`)"
@@ -84,6 +69,24 @@ services:
     networks:
       - timemanager-network
 
+  # ========== DATABASE SEED (runs after backend migrations) ==========
+  db-seed:
+    image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/backend:${IMAGE_TAG:-latest}
+    container_name: timemanager-db-seed
+    entrypoint: ["/bin/bash", "/app/scripts/init-seed.sh"]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: timemanager
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: timemanager
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - timemanager-network
+    restart: "no"
+
   # ========== FRONTEND ==========
   frontend:
     image: ghcr.io/${GITHUB_REPOSITORY:-timemanager}/frontend:${IMAGE_TAG:-latest}
@@ -91,7 +94,8 @@ services:
     restart: unless-stopped
     # Health check defined in Dockerfile.prod (wget to /)
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`)"
