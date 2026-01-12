@@ -34,6 +34,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # TODO: Restore "enable={{is_default_branch}}" when deploying from master
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -41,7 +42,7 @@ jobs:
           images: ${{ env.BACKEND_IMAGE }}
           tags: |
             type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       - name: Build and push Backend
         uses: docker/build-push-action@v5
@@ -73,6 +74,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # TODO: Restore "enable={{is_default_branch}}" when deploying from master
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -80,7 +82,7 @@ jobs:
           images: ${{ env.FRONTEND_IMAGE }}
           tags: |
             type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
