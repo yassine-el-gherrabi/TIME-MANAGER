@@ -164,40 +164,15 @@
       "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2, "fillOpacity": 10}}}
     },
     {
-      "id": 30,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28},
-      "type": "row",
-      "title": "Infrastructure (Containers)",
-      "collapsed": false
-    },
-    {
-      "id": 31,
-      "gridPos": {"h": 7, "w": 12, "x": 0, "y": 29},
-      "type": "timeseries",
-      "title": "CPU %",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"timemanager-.*\", image!=\"\"}[1m])) * 100", "legendFormat": "{{name}}"}],
-      "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "custom": {"lineWidth": 2, "fillOpacity": 10}}}
-    },
-    {
-      "id": 32,
-      "gridPos": {"h": 7, "w": 12, "x": 12, "y": 29},
-      "type": "timeseries",
-      "title": "Memoire",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "container_memory_usage_bytes{name=~\"timemanager-.*\", image!=\"\"}", "legendFormat": "{{name}}"}],
-      "fieldConfig": {"defaults": {"unit": "bytes", "min": 0, "custom": {"lineWidth": 2, "fillOpacity": 10}}}
-    },
-    {
       "id": 40,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 36},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28},
       "type": "row",
       "title": "Logs",
       "collapsed": false
     },
     {
       "id": 41,
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 37},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 29},
       "type": "logs",
       "title": "Backend Logs",
       "datasource": {"type": "loki", "uid": "loki"},
@@ -206,18 +181,18 @@
     },
     {
       "id": 50,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 47},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 39},
       "type": "row",
       "title": "Database & Health",
       "collapsed": false
     },
     {
       "id": 51,
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 48},
+      "gridPos": {"h": 4, "w": 8, "x": 0, "y": 40},
       "type": "stat",
       "title": "PostgreSQL",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "container_memory_usage_bytes{name=\"timemanager-postgres\"} > 0", "legendFormat": "Status"}],
+      "targets": [{"expr": "count(container_start_time_seconds{name=\"timemanager-postgres\"}) or vector(0)", "legendFormat": "Status"}],
       "fieldConfig": {
         "defaults": {
           "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "red"}, {"value": 1, "color": "green"}]},
@@ -225,12 +200,11 @@
           "noValue": "DOWN"
         }
       },
-      "options": {"graphMode": "none", "colorMode": "background"},
-      "transformations": [{"id": "reduce", "options": {"reducers": ["lastNotNull"]}}]
+      "options": {"graphMode": "none", "colorMode": "background"}
     },
     {
       "id": 52,
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 48},
+      "gridPos": {"h": 4, "w": 8, "x": 8, "y": 40},
       "type": "stat",
       "title": "Backend API",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -243,46 +217,6 @@
         }
       },
       "options": {"graphMode": "none", "colorMode": "background"}
-    },
-    {
-      "id": 53,
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 48},
-      "type": "stat",
-      "title": "Avg Response Time",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "rate(http_request_duration_seconds_sum{job=\"backend\"}[5m]) / rate(http_request_duration_seconds_count{job=\"backend\"}[5m]) or vector(0)", "legendFormat": "Avg"}],
-      "fieldConfig": {"defaults": {"unit": "s", "decimals": 3, "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "green"}, {"value": 0.5, "color": "yellow"}, {"value": 1, "color": "red"}]}}},
-      "options": {"graphMode": "area", "colorMode": "value"}
-    },
-    {
-      "id": 54,
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 48},
-      "type": "stat",
-      "title": "Error Rate (5m)",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "sum(rate(http_requests_total{job=\"backend\", status_class=\"5xx\"}[5m])) / sum(rate(http_requests_total{job=\"backend\"}[5m])) * 100 or vector(0)", "legendFormat": "Errors"}],
-      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 5, "color": "red"}]}}},
-      "options": {"graphMode": "area", "colorMode": "value"}
-    },
-    {
-      "id": 55,
-      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 52},
-      "type": "timeseries",
-      "title": "Database Container Memory",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "container_memory_usage_bytes{name=\"timemanager-postgres\"}", "legendFormat": "PostgreSQL Memory"}],
-      "fieldConfig": {"defaults": {"unit": "bytes", "min": 0, "custom": {"lineWidth": 2, "fillOpacity": 20}}}
-    },
-    {
-      "id": 56,
-      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 52},
-      "type": "timeseries",
-      "title": "Request Rate by Status",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [
-        {"expr": "sum by (status_class) (rate(http_requests_total{job=\"backend\"}[1m]))", "legendFormat": "{{status_class}}"}
-      ],
-      "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2, "fillOpacity": 10, "stacking": {"mode": "normal"}}}}
     }
   ]
 }
