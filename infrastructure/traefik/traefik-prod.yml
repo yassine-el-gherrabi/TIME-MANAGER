@@ -12,10 +12,10 @@ entryPoints:
     address: ":443"
 
 # Certificate Resolvers (Let's Encrypt)
+# Note: email is set via CLI in docker-compose.prod.yml
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: "${TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL}"
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
@@ -24,14 +24,14 @@ certificatesResolvers:
 providers:
   docker:
     exposedByDefault: false
-    network: timemanager-network
+    network: timemanager_timemanager-network
   file:
     filename: /etc/traefik/dynamic.yml
     watch: true
 
 # Logging
 log:
-  level: WARN
+  level: DEBUG
 
 # Access Logs (optional, can be verbose)
 accessLog:

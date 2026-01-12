@@ -112,7 +112,7 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: root
           key: ${{ secrets.HETZNER_SSH_KEY }}
-          source: "docker-compose.prod.yml,infrastructure/traefik/traefik-prod.yml,infrastructure/traefik/dynamic-prod.yml"
+          source: "docker-compose.prod.yml,infrastructure/"
           target: "/opt/timemanager"
 
       - name: Deploy to Hetzner
@@ -139,6 +139,9 @@ jobs:
             FRONTEND_URL=https://time-manager.app
             RUST_LOG=info
             EMAIL_ENABLED=false
+            # Grafana credentials (change in production!)
+            GRAFANA_USER=admin
+            GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD || 'admin' }}
             ENVEOF
 
             # Login to GHCR

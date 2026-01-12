@@ -46,10 +46,11 @@ LABEL org.opencontainers.image.title="TimeManager Backend" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.vendor="TimeManager"
 
-# Install runtime dependencies only
+# Install runtime dependencies only (curl for health checks)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libpq5 \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -66,9 +67,9 @@ USER appuser
 
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD /app/timemanager-backend --health-check || exit 1
+# Health check using curl to /health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl --fail --silent http://localhost:8080/health || exit 1
 
 # Run binary
 CMD ["/app/timemanager-backend"]

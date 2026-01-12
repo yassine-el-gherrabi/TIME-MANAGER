@@ -18,10 +18,15 @@ scrape_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/timemanager-(.*)'
         action: keep
-      # Extract service name from container name
+      # Extract service name from container name (e.g., "backend" from "timemanager-backend")
       - source_labels: ['__meta_docker_container_name']
         regex: '/timemanager-(.*)'
         target_label: service
+        replacement: '$1'
+      # Add container label with full name (for Grafana queries)
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container
         replacement: '$1'
       # Add stream label (stdout/stderr)
       - source_labels: ['__meta_docker_container_log_stream']
@@ -29,3 +34,15 @@ scrape_configs:
       # Add container_id label
       - source_labels: ['__meta_docker_container_id']
         target_label: container_id
+    # Pipeline to parse JSON logs from backend
+    pipeline_stages:
+      - match:
+          selector: '{service="backend"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  message: message
+                  target: target
+            - labels:
+                level:
