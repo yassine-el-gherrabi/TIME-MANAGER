@@ -74,7 +74,7 @@ describe('Auth Integration Tests', () => {
     await user.type(screen.getByLabelText(/password/i), 'password123');
 
     // Submit form
-    await user.click(screen.getByRole('button', { name: /^login$/i }));
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Should navigate to dashboard after successful login
     await waitFor(() => {

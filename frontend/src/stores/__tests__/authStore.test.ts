@@ -20,6 +20,13 @@ vi.mock('../../api/auth', () => ({
   },
 }));
 
+// Mock the system API
+vi.mock('../../api/system', () => ({
+  systemApi: {
+    getStatus: vi.fn().mockResolvedValue({ needs_setup: false }),
+  },
+}));
+
 describe('AuthStore', () => {
   const mockUser: User = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -171,7 +178,8 @@ describe('AuthStore', () => {
 
       const result = await initializeAuth();
 
-      expect(result).toBe(false);
+      expect(result.isAuthenticated).toBe(false);
+      expect(result.needsSetup).toBe(false);
       expect(authApi.refresh).not.toHaveBeenCalled();
     });
 
@@ -186,7 +194,8 @@ describe('AuthStore', () => {
 
       const result = await initializeAuth();
 
-      expect(result).toBe(true);
+      expect(result.isAuthenticated).toBe(true);
+      expect(result.needsSetup).toBe(false);
       expect(authApi.refresh).toHaveBeenCalled();
       expect(authApi.me).toHaveBeenCalled();
       const state = useAuthStore.getState();
@@ -204,7 +213,8 @@ describe('AuthStore', () => {
 
       const result = await initializeAuth();
 
-      expect(result).toBe(false);
+      expect(result.isAuthenticated).toBe(false);
+      expect(result.needsSetup).toBe(false);
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
       expect(state.isAuthenticated).toBe(false);
