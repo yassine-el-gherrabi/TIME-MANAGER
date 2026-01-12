@@ -132,7 +132,7 @@ pub async fn bootstrap(
     let access_token = jwt_service.generate_access_token(
         user.id,
         user.organization_id,
-        user.role.clone(),
+        user.role,
     )?;
 
     tracing::info!(

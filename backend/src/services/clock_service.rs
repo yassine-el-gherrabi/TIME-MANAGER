@@ -646,8 +646,8 @@ impl ClockService {
         earliest: Option<chrono::NaiveTime>,
         latest: Option<chrono::NaiveTime>,
     ) -> bool {
-        let after_earliest = earliest.map_or(true, |e| current >= e);
-        let before_latest = latest.map_or(true, |l| current <= l);
+        let after_earliest = earliest.is_none_or(|e| current >= e);
+        let before_latest = latest.is_none_or(|l| current <= l);
         after_earliest && before_latest
     }
 

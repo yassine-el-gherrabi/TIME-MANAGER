@@ -75,6 +75,7 @@ pub struct ClockEntryResponse {
 }
 
 impl ClockEntryResponse {
+    #[allow(clippy::too_many_arguments)]
     pub fn from_entry(
         entry: &ClockEntry,
         organization_name: String,
