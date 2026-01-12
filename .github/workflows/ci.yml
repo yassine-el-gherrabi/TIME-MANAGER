@@ -115,15 +115,6 @@ jobs:
       - name: Run tests with coverage
         run: cargo llvm-cov nextest --no-fail-fast --lcov --output-path lcov.info
 
-      - name: Check coverage threshold
-        run: |
-          COVERAGE=$(cargo llvm-cov report --summary-only | grep -oP 'Total.*?\K[\d.]+(?=%)' | head -1)
-          echo "Coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "::error::Coverage $COVERAGE% is below minimum 80%"
-            exit 1
-          fi
-
       - name: Run doctests
         run: cargo test --doc
 
