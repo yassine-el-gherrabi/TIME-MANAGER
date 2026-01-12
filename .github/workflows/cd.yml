@@ -7,8 +7,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
+  REPO_LOWER: yassine-el-gherrabi/time-manager
+  BACKEND_IMAGE: ghcr.io/yassine-el-gherrabi/time-manager/backend
+  FRONTEND_IMAGE: ghcr.io/yassine-el-gherrabi/time-manager/frontend
 
 jobs:
   # ===== BUILD AND PUSH IMAGES =====
@@ -125,10 +126,10 @@ jobs:
           script: |
             cd /opt/timemanager
 
-            # Create .env file
+            # Create .env file (repo name must be lowercase for Docker)
             cat > .env << 'ENVEOF'
             DOMAIN=time-manager.app
-            GITHUB_REPOSITORY=${{ github.repository }}
+            GITHUB_REPOSITORY=yassine-el-gherrabi/time-manager
             IMAGE_TAG=latest
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             ACME_EMAIL=${{ vars.ACME_EMAIL }}
