@@ -1,8 +1,8 @@
 # Time Manager
 
-![Backend CI](https://github.com/your-org/time-manager/workflows/Backend%20CI/badge.svg)
-![Frontend CI](https://github.com/your-org/time-manager/workflows/Frontend%20CI/badge.svg)
-![Rust](https://img.shields.io/badge/Rust-1.75+-orange?logo=rust)
+![Backend CI](https://github.com/yassine-el-gherrabi/time-manager/workflows/Backend%20CI/badge.svg)
+![Frontend CI](https://github.com/yassine-el-gherrabi/time-manager/workflows/Frontend%20CI/badge.svg)
+![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue?logo=typescript)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -17,6 +17,37 @@ Plateforme SaaS de gestion du temps de travail. Pointage, absences, équipes, pl
 | **Backend** | Rust, Axum, Diesel ORM, PostgreSQL 16, JWT, Argon2 |
 | **Frontend** | React 18, TypeScript 5, Vite, Tailwind CSS, Zustand, Radix UI |
 | **Infrastructure** | Docker, Traefik v2, Prometheus, Loki, Grafana |
+
+### Justification des Choix Techniques
+
+#### Backend: Rust + Axum
+
+| Critère | Justification |
+|---------|---------------|
+| **Performance** | Rust offre des performances proches du C/C++ avec une gestion mémoire sans garbage collector. Idéal pour un SaaS temps réel avec de nombreuses requêtes concurrentes. |
+| **Sécurité** | Le système de types de Rust élimine les bugs de mémoire (null pointer, buffer overflow) à la compilation. Particulièrement critique pour une application gérant des données RH sensibles. |
+| **Async natif** | Axum utilise Tokio pour l'async/await, permettant de gérer des milliers de connexions simultanées avec peu de ressources. |
+| **Écosystème** | Diesel ORM fournit des requêtes SQL type-safe avec vérification à la compilation. Tower middleware et Serde pour la sérialisation performante. |
+| **Maintenabilité** | Le compilateur Rust détecte de nombreuses erreurs avant l'exécution, réduisant les bugs en production et facilitant les refactorings. |
+
+#### Frontend: React 18 + TypeScript
+
+| Critère | Justification |
+|---------|---------------|
+| **Maturité** | React est le framework le plus utilisé en entreprise avec un écosystème massif de composants et d'outils. |
+| **TypeScript** | Typage statique pour détecter les erreurs à la compilation, autocomplétion IDE, et documentation inline du code. |
+| **Composants** | Architecture component-based réutilisable. Radix UI pour l'accessibilité (WCAG 2.1). Shadcn/UI pour les composants stylisés. |
+| **State Management** | Zustand offre une API simple et performante sans le boilerplate de Redux. Stores séparés par domaine. |
+| **Build** | Vite pour un HMR instantané en dev et des builds optimisés en production avec tree-shaking et code-splitting. |
+
+#### Infrastructure: Docker + Traefik
+
+| Critère | Justification |
+|---------|---------------|
+| **Portabilité** | Docker garantit un environnement identique entre dev, staging et production. |
+| **Orchestration** | Docker Compose pour le développement local et la production single-node. Facilement migratable vers Kubernetes. |
+| **Reverse Proxy** | Traefik avec configuration automatique, rate limiting intégré, et Let's Encrypt pour HTTPS automatique. |
+| **Observabilité** | Stack Prometheus/Loki/Grafana pour métriques, logs centralisés et dashboards temps réel. |
 
 ---
 
