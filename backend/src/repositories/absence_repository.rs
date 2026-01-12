@@ -9,6 +9,7 @@ use crate::domain::enums::AbsenceStatus;
 use crate::error::AppError;
 use crate::models::{Absence, AbsenceFilter, AbsenceUpdate, NewAbsence, Pagination};
 use crate::schema::{absences, team_members};
+use crate::utils::{end_of_year, start_of_year};
 
 /// Absence repository for database operations
 pub struct AbsenceRepository {
@@ -315,8 +316,8 @@ impl AbsenceRepository {
             .await
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
-        let start = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
-        let end = NaiveDate::from_ymd_opt(year, 12, 31).unwrap();
+        let start = start_of_year(year)?;
+        let end = end_of_year(year)?;
 
         let total: Option<BigDecimal> = absences::table
             .filter(absences::organization_id.eq(org_id))

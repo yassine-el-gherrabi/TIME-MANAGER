@@ -7,6 +7,7 @@ use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{ClosedDay, ClosedDayFilter, ClosedDayUpdate, NewClosedDay};
 use crate::schema::closed_days;
+use crate::utils::{end_of_year, start_of_year};
 
 /// ClosedDay repository for database operations
 pub struct ClosedDayRepository {
@@ -96,8 +97,8 @@ impl ClosedDayRepository {
             .await
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
-        let start = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
-        let end = NaiveDate::from_ymd_opt(year, 12, 31).unwrap();
+        let start = start_of_year(year)?;
+        let end = end_of_year(year)?;
 
         // Get non-recurring closed days in this year
         let mut closed_days_list: Vec<ClosedDay> = closed_days::table

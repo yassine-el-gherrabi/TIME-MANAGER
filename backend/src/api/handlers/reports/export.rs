@@ -3,7 +3,7 @@ use axum::{
     http::{header, HeaderMap, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
-use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
+use chrono::NaiveDate;
 use serde::Deserialize;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -14,6 +14,7 @@ use crate::extractors::{Admin, RoleGuard};
 use crate::repositories::{
     AbsenceRepository, AbsenceTypeRepository, ClockRepository, UserRepository,
 };
+use crate::utils::{end_of_day, start_of_day};
 
 #[derive(Debug, Deserialize)]
 pub struct ExportReportsQuery {
@@ -95,18 +96,6 @@ pub async fn export_reports(
     Ok((StatusCode::OK, headers, csv_content).into_response())
 }
 
-/// Convert NaiveDate to DateTime<Utc> at start of day
-fn naive_date_to_start_of_day(date: NaiveDate) -> DateTime<Utc> {
-    date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
-        .and_utc()
-}
-
-/// Convert NaiveDate to DateTime<Utc> at end of day
-fn naive_date_to_end_of_day(date: NaiveDate) -> DateTime<Utc> {
-    date.and_time(NaiveTime::from_hms_opt(23, 59, 59).unwrap())
-        .and_utc()
-}
-
 /// Export clock entries to CSV
 async fn export_clocks(
     state: &AppState,
@@ -120,8 +109,8 @@ async fn export_clocks(
 
     let filter = ClockFilter {
         user_id: query.user_id,
-        start_date: query.start_date.map(naive_date_to_start_of_day),
-        end_date: query.end_date.map(naive_date_to_end_of_day),
+        start_date: query.start_date.map(start_of_day),
+        end_date: query.end_date.map(end_of_day),
         status: None,
     };
 

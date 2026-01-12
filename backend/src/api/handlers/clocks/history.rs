@@ -13,6 +13,7 @@ use crate::error::AppError;
 use crate::extractors::AuthenticatedUser;
 use crate::models::{ClockFilter, Pagination};
 use crate::services::ClockService;
+use crate::utils::{end_of_day, start_of_day};
 
 #[derive(Debug, Deserialize, Default)]
 pub struct HistoryQuery {
@@ -50,12 +51,8 @@ pub async fn get_history(
 
     // Convert NaiveDate to DateTime<Utc> for filtering
     let filter = ClockFilter {
-        start_date: query
-            .start_date
-            .map(|d| d.and_hms_opt(0, 0, 0).unwrap().and_utc()),
-        end_date: query
-            .end_date
-            .map(|d| d.and_hms_opt(23, 59, 59).unwrap().and_utc()),
+        start_date: query.start_date.map(start_of_day),
+        end_date: query.end_date.map(end_of_day),
         status: status_filter,
         user_id: None,
     };

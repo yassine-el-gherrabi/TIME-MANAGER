@@ -8,6 +8,7 @@ use crate::domain::enums::ClockEntryStatus;
 use crate::error::AppError;
 use crate::models::{ClockEntry, ClockEntryUpdate, ClockFilter, NewClockEntry, Pagination};
 use crate::schema::{clock_entries, team_members, users};
+use crate::utils::{end_of_day, start_of_day};
 
 /// Clock repository for database operations
 pub struct ClockRepository {
@@ -556,14 +557,14 @@ impl ClockRepository {
             .map_err(|e| AppError::PoolError(e.to_string()))?;
 
         // Calculate start and end of day in UTC
-        let start_of_day = date.and_hms_opt(0, 0, 0).unwrap().and_utc();
-        let end_of_day = date.and_hms_opt(23, 59, 59).unwrap().and_utc();
+        let day_start = start_of_day(date);
+        let day_end = end_of_day(date);
 
         let count_result: i64 = clock_entries::table
             .filter(clock_entries::organization_id.eq(org_id))
             .filter(clock_entries::user_id.eq(user_id))
-            .filter(clock_entries::clock_in.ge(start_of_day))
-            .filter(clock_entries::clock_in.le(end_of_day))
+            .filter(clock_entries::clock_in.ge(day_start))
+            .filter(clock_entries::clock_in.le(day_end))
             .select(count(clock_entries::id))
             .first(&mut conn)
             .await

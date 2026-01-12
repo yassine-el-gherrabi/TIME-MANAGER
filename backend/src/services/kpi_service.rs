@@ -8,6 +8,7 @@ use crate::error::AppError;
 use crate::repositories::{
     ClockRepository, TeamRepository, UserRepository, WorkScheduleRepository,
 };
+use crate::utils::start_of_day;
 
 /// Individual user KPIs
 #[derive(Debug, Serialize)]
@@ -404,8 +405,7 @@ impl KPIService {
                         chrono::NaiveDate::from_ymd_opt(current.year(), current.month() + 1, 1)
                     };
                     let next = next_month
-                        .map(|d| d.and_hms_opt(0, 0, 0).unwrap())
-                        .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
+                        .map(start_of_day)
                         .unwrap_or_else(|| current + chrono::Duration::days(30));
                     // Return ISO date format for frontend parsing
                     (next, current.format("%Y-%m-%d").to_string())

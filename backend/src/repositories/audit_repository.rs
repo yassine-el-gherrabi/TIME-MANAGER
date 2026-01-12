@@ -1,4 +1,3 @@
-use chrono::{NaiveTime, TimeZone, Utc};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use uuid::Uuid;
@@ -7,6 +6,7 @@ use crate::config::database::DbPool;
 use crate::error::AppError;
 use crate::models::{AuditLog, AuditLogFilter, AuditUserInfo, NewAuditLog, Pagination};
 use crate::schema::{audit_logs, users};
+use crate::utils::{end_of_day_tz, start_of_day_tz};
 
 /// Maximum number of records for CSV export
 const MAX_EXPORT_RECORDS: i64 = 10_000;
@@ -86,16 +86,13 @@ impl AuditRepository {
 
         // Apply date range filters
         if let Some(start_date) = filter.start_date {
-            let start_datetime = Utc
-                .from_utc_datetime(&start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap()));
+            let start_datetime = start_of_day_tz(start_date);
             query = query.filter(audit_logs::created_at.ge(start_datetime));
             count_query = count_query.filter(audit_logs::created_at.ge(start_datetime));
         }
 
         if let Some(end_date) = filter.end_date {
-            let end_datetime = Utc.from_utc_datetime(
-                &end_date.and_time(NaiveTime::from_hms_opt(23, 59, 59).unwrap()),
-            );
+            let end_datetime = end_of_day_tz(end_date);
             query = query.filter(audit_logs::created_at.le(end_datetime));
             count_query = count_query.filter(audit_logs::created_at.le(end_datetime));
         }
@@ -162,15 +159,12 @@ impl AuditRepository {
 
         // Apply date range filters
         if let Some(start_date) = filter.start_date {
-            let start_datetime = Utc
-                .from_utc_datetime(&start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap()));
+            let start_datetime = start_of_day_tz(start_date);
             query = query.filter(audit_logs::created_at.ge(start_datetime));
         }
 
         if let Some(end_date) = filter.end_date {
-            let end_datetime = Utc.from_utc_datetime(
-                &end_date.and_time(NaiveTime::from_hms_opt(23, 59, 59).unwrap()),
-            );
+            let end_datetime = end_of_day_tz(end_date);
             query = query.filter(audit_logs::created_at.le(end_datetime));
         }
 

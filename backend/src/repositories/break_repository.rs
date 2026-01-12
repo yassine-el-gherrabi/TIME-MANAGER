@@ -11,6 +11,7 @@ use crate::models::{
     BreakPolicyUpdate, BreakWindow, NewBreakEntry, NewBreakPolicy, NewBreakWindow, Pagination,
 };
 use crate::schema::{break_entries, break_policies, break_windows, team_members};
+use crate::utils::{end_of_day, start_of_day};
 
 /// Repository for break policies, windows, and entries
 pub struct BreakRepository {
@@ -452,16 +453,12 @@ impl BreakRepository {
             }
             if let Some(ref start_date) = filter.start_date {
                 if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
-                    let start = date.and_hms_opt(0, 0, 0).unwrap();
-                    let start_utc = DateTime::<Utc>::from_naive_utc_and_offset(start, Utc);
-                    count_query = count_query.filter(break_entries::break_start.ge(start_utc));
+                    count_query = count_query.filter(break_entries::break_start.ge(start_of_day(date)));
                 }
             }
             if let Some(ref end_date) = filter.end_date {
                 if let Ok(date) = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
-                    let end = date.and_hms_opt(23, 59, 59).unwrap();
-                    let end_utc = DateTime::<Utc>::from_naive_utc_and_offset(end, Utc);
-                    count_query = count_query.filter(break_entries::break_start.le(end_utc));
+                    count_query = count_query.filter(break_entries::break_start.le(end_of_day(date)));
                 }
             }
 
@@ -485,16 +482,12 @@ impl BreakRepository {
         }
         if let Some(ref start_date) = filter.start_date {
             if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
-                let start = date.and_hms_opt(0, 0, 0).unwrap();
-                let start_utc = DateTime::<Utc>::from_naive_utc_and_offset(start, Utc);
-                query = query.filter(break_entries::break_start.ge(start_utc));
+                query = query.filter(break_entries::break_start.ge(start_of_day(date)));
             }
         }
         if let Some(ref end_date) = filter.end_date {
             if let Ok(date) = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
-                let end = date.and_hms_opt(23, 59, 59).unwrap();
-                let end_utc = DateTime::<Utc>::from_naive_utc_and_offset(end, Utc);
-                query = query.filter(break_entries::break_start.le(end_utc));
+                query = query.filter(break_entries::break_start.le(end_of_day(date)));
             }
         }
 
