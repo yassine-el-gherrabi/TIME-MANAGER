@@ -29,7 +29,11 @@ import { LanguageSelector } from '../LanguageSelector';
 import { useAuthStore } from '../../stores/authStore';
 import { UserRole } from '../../types/auth';
 
-export const Sidebar: FC = () => {
+interface SidebarContentProps {
+  onNavClick?: () => void;
+}
+
+export const SidebarContent: FC<SidebarContentProps> = ({ onNavClick }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -39,34 +43,32 @@ export const Sidebar: FC = () => {
     navigate('/login');
   };
 
-  return (
-    <aside className="sticky top-0 flex h-screen w-64 flex-col border-r bg-background">
-      {/* Logo and Notifications */}
-      <div className="flex h-16 items-center justify-between border-b px-6">
-        <div className="flex items-center gap-2">
-          <Clock className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold">Time Manager</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <LanguageSelector />
-          <NotificationBell />
-        </div>
-      </div>
+  const handleNavClick = () => {
+    onNavClick?.();
+  };
 
+  return (
+    <>
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-4">
-        <NavLink to="/" icon={<LayoutDashboard className="h-4 w-4" />} end>
-          {t('nav.dashboard')}
-        </NavLink>
-        <NavLink to="/clock" icon={<Timer className="h-4 w-4" />} end>
-          <span className="flex items-center gap-2">
-            {t('nav.timeClock')}
-            <ClockStatusIndicator />
-          </span>
-        </NavLink>
-        <NavLink to="/absences" icon={<Briefcase className="h-4 w-4" />} end>
-          {t('nav.myAbsences')}
-        </NavLink>
+      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+        <div onClick={handleNavClick}>
+          <NavLink to="/" icon={<LayoutDashboard className="h-4 w-4" />} end>
+            {t('nav.dashboard')}
+          </NavLink>
+        </div>
+        <div onClick={handleNavClick}>
+          <NavLink to="/clock" icon={<Timer className="h-4 w-4" />} end>
+            <span className="flex items-center gap-2">
+              {t('nav.timeClock')}
+              <ClockStatusIndicator />
+            </span>
+          </NavLink>
+        </div>
+        <div onClick={handleNavClick}>
+          <NavLink to="/absences" icon={<Briefcase className="h-4 w-4" />} end>
+            {t('nav.myAbsences')}
+          </NavLink>
+        </div>
 
         {/* Manager+ Section */}
         {(user?.role === UserRole.Manager || user?.role === UserRole.Admin || user?.role === UserRole.SuperAdmin) && (
@@ -74,15 +76,21 @@ export const Sidebar: FC = () => {
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t('nav.management')}
             </p>
-            <NavLink to="/clock/pending" icon={<ClipboardCheck className="h-4 w-4" />}>
-              {t('nav.pendingClocks')}
-            </NavLink>
-            <NavLink to="/absences/pending" icon={<CalendarCheck className="h-4 w-4" />}>
-              {t('nav.pendingAbsences')}
-            </NavLink>
-            <NavLink to="/absences/calendar" icon={<CalendarDays className="h-4 w-4" />}>
-              {t('nav.calendar')}
-            </NavLink>
+            <div onClick={handleNavClick}>
+              <NavLink to="/clock/pending" icon={<ClipboardCheck className="h-4 w-4" />}>
+                {t('nav.pendingClocks')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/absences/pending" icon={<CalendarCheck className="h-4 w-4" />}>
+                {t('nav.pendingAbsences')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/absences/calendar" icon={<CalendarDays className="h-4 w-4" />}>
+                {t('nav.calendar')}
+              </NavLink>
+            </div>
           </div>
         )}
 
@@ -92,21 +100,31 @@ export const Sidebar: FC = () => {
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t('nav.admin')}
             </p>
-            <NavLink to="/admin/users" icon={<Users className="h-4 w-4" />}>
-              {t('nav.users')}
-            </NavLink>
-            <NavLink to="/admin/teams" icon={<UsersRound className="h-4 w-4" />}>
-              {t('nav.teams')}
-            </NavLink>
-            <NavLink to="/admin/schedules" icon={<Calendar className="h-4 w-4" />}>
-              {t('nav.workSchedules')}
-            </NavLink>
-            <NavLink to="/admin/absence-types" icon={<FileType className="h-4 w-4" />}>
-              {t('nav.absenceTypes')}
-            </NavLink>
-            <NavLink to="/admin/closed-days" icon={<PartyPopper className="h-4 w-4" />}>
-              {t('nav.closedDays')}
-            </NavLink>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/users" icon={<Users className="h-4 w-4" />}>
+                {t('nav.users')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/teams" icon={<UsersRound className="h-4 w-4" />}>
+                {t('nav.teams')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/schedules" icon={<Calendar className="h-4 w-4" />}>
+                {t('nav.workSchedules')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/absence-types" icon={<FileType className="h-4 w-4" />}>
+                {t('nav.absenceTypes')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/closed-days" icon={<PartyPopper className="h-4 w-4" />}>
+                {t('nav.closedDays')}
+              </NavLink>
+            </div>
           </div>
         )}
 
@@ -116,12 +134,16 @@ export const Sidebar: FC = () => {
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Super Admin
             </p>
-            <NavLink to="/admin/organizations" icon={<Building2 className="h-4 w-4" />}>
-              {t('nav.organizations')}
-            </NavLink>
-            <NavLink to="/admin/audit-logs" icon={<ScrollText className="h-4 w-4" />}>
-              {t('nav.auditLogs')}
-            </NavLink>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/organizations" icon={<Building2 className="h-4 w-4" />}>
+                {t('nav.organizations')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/audit-logs" icon={<ScrollText className="h-4 w-4" />}>
+                {t('nav.auditLogs')}
+              </NavLink>
+            </div>
           </div>
         )}
 
@@ -130,15 +152,21 @@ export const Sidebar: FC = () => {
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t('nav.settings')}
           </p>
-          <NavLink to="/profile" icon={<User className="h-4 w-4" />}>
-            {t('nav.profile')}
-          </NavLink>
-          <NavLink to="/settings/password" icon={<KeyRound className="h-4 w-4" />}>
-            {t('nav.password')}
-          </NavLink>
-          <NavLink to="/settings/sessions" icon={<MonitorSmartphone className="h-4 w-4" />}>
-            {t('nav.sessions')}
-          </NavLink>
+          <div onClick={handleNavClick}>
+            <NavLink to="/profile" icon={<User className="h-4 w-4" />}>
+              {t('nav.profile')}
+            </NavLink>
+          </div>
+          <div onClick={handleNavClick}>
+            <NavLink to="/settings/password" icon={<KeyRound className="h-4 w-4" />}>
+              {t('nav.password')}
+            </NavLink>
+          </div>
+          <div onClick={handleNavClick}>
+            <NavLink to="/settings/sessions" icon={<MonitorSmartphone className="h-4 w-4" />}>
+              {t('nav.sessions')}
+            </NavLink>
+          </div>
         </div>
       </nav>
 
@@ -159,6 +187,26 @@ export const Sidebar: FC = () => {
           {t('auth.logout')}
         </Button>
       </div>
+    </>
+  );
+};
+
+export const Sidebar: FC = () => {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-64 flex-col border-r bg-background lg:flex">
+      {/* Logo and Notifications */}
+      <div className="flex h-16 items-center justify-between border-b px-6">
+        <div className="flex items-center gap-2">
+          <Clock className="h-6 w-6 text-primary" />
+          <span className="text-lg font-semibold">Time Manager</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <LanguageSelector />
+          <NotificationBell />
+        </div>
+      </div>
+
+      <SidebarContent />
     </aside>
   );
 };

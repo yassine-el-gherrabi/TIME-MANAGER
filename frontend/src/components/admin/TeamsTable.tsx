@@ -53,10 +53,10 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.name')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.description')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('teams.manager')}
             </th>
             <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
@@ -72,11 +72,19 @@ export const TeamsTable: React.FC<TeamsTableProps> = ({
             <tr key={team.id} className="border-b hover:bg-muted/25 transition-colors">
               <td className="px-4 py-3 text-sm">
                 <div className="font-medium">{team.name}</div>
+                {/* Show manager on mobile under name */}
+                <div className="sm:hidden text-xs text-muted-foreground">
+                  {team.manager_id ? (
+                    managerNames[team.manager_id] || t('common.loading')
+                  ) : (
+                    <span className="italic">{t('teams.noManager')}</span>
+                  )}
+                </div>
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="hidden md:table-cell px-4 py-3 text-sm text-muted-foreground">
                 {team.description || <span className="italic">{t('teams.noDescription')}</span>}
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="hidden sm:table-cell px-4 py-3 text-sm text-muted-foreground">
                 {team.manager_id ? (
                   managerNames[team.manager_id] || (
                     <span className="text-xs text-muted-foreground/70">{t('common.loading')}</span>

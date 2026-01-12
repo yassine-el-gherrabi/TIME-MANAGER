@@ -255,7 +255,7 @@ export function PendingAbsencesPage() {
 
           {/* Filters */}
           {(isSuperAdmin || canFilterByTeam) && (
-            <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t">
+            <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-center mt-4 pt-4 border-t">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Filter className="h-4 w-4" />
                 <span>{t('pendingAbsences.filterBy')}</span>
@@ -268,7 +268,7 @@ export function PendingAbsencesPage() {
                   onValueChange={handleOrgChange}
                   disabled={loadingOrgs}
                 >
-                  <SelectTrigger className="w-[180px] h-9">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <Building2 className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="All Organizations" />
                   </SelectTrigger>
@@ -290,7 +290,7 @@ export function PendingAbsencesPage() {
                   onValueChange={handleTeamChange}
                   disabled={loadingTeams}
                 >
-                  <SelectTrigger className="w-[180px] h-9">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <Users className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="All Teams" />
                   </SelectTrigger>

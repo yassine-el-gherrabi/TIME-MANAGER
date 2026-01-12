@@ -60,16 +60,16 @@ export const OrganizationsTable: FC<OrganizationsTableProps> = ({
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.name')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('organizations.slug')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('organizations.timezone')}
             </th>
             <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">
               {t('organizations.users')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden lg:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.created')}
             </th>
             <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
@@ -85,13 +85,19 @@ export const OrganizationsTable: FC<OrganizationsTableProps> = ({
             >
               <td className="px-4 py-3 text-sm">
                 <div className="font-medium">{organization.name}</div>
+                {/* Show slug on mobile under name */}
+                <div className="sm:hidden">
+                  <code className="px-1 py-0.5 rounded bg-muted text-xs">
+                    {organization.slug}
+                  </code>
+                </div>
               </td>
-              <td className="px-4 py-3 text-sm">
+              <td className="hidden sm:table-cell px-4 py-3 text-sm">
                 <code className="px-2 py-0.5 rounded bg-muted text-xs">
                   {organization.slug}
                 </code>
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="hidden md:table-cell px-4 py-3 text-sm text-muted-foreground">
                 {organization.timezone}
               </td>
               <td className="px-4 py-3 text-sm text-center">
@@ -105,7 +111,7 @@ export const OrganizationsTable: FC<OrganizationsTableProps> = ({
                   {organization.user_count ?? 0}
                 </span>
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground">
+              <td className="hidden lg:table-cell px-4 py-3 text-sm text-muted-foreground">
                 {formatDate(organization.created_at)}
               </td>
               <td className="px-4 py-3 text-sm text-right">

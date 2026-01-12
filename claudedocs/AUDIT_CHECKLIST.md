@@ -18,12 +18,12 @@
 - [x] **Add task/command to launch app without seed**: `task up:noseed` with NO_SEED env var
 
 ### 1.4 Internationalization & Localization
-- [ ] **Implement language selector**: Allow users to choose their BO language
+- [x] **Implement language selector**: i18next + react-i18next with EN/FR support. LanguageSelector dropdown in Sidebar. Persisted via localStorage. Sidebar and LoginForm translated as demo
 - [x] **Add timezone indicator**: Shows organization timezone in Dashboard header with Globe icon
 
 ### 1.5 UI/UX Global
 - [x] **Move toast notifications**: Display at top-center instead of top-right
-- [ ] **Fix responsive design (mobile-first)**: Currently unusable on mobile, items overflow containers
+- [x] **Fix responsive design (mobile-first)**: Implemented mobile header, sidebar drawer, responsive tables/forms/dashboard. Breakpoint: lg:1024px
 
 ### 1.6 Clock Notes Feature
 - [x] **Add clock note input in frontend**: Optional textarea in clock-out confirmation dialog
@@ -44,9 +44,9 @@
 - [ ] **Clearly document break system behavior**
 
 ### 1.10 CSV Export System
-- [ ] **Design CSV export feature**: Determine what data can be exported
-- [ ] **Define role-based export permissions**: What can each role export?
-- [ ] **Implement CSV export at various points**: Users, Teams, Clock entries, Absences, etc.
+- [x] **Design CSV export feature**: Backend already supports users/clocks/absences via `/api/v1/reports/export`
+- [x] **Define role-based export permissions**: Employee: own data. Manager+: team data. Admin+: org-wide. Enforced by backend
+- [x] **Implement CSV export at various points**: Export buttons added to UsersPage (Admin+), ClockPage, AbsencesPage
 
 ---
 
@@ -196,7 +196,7 @@
 
 ## Notes
 
-- **Responsive**: The mobile-first rework is extensive and should be planned as a dedicated sprint
-- **i18n**: Language system needs architecture decision (library choice, translation workflow)
-- **CSV Export**: Requires security review for data access permissions
+- **Responsive**: ✅ Implemented with mobile header, sheet drawer navigation, responsive tables (hidden columns), responsive forms, dashboard grid improvements
+- **i18n**: ✅ Implemented with i18next. Core components translated (Sidebar, LoginForm). Additional translations can be added incrementally
+- **CSV Export**: ✅ Implemented. Backend enforces role-based permissions automatically
 - **Clock Restrictions**: Complex feature requiring DB schema changes and comprehensive testing

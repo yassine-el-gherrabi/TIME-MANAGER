@@ -121,7 +121,7 @@ export function OrgTeamFilter({
   }
 
   return (
-    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+    <div className={`grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-center ${className}`}>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Filter className="h-4 w-4" />
         <span>Filter by:</span>
@@ -134,7 +134,7 @@ export function OrgTeamFilter({
           onValueChange={handleOrgChange}
           disabled={loadingOrgs}
         >
-          <SelectTrigger className="w-[180px] h-9">
+          <SelectTrigger className="w-full sm:w-[180px] h-9">
             <Building2 className="h-4 w-4 mr-2" />
             <SelectValue placeholder="All Organizations" />
           </SelectTrigger>
@@ -156,7 +156,7 @@ export function OrgTeamFilter({
           onValueChange={handleTeamChange}
           disabled={loadingTeams}
         >
-          <SelectTrigger className="w-[180px] h-9">
+          <SelectTrigger className="w-full sm:w-[180px] h-9">
             <Users className="h-4 w-4 mr-2" />
             <SelectValue placeholder="All Teams" />
           </SelectTrigger>

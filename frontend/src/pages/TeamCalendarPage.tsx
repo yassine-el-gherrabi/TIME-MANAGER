@@ -149,7 +149,7 @@ export function TeamCalendarPage() {
           <Button variant="outline" onClick={goToToday}>
             Today
           </Button>
-          <h2 className="text-lg font-semibold min-w-[150px] text-center">
+          <h2 className="text-lg font-semibold min-w-[120px] sm:min-w-[150px] text-center">
             {format(currentMonth, 'MMMM yyyy')}
           </h2>
           <Button variant="outline" size="icon" onClick={goToNextMonth}>
@@ -207,7 +207,7 @@ export function TeamCalendarPage() {
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
-                    <th className="sticky left-0 bg-background border-b px-3 py-2 text-left font-medium min-w-[150px]">
+                    <th className="sticky left-0 z-10 bg-background border-b px-2 sm:px-3 py-2 text-left font-medium min-w-[100px] sm:min-w-[150px]">
                       Team Member
                     </th>
                     {days.map((day) => (
@@ -245,7 +245,7 @@ export function TeamCalendarPage() {
                   ) : (
                     userAbsences.map((user) => (
                       <tr key={user.userId} className="hover:bg-muted/50">
-                        <td className="sticky left-0 bg-background border-b px-3 py-2 font-medium">
+                        <td className="sticky left-0 z-10 bg-background border-b px-2 sm:px-3 py-2 font-medium truncate max-w-[100px] sm:max-w-none">
                           {user.userName}
                         </td>
                         {days.map((day) => {

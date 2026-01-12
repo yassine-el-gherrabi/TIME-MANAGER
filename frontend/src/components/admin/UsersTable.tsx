@@ -78,18 +78,18 @@ export const UsersTable: React.FC<UsersTableProps> = ({
             <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.name')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.email')}
             </th>
             {showOrganization && (
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+              <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                 {t('users.organization')}
               </th>
             )}
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('users.role')}
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-muted-foreground">
               {t('common.status')}
             </th>
             <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
@@ -114,19 +114,23 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                   <div className="font-medium">
                     {user.first_name} {user.last_name}
                   </div>
+                  {/* Show email on mobile under name */}
+                  <div className="sm:hidden text-xs text-muted-foreground truncate max-w-[150px]">
+                    {user.email}
+                  </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
+                <td className="hidden sm:table-cell px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
                 {showOrganization && (
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{user.organization_name}</td>
+                  <td className="hidden md:table-cell px-4 py-3 text-sm text-muted-foreground">{user.organization_name}</td>
                 )}
-                <td className="px-4 py-3 text-sm">
+                <td className="hidden sm:table-cell px-4 py-3 text-sm">
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${getRoleBadgeClass(user.role)}`}
                   >
                     {user.role}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm">
+                <td className="hidden md:table-cell px-4 py-3 text-sm">
                   <div className="flex items-center gap-2">
                     {isDeleted ? (
                       <Badge variant="destructive">{t('users.deleted')}</Badge>

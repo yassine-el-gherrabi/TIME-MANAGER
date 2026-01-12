@@ -150,12 +150,12 @@ export function DashboardPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             {t('dashboard.welcome', { name: user?.first_name })}
           </h1>
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-muted-foreground">
             <span>{t('dashboard.overview')}</span>
             {user?.organization_timezone && (
               <span className="flex items-center gap-1 text-sm">
@@ -165,13 +165,13 @@ export function DashboardPage() {
             )}
           </div>
         </div>
-        <Button onClick={handleLogout} variant="outline">
+        <Button onClick={handleLogout} variant="outline" className="w-full sm:w-auto">
           {t('auth.logout')}
         </Button>
       </div>
 
       {/* Main Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {/* Clock Widget - Takes priority */}
         <div className="lg:col-span-1">
           <ClockWidget />
@@ -219,7 +219,7 @@ export function DashboardPage() {
       </div>
 
       {/* Charts Section - All Users */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <HoursBarChart
           data={charts?.data ?? []}
           title={t('dashboard.hoursWorked')}
@@ -342,7 +342,7 @@ export function DashboardPage() {
             {t('dashboard.editProfile')}
           </Button>
         </CardHeader>
-        <CardContent className={`grid gap-2 sm:grid-cols-2 ${user?.role === UserRole.SuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+        <CardContent className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${user?.role === UserRole.SuperAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <div>
             <p className="text-sm font-medium text-muted-foreground">{t('common.email')}</p>
             <p className="text-sm">{user?.email}</p>
