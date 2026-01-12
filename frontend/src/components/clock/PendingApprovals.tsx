@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useEffect, type FC, type ChangeEvent } from 'react';
 import { format } from 'date-fns';
-import { Loader2, Clock, CheckCircle, XCircle, AlertCircle, Building2, Users, Filter } from 'lucide-react';
+import { Loader2, Clock, CheckCircle, XCircle, AlertCircle, Building2, Users, Filter, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+import { useTranslation } from 'react-i18next';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { useCurrentUser } from '../../hooks/useAuth';
 import { clocksApi } from '../../api/clocks';
@@ -62,6 +63,7 @@ const calculateDuration = (clockIn: string, clockOut: string | null): string => 
 };
 
 export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
+  const { t } = useTranslation();
   const user = useCurrentUser();
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ClockEntryResponse | null>(null);
@@ -355,6 +357,16 @@ export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
                             {entry.team_name}
                           </span>
                         )}
+                        {entry.override_id && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800"
+                            title={entry.override_reason || t('clock.override')}
+                          >
+                            <ShieldAlert className="h-3 w-3 mr-1" />
+                            {t('clock.override')}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mb-1">
                         {format(new Date(entry.clock_in), 'EEEE, MMM d')}
@@ -382,6 +394,11 @@ export const PendingApprovals: FC<PendingApprovalsProps> = ({ className }) => {
                       {entry.notes && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {entry.notes}
+                        </p>
+                      )}
+                      {entry.override_id && entry.override_reason && (
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          <span className="font-medium">{t('clock.overrideReasonLabel')}</span> {entry.override_reason}
                         </p>
                       )}
                     </div>

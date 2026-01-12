@@ -10,8 +10,20 @@ pub mod sql_types {
     pub struct AuditAction;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "break_tracking_mode"))]
+    pub struct BreakTrackingMode;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "clock_entry_status"))]
     pub struct ClockEntryStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "clock_override_status"))]
+    pub struct ClockOverrideStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "clock_restriction_mode"))]
+    pub struct ClockRestrictionMode;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "notification_type"))]
@@ -85,6 +97,54 @@ diesel::table! {
 }
 
 diesel::table! {
+    break_entries (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        user_id -> Uuid,
+        clock_entry_id -> Uuid,
+        break_start -> Timestamptz,
+        break_end -> Nullable<Timestamptz>,
+        duration_minutes -> Nullable<Int4>,
+        notes -> Nullable<Text>,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::BreakTrackingMode;
+
+    break_policies (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        team_id -> Nullable<Uuid>,
+        user_id -> Nullable<Uuid>,
+        #[max_length = 100]
+        name -> Varchar,
+        description -> Nullable<Text>,
+        tracking_mode -> BreakTrackingMode,
+        notify_missing_break -> Bool,
+        is_active -> Bool,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    break_windows (id) {
+        id -> Uuid,
+        break_policy_id -> Uuid,
+        day_of_week -> Int2,
+        window_start -> Time,
+        window_end -> Time,
+        min_duration_minutes -> Int4,
+        max_duration_minutes -> Int4,
+        is_mandatory -> Bool,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::ClockEntryStatus;
 
@@ -100,6 +160,50 @@ diesel::table! {
         notes -> Nullable<Text>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::ClockOverrideStatus;
+
+    clock_override_requests (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        user_id -> Uuid,
+        clock_entry_id -> Nullable<Uuid>,
+        #[max_length = 10]
+        requested_action -> Varchar,
+        requested_at -> Timestamptz,
+        reason -> Text,
+        status -> ClockOverrideStatus,
+        reviewed_by -> Nullable<Uuid>,
+        reviewed_at -> Nullable<Timestamptz>,
+        review_notes -> Nullable<Text>,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::ClockRestrictionMode;
+
+    clock_restrictions (id) {
+        id -> Uuid,
+        organization_id -> Uuid,
+        team_id -> Nullable<Uuid>,
+        user_id -> Nullable<Uuid>,
+        mode -> ClockRestrictionMode,
+        clock_in_earliest -> Nullable<Time>,
+        clock_in_latest -> Nullable<Time>,
+        clock_out_earliest -> Nullable<Time>,
+        clock_out_latest -> Nullable<Time>,
+        enforce_schedule -> Bool,
+        require_manager_approval -> Bool,
+        is_active -> Bool,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        max_daily_clock_events -> Nullable<Int4>,
     }
 }
 
@@ -330,7 +434,19 @@ diesel::joinable!(absences -> absence_types (type_id));
 diesel::joinable!(absences -> organizations (organization_id));
 diesel::joinable!(audit_logs -> organizations (organization_id));
 diesel::joinable!(audit_logs -> users (user_id));
+diesel::joinable!(break_entries -> clock_entries (clock_entry_id));
+diesel::joinable!(break_entries -> organizations (organization_id));
+diesel::joinable!(break_entries -> users (user_id));
+diesel::joinable!(break_policies -> organizations (organization_id));
+diesel::joinable!(break_policies -> teams (team_id));
+diesel::joinable!(break_policies -> users (user_id));
+diesel::joinable!(break_windows -> break_policies (break_policy_id));
 diesel::joinable!(clock_entries -> organizations (organization_id));
+diesel::joinable!(clock_override_requests -> clock_entries (clock_entry_id));
+diesel::joinable!(clock_override_requests -> organizations (organization_id));
+diesel::joinable!(clock_restrictions -> organizations (organization_id));
+diesel::joinable!(clock_restrictions -> teams (team_id));
+diesel::joinable!(clock_restrictions -> users (user_id));
 diesel::joinable!(closed_days -> organizations (organization_id));
 diesel::joinable!(holidays -> organizations (organization_id));
 diesel::joinable!(invite_tokens -> users (user_id));
@@ -355,24 +471,4 @@ diesel::joinable!(work_schedule_days -> work_schedules (work_schedule_id));
 diesel::joinable!(work_schedules -> organizations (organization_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    absence_types,
-    absences,
-    audit_logs,
-    clock_entries,
-    closed_days,
-    holidays,
-    invite_tokens,
-    leave_balances,
-    login_attempts,
-    notifications,
-    organizations,
-    password_history,
-    password_reset_tokens,
-    refresh_tokens,
-    team_members,
-    teams,
-    user_sessions,
-    users,
-    work_schedule_days,
-    work_schedules,
-);
+    absence_types,absences,audit_logs,break_entries,break_policies,break_windows,clock_entries,clock_override_requests,clock_restrictions,closed_days,holidays,invite_tokens,leave_balances,login_attempts,notifications,organizations,password_history,password_reset_tokens,refresh_tokens,team_members,teams,user_sessions,users,work_schedule_days,work_schedules,);

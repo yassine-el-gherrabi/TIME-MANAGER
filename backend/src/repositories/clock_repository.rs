@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use uuid::Uuid;
@@ -537,5 +537,34 @@ impl ClockRepository {
             .map_err(AppError::DatabaseError)?;
 
         Ok((entries, total))
+    }
+
+    /// Count clock entries for a specific user on a specific day
+    /// Used to enforce daily clock frequency limits
+    pub async fn count_daily_entries(
+        &self,
+        org_id: Uuid,
+        user_id: Uuid,
+        date: NaiveDate,
+    ) -> Result<i64, AppError> {
+        use diesel::dsl::count;
+
+        let mut conn = self.pool.get().await.map_err(|e| AppError::PoolError(e.to_string()))?;
+
+        // Calculate start and end of day in UTC
+        let start_of_day = date.and_hms_opt(0, 0, 0).unwrap().and_utc();
+        let end_of_day = date.and_hms_opt(23, 59, 59).unwrap().and_utc();
+
+        let count_result: i64 = clock_entries::table
+            .filter(clock_entries::organization_id.eq(org_id))
+            .filter(clock_entries::user_id.eq(user_id))
+            .filter(clock_entries::clock_in.ge(start_of_day))
+            .filter(clock_entries::clock_in.le(end_of_day))
+            .select(count(clock_entries::id))
+            .first(&mut conn)
+            .await
+            .map_err(AppError::DatabaseError)?;
+
+        Ok(count_result)
     }
 }

@@ -4,6 +4,8 @@
  * TypeScript type definitions for clock in/out operations.
  */
 
+import type { ClockOverrideStatus } from './clockRestriction';
+
 /**
  * Clock entry status enumeration
  */
@@ -63,6 +65,10 @@ export interface ClockEntryResponse {
   /** Expected hours for the day based on user's schedule (null if no schedule) */
   theoretical_hours: number | null;
   created_at: string;
+  /** Override information (if entry was made via override) */
+  override_id: string | null;
+  override_reason: string | null;
+  override_status: ClockOverrideStatus | null;
 }
 
 /**

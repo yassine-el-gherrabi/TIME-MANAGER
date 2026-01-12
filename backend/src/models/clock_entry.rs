@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::domain::enums::ClockEntryStatus;
+use crate::domain::enums::{ClockEntryStatus, ClockOverrideStatus};
 use crate::schema::clock_entries;
 
 /// ClockEntry entity from database
@@ -68,6 +68,10 @@ pub struct ClockEntryResponse {
     pub approved_at: Option<DateTime<Utc>>,
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
+    /// Override information (if entry was made via override)
+    pub override_id: Option<Uuid>,
+    pub override_reason: Option<String>,
+    pub override_status: Option<ClockOverrideStatus>,
 }
 
 impl ClockEntryResponse {
@@ -80,10 +84,16 @@ impl ClockEntryResponse {
         team_name: Option<String>,
         approver_name: Option<String>,
         theoretical_hours: Option<f64>,
+        override_info: Option<(Uuid, String, ClockOverrideStatus)>,
     ) -> Self {
         let duration_minutes = entry
             .clock_out
             .map(|out| (out - entry.clock_in).num_minutes());
+
+        let (override_id, override_reason, override_status) = match override_info {
+            Some((id, reason, status)) => (Some(id), Some(reason), Some(status)),
+            None => (None, None, None),
+        };
 
         Self {
             id: entry.id,
@@ -104,6 +114,9 @@ impl ClockEntryResponse {
             approved_at: entry.approved_at,
             notes: entry.notes.clone(),
             created_at: entry.created_at,
+            override_id,
+            override_reason,
+            override_status,
         }
     }
 }

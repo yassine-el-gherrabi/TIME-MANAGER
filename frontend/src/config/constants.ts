@@ -187,6 +187,46 @@ export const REPORTS_ENDPOINTS = {
 } as const;
 
 /**
+ * Clock restriction endpoints (Admin+)
+ */
+export const CLOCK_RESTRICTION_ENDPOINTS = {
+  LIST: '/clock-restrictions',
+  CREATE: '/clock-restrictions',
+  GET: (id: string) => `/clock-restrictions/${id}`,
+  UPDATE: (id: string) => `/clock-restrictions/${id}`,
+  DELETE: (id: string) => `/clock-restrictions/${id}`,
+  VALIDATE: '/clock-restrictions/validate',
+  OVERRIDES: '/clock-restrictions/overrides',
+  PENDING_OVERRIDES: '/clock-restrictions/overrides/pending',
+  MY_OVERRIDES: '/clock-restrictions/overrides/me',
+  REVIEW_OVERRIDE: (id: string) => `/clock-restrictions/overrides/${id}/review`,
+} as const;
+
+/**
+ * Break system endpoints (Admin+ for policies, all users for entries)
+ */
+export const BREAK_ENDPOINTS = {
+  // Break policies CRUD
+  POLICIES: '/breaks/policies',
+  CREATE_POLICY: '/breaks/policies',
+  GET_POLICY: (id: string) => `/breaks/policies/${id}`,
+  UPDATE_POLICY: (id: string) => `/breaks/policies/${id}`,
+  DELETE_POLICY: (id: string) => `/breaks/policies/${id}`,
+  // Break windows management
+  GET_WINDOWS: (policyId: string) => `/breaks/policies/${policyId}/windows`,
+  ADD_WINDOW: (policyId: string) => `/breaks/policies/${policyId}/windows`,
+  DELETE_WINDOW: (policyId: string, windowId: string) =>
+    `/breaks/policies/${policyId}/windows/${windowId}`,
+  // Break entries (explicit tracking)
+  ENTRIES: '/breaks/entries',
+  START_BREAK: (clockEntryId: string) => `/breaks/entries/${clockEntryId}/start`,
+  END_BREAK: '/breaks/entries/end',
+  // Status and effective policy
+  STATUS: '/breaks/status',
+  EFFECTIVE: '/breaks/effective',
+} as const;
+
+/**
  * Local storage keys
  * Note: Access tokens stored in memory only, refresh tokens in HttpOnly cookies
  */

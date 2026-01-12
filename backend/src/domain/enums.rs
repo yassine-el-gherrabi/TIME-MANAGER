@@ -7,7 +7,10 @@ use std::io::Write;
 
 use crate::schema::sql_types::AbsenceStatus as AbsenceStatusSqlType;
 use crate::schema::sql_types::AuditAction as AuditActionSqlType;
+use crate::schema::sql_types::BreakTrackingMode as BreakTrackingModeSqlType;
 use crate::schema::sql_types::ClockEntryStatus as ClockEntryStatusSqlType;
+use crate::schema::sql_types::ClockOverrideStatus as ClockOverrideStatusSqlType;
+use crate::schema::sql_types::ClockRestrictionMode as ClockRestrictionModeSqlType;
 use crate::schema::sql_types::NotificationType as NotificationTypeSqlType;
 use crate::schema::sql_types::UserRole as UserRoleSqlType;
 
@@ -223,6 +226,123 @@ impl FromSql<AuditActionSqlType, Pg> for AuditAction {
             "update" => Ok(AuditAction::Update),
             "delete" => Ok(AuditAction::Delete),
             _ => Err(format!("Unrecognized audit action: {}", action_str).into()),
+        }
+    }
+}
+
+/// Clock restriction mode enumeration matching the database clock_restriction_mode ENUM
+/// - Strict: No override possible, must be within time window
+/// - Flexible: Override with justification (auto-approved or pending manager approval)
+/// - Unrestricted: No time restrictions enforced
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = ClockRestrictionModeSqlType)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum ClockRestrictionMode {
+    Strict,
+    #[default]
+    Flexible,
+    Unrestricted,
+}
+
+impl ToSql<ClockRestrictionModeSqlType, Pg> for ClockRestrictionMode {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let mode_str = match self {
+            ClockRestrictionMode::Strict => "strict",
+            ClockRestrictionMode::Flexible => "flexible",
+            ClockRestrictionMode::Unrestricted => "unrestricted",
+        };
+        out.write_all(mode_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<ClockRestrictionModeSqlType, Pg> for ClockRestrictionMode {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let mode_str = std::str::from_utf8(bytes.as_bytes())?;
+        match mode_str {
+            "strict" => Ok(ClockRestrictionMode::Strict),
+            "flexible" => Ok(ClockRestrictionMode::Flexible),
+            "unrestricted" => Ok(ClockRestrictionMode::Unrestricted),
+            _ => Err(format!("Unrecognized clock restriction mode: {}", mode_str).into()),
+        }
+    }
+}
+
+/// Clock override request status enumeration matching the database clock_override_status ENUM
+/// - Pending: Waiting for manager review
+/// - Approved: Manager approved the override request
+/// - Rejected: Manager rejected the override request
+/// - AutoApproved: Automatically approved (flexible mode without require_manager_approval)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = ClockOverrideStatusSqlType)]
+#[serde(rename_all = "snake_case")]
+#[derive(Default)]
+pub enum ClockOverrideStatus {
+    #[default]
+    Pending,
+    Approved,
+    Rejected,
+    AutoApproved,
+}
+
+impl ToSql<ClockOverrideStatusSqlType, Pg> for ClockOverrideStatus {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let status_str = match self {
+            ClockOverrideStatus::Pending => "pending",
+            ClockOverrideStatus::Approved => "approved",
+            ClockOverrideStatus::Rejected => "rejected",
+            ClockOverrideStatus::AutoApproved => "auto_approved",
+        };
+        out.write_all(status_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<ClockOverrideStatusSqlType, Pg> for ClockOverrideStatus {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let status_str = std::str::from_utf8(bytes.as_bytes())?;
+        match status_str {
+            "pending" => Ok(ClockOverrideStatus::Pending),
+            "approved" => Ok(ClockOverrideStatus::Approved),
+            "rejected" => Ok(ClockOverrideStatus::Rejected),
+            "auto_approved" => Ok(ClockOverrideStatus::AutoApproved),
+            _ => Err(format!("Unrecognized clock override status: {}", status_str).into()),
+        }
+    }
+}
+
+/// Break tracking mode enumeration matching the database break_tracking_mode ENUM
+/// - AutoDeduct: Breaks are automatically deducted from worked hours based on policy
+/// - ExplicitTracking: Users must explicitly start/end breaks
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = BreakTrackingModeSqlType)]
+#[serde(rename_all = "snake_case")]
+#[derive(Default)]
+pub enum BreakTrackingMode {
+    #[default]
+    AutoDeduct,
+    ExplicitTracking,
+}
+
+impl ToSql<BreakTrackingModeSqlType, Pg> for BreakTrackingMode {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let mode_str = match self {
+            BreakTrackingMode::AutoDeduct => "auto_deduct",
+            BreakTrackingMode::ExplicitTracking => "explicit_tracking",
+        };
+        out.write_all(mode_str.as_bytes())?;
+        Ok(IsNull::No)
+    }
+}
+
+impl FromSql<BreakTrackingModeSqlType, Pg> for BreakTrackingMode {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let mode_str = std::str::from_utf8(bytes.as_bytes())?;
+        match mode_str {
+            "auto_deduct" => Ok(BreakTrackingMode::AutoDeduct),
+            "explicit_tracking" => Ok(BreakTrackingMode::ExplicitTracking),
+            _ => Err(format!("Unrecognized break tracking mode: {}", mode_str).into()),
         }
     }
 }

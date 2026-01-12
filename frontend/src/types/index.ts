@@ -158,5 +158,59 @@ export type {
   DeleteOrganizationResponse,
 } from './organization';
 
+// Clock restriction types
+export type {
+  ClockRestrictionMode,
+  ClockOverrideStatus,
+  ClockRestriction,
+  ClockRestrictionResponse,
+  EffectiveRestriction,
+  CreateClockRestrictionRequest,
+  UpdateClockRestrictionRequest,
+  ClockValidationResult,
+  ClockOverrideRequest,
+  ClockOverrideRequestResponse,
+  CreateOverrideRequest,
+  ReviewOverrideRequest,
+  ClockRestrictionFilter,
+  ClockOverrideFilter,
+  PaginatedClockRestrictions,
+  PaginatedOverrideRequests,
+} from './clockRestriction';
+export {
+  RESTRICTION_MODE_CONFIG,
+  OVERRIDE_STATUS_CONFIG,
+} from './clockRestriction';
+
+// Break system types
+export type {
+  BreakTrackingMode,
+  BreakPolicy,
+  BreakPolicyResponse,
+  CreateBreakPolicyRequest,
+  UpdateBreakPolicyRequest,
+  BreakPolicyFilter,
+  PaginatedBreakPolicies,
+  BreakWindow,
+  BreakWindowResponse,
+  CreateBreakWindowRequest,
+  BreakEntry,
+  BreakEntryResponse,
+  StartBreakRequest,
+  EndBreakRequest,
+  BreakEntryFilter,
+  PaginatedBreakEntries,
+  BreakStatus,
+  EffectiveBreakPolicy,
+  BreakDeduction,
+} from './break';
+export {
+  DAYS_OF_WEEK,
+  TRACKING_MODE_OPTIONS,
+  getDayLabel,
+  getTrackingModeLabel,
+  formatBreakDuration,
+} from './break';
+
 // Re-export enums
 export { UserRole } from './auth';

@@ -4,8 +4,10 @@
 pub mod absence;
 pub mod absence_type;
 pub mod audit_log;
+pub mod break_policy;
 pub mod claims;
 pub mod clock_entry;
+pub mod clock_restriction;
 pub mod closed_day;
 pub mod invite_token;
 pub mod leave_balance;
@@ -37,6 +39,13 @@ pub use clock_entry::{
     ClockEntry, ClockEntryResponse, ClockEntryUpdate, ClockFilter, ClockStatus, NewClockEntry,
     PaginatedClockEntries, PendingClockFilter,
 };
+pub use clock_restriction::{
+    ClockOverrideFilter, ClockOverrideRequest, ClockOverrideRequestResponse,
+    ClockOverrideRequestUpdate, ClockRestriction, ClockRestrictionFilter, ClockRestrictionResponse,
+    ClockRestrictionUpdate, ClockValidationResult, CreateClockRestrictionRequest,
+    CreateOverrideRequest, EffectiveRestriction, NewClockOverrideRequest, NewClockRestriction,
+    PaginatedClockOverrideRequests, ReviewOverrideRequest, UpdateClockRestrictionRequest,
+};
 pub use closed_day::{
     ClosedDay, ClosedDayFilter, ClosedDayResponse, ClosedDayUpdate, NewClosedDay,
 };
@@ -65,4 +74,11 @@ pub use user_session::{NewUserSession, UserSession};
 pub use work_schedule::{
     DayConfig, NewWorkSchedule, NewWorkScheduleDay, WorkSchedule, WorkScheduleDay,
     WorkScheduleDayUpdate, WorkScheduleUpdate, WorkScheduleWithDays,
+};
+pub use break_policy::{
+    BreakDeduction, BreakEntry, BreakEntryFilter, BreakEntryResponse, BreakEntryUpdate,
+    BreakPolicy, BreakPolicyFilter, BreakPolicyResponse, BreakPolicyUpdate, BreakStatus,
+    BreakWindow, BreakWindowResponse, CreateBreakPolicyRequest, CreateBreakWindowRequest,
+    EffectiveBreakPolicy, EndBreakRequest, NewBreakEntry, NewBreakPolicy, NewBreakWindow,
+    PaginatedBreakEntries, PaginatedBreakPolicies, StartBreakRequest, UpdateBreakPolicyRequest,
 };

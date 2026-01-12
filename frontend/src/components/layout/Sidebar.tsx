@@ -20,6 +20,8 @@ import {
   User,
   ScrollText,
   Building2,
+  AlarmClockCheck,
+  Coffee,
 } from 'lucide-react';
 import { NavLink } from './NavLink';
 import { Button } from '../ui/button';
@@ -123,6 +125,16 @@ export const SidebarContent: FC<SidebarContentProps> = ({ onNavClick }) => {
             <div onClick={handleNavClick}>
               <NavLink to="/admin/closed-days" icon={<PartyPopper className="h-4 w-4" />}>
                 {t('nav.closedDays')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/clock-restrictions" icon={<AlarmClockCheck className="h-4 w-4" />}>
+                {t('nav.clockRestrictions')}
+              </NavLink>
+            </div>
+            <div onClick={handleNavClick}>
+              <NavLink to="/admin/break-policies" icon={<Coffee className="h-4 w-4" />}>
+                {t('nav.breakPolicies')}
               </NavLink>
             </div>
           </div>

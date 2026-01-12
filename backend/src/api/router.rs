@@ -12,9 +12,11 @@ use super::handlers::absences;
 use super::handlers::audit_logs;
 use super::handlers::auth;
 use super::handlers::balances;
-use super::handlers::system;
+use super::handlers::breaks;
+use super::handlers::clock_restrictions;
 use super::handlers::clocks;
 use super::handlers::closed_days;
+use super::handlers::system;
 use super::handlers::health::health_check;
 use super::handlers::kpis;
 use super::handlers::metrics;
@@ -216,6 +218,63 @@ pub fn create_router(state: AppState) -> Router {
     // System routes (public)
     let system_routes = Router::new().route("/status", get(system::get_status));
 
+    // Clock restrictions routes (Admin+ only)
+    let clock_restriction_routes = Router::new()
+        .route(
+            "/",
+            get(clock_restrictions::list_restrictions).post(clock_restrictions::create_restriction),
+        )
+        .route(
+            "/:id",
+            get(clock_restrictions::get_restriction)
+                .put(clock_restrictions::update_restriction)
+                .delete(clock_restrictions::delete_restriction),
+        )
+        .route("/validate", get(clock_restrictions::validate_clock_action))
+        .route(
+            "/overrides",
+            post(clock_restrictions::create_override_request),
+        )
+        .route(
+            "/overrides/pending",
+            get(clock_restrictions::list_pending_overrides),
+        )
+        .route("/overrides/me", get(clock_restrictions::list_user_overrides))
+        .route(
+            "/overrides/:id/review",
+            post(clock_restrictions::review_override_request),
+        );
+
+    // Break policy and entry routes
+    let break_routes = Router::new()
+        // Break policies CRUD
+        .route(
+            "/policies",
+            get(breaks::list_policies).post(breaks::create_policy),
+        )
+        .route(
+            "/policies/:id",
+            get(breaks::get_policy)
+                .put(breaks::update_policy)
+                .delete(breaks::delete_policy),
+        )
+        // Break windows management
+        .route(
+            "/policies/:policy_id/windows",
+            get(breaks::get_windows).post(breaks::add_window),
+        )
+        .route(
+            "/policies/:policy_id/windows/:window_id",
+            delete(breaks::delete_window),
+        )
+        // Break entries (explicit tracking)
+        .route("/entries", get(breaks::list_entries))
+        .route("/entries/:clock_entry_id/start", post(breaks::start_break))
+        .route("/entries/end", post(breaks::end_break))
+        // Status and effective policy
+        .route("/status", get(breaks::get_break_status))
+        .route("/effective", get(breaks::get_effective_policy));
+
     // Main router
     Router::new()
         .route("/health", get(health_check))
@@ -232,6 +291,8 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/v1/absences", absence_routes)
         .nest("/v1/balances", balance_routes)
         .nest("/v1/closed-days", closed_day_routes)
+        .nest("/v1/clock-restrictions", clock_restriction_routes)
+        .nest("/v1/breaks", break_routes)
         .nest("/v1/notifications", notification_routes)
         .nest("/v1/reports", reports_routes)
         .nest("/v1/organizations", organization_routes)

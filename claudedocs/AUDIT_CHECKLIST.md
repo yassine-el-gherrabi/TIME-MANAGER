@@ -17,7 +17,7 @@
 ### 1.3 Development/Testing
 - [x] **Add task/command to launch app without seed**: `task up:noseed` with NO_SEED env var
 
-### 1.4 Internationalization & Localization
+### 1.4 Internationalization & LNon ocalization
 - [x] **Implement language selector**: i18next + react-i18next with EN/FR support. LanguageSelector dropdown in Sidebar. Persisted via localStorage. Sidebar and LoginForm translated as demo
 - [x] **Add timezone indicator**: Shows organization timezone in Dashboard header with Globe icon
 
@@ -34,14 +34,19 @@
 - [x] **Evaluate multi-team membership**: Confirmed - Schema supports multi-team via team_members junction table. API: POST/DELETE /teams/:id/members. Use case: employee works on multiple projects/departments
 
 ### 1.8 Clock Restrictions Configuration
-- [ ] **Implement clock-in/out restrictions at Organization level**: Define when users can clock
-- [ ] **Allow Team-level override of clock restrictions**
-- [ ] **Allow User-level override of clock restrictions**
+- [x] **Implement clock-in/out restrictions at Organization level**: Define when users can clock. Three modes: STRICT (no override), FLEXIBLE (override with justification), UNRESTRICTED. DB: `clock_restrictions` table with `clock_restriction_mode` enum
+- [x] **Allow Team-level override of clock restrictions**: Team-specific restrictions cascade over organization defaults
+- [x] **Allow User-level override of clock restrictions**: User-specific restrictions cascade over team/org defaults (User > Team > Org)
+- [x] **Override request system**: `clock_override_requests` table for FLEXIBLE mode. Users can request exceptions with justification. Managers can approve/reject via `/clock-restrictions/overrides/:id/review`
+- [x] **Frontend admin page**: `/admin/clock-restrictions` with CRUD operations, scope selection, time window configuration
 
 ### 1.9 Break System Redesign
-- [ ] **Implement mandatory break windows**: Organization can define time ranges where clock doesn't count
-- [ ] **Design break configuration at Organization/Team/User level**
-- [ ] **Clearly document break system behavior**
+- [x] **Implement mandatory break windows**: `break_windows` table defines time ranges per day with min/max duration. Breaks are deducted from worked hours based on tracking mode
+- [x] **Design break configuration at Organization/Team/User level**: `break_policies` table with cascade logic (User > Team > Org). Two tracking modes: AUTO_DEDUCT (automatic deduction) and EXPLICIT_TRACKING (user starts/ends breaks)
+- [x] **Break entries for explicit tracking**: `break_entries` table tracks start/end times for each break within a clock session
+- [x] **Break status API**: `/breaks/status` returns current break state, `/breaks/effective` returns user's effective policy
+- [x] **Frontend admin page**: `/admin/break-policies` with policy CRUD, break window management, scope selection
+- [x] **Clearly document break system behavior**: AUTO_DEDUCT deducts break time automatically based on configured windows. EXPLICIT_TRACKING requires users to manually start/end breaks. Notify option alerts managers when explicit tracking users don't log breaks
 
 ### 1.10 CSV Export System
 - [x] **Design CSV export feature**: Backend already supports users/clocks/absences via `/api/v1/reports/export`
@@ -168,19 +173,19 @@
 ## 11. Grafana - Time Manager Dashboard
 
 ### 11.1 General Evaluation
-- [ ] **Review dashboard usefulness**: What metrics are valuable?
-- [ ] **Propose improvements**: What else should be monitored?
+- [x] **Review dashboard usefulness**: Added HTTP requests/errors, uptime, service health, database connections, alerts panels
+- [x] **Propose improvements**: Added error rate alerts panel, health check panel for all services, DB connection pool monitoring
 
 ### 11.2 Latency Panel
-- [ ] **Fix Latency (P50, P95, P99)**: Currently displays nothing
+- [x] **Fix Latency (P50, P95, P99)**: Updated histogram_quantile queries with `or vector(0)` fallback for empty data handling
 
 ### 11.3 Infrastructure Panel
-- [ ] **Fix Container CPU metrics**: Currently displays nothing
-- [ ] **Fix Container Memory metrics**: Currently displays nothing
+- [x] **Fix Container CPU metrics**: Updated container name regex filter to match Docker Compose service names
+- [x] **Fix Container Memory metrics**: Updated container name regex filter to match actual container naming pattern
 
 ### 11.4 Backend Logs Panel
-- [ ] **Fix Loki integration**: Backend Logs panel shows nothing
-- [ ] **Ensure logs are properly collected**: Verify Promtail → Loki → Grafana pipeline
+- [x] **Fix Loki integration**: Updated Promtail container regex from `/timemanager-(.*)/` to `/(.*)-(backend|frontend|postgres|redis)-(.*)$/`
+- [x] **Ensure logs are properly collected**: Fixed relabel_configs in promtail.yml to properly extract container names from Docker labels
 
 ---
 
@@ -199,4 +204,6 @@
 - **Responsive**: ✅ Implemented with mobile header, sheet drawer navigation, responsive tables (hidden columns), responsive forms, dashboard grid improvements
 - **i18n**: ✅ Implemented with i18next. Core components translated (Sidebar, LoginForm). Additional translations can be added incrementally
 - **CSV Export**: ✅ Implemented. Backend enforces role-based permissions automatically
-- **Clock Restrictions**: Complex feature requiring DB schema changes and comprehensive testing
+- **Clock Restrictions**: ✅ Implemented with 3 modes (strict/flexible/unrestricted), cascade logic (User > Team > Org), override request system for flexible mode, frontend admin page
+- **Break System**: ✅ Implemented with 2 tracking modes (auto_deduct/explicit_tracking), break windows per day, break entries for explicit tracking, cascade policy resolution, frontend admin page
+- **Grafana Monitoring**: ✅ Fixed latency panels, container metrics, Loki log integration. Added health checks, alert panels, database connection monitoring

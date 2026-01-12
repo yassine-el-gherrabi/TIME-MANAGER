@@ -2,32 +2,37 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::config::database::DbPool;
-use crate::domain::enums::{NotificationType, UserRole};
+use crate::domain::enums::{ClockRestrictionMode, NotificationType, UserRole};
 use crate::error::AppError;
 use crate::models::{
-    ClockEntry, ClockEntryResponse, ClockFilter, ClockStatus, PaginatedClockEntries, Pagination,
-    PendingClockFilter,
+    ClockEntry, ClockEntryResponse, ClockFilter, ClockStatus, ClockValidationResult,
+    PaginatedClockEntries, Pagination, PendingClockFilter,
 };
-use crate::repositories::{ClockRepository, OrganizationRepository, TeamRepository};
+use crate::repositories::{ClockRepository, ClockRestrictionRepository, OrganizationRepository, TeamRepository, WorkScheduleRepository};
 use crate::services::NotificationService;
 
 /// Service for clock in/out operations
 pub struct ClockService {
     clock_repo: ClockRepository,
+    restriction_repo: ClockRestrictionRepository,
     team_repo: TeamRepository,
     org_repo: OrganizationRepository,
+    work_schedule_repo: WorkScheduleRepository,
 }
 
 impl ClockService {
     pub fn new(pool: DbPool) -> Self {
         Self {
             clock_repo: ClockRepository::new(pool.clone()),
+            restriction_repo: ClockRestrictionRepository::new(pool.clone()),
             team_repo: TeamRepository::new(pool.clone()),
-            org_repo: OrganizationRepository::new(pool),
+            org_repo: OrganizationRepository::new(pool.clone()),
+            work_schedule_repo: WorkScheduleRepository::new(pool),
         }
     }
 
     /// Clock in - creates a new clock entry
+    /// Returns validation result if restrictions block the action
     pub async fn clock_in(
         &self,
         org_id: Uuid,
@@ -46,7 +51,57 @@ impl ClockService {
             ));
         }
 
-        self.clock_repo.clock_in(org_id, user_id, notes).await
+        // Check daily clock limit if configured
+        let effective = self
+            .restriction_repo
+            .get_effective_restriction(org_id, user_id)
+            .await?;
+        if let Some(ref eff) = effective {
+            if let Some(max_daily) = eff.restriction.max_daily_clock_events {
+                let today = Utc::now().date_naive();
+                let daily_count = self
+                    .clock_repo
+                    .count_daily_entries(org_id, user_id, today)
+                    .await?;
+                if daily_count >= max_daily as i64 {
+                    return Err(AppError::ValidationError(format!(
+                        "Daily clock limit reached. Maximum {} clock entries per day allowed.",
+                        max_daily
+                    )));
+                }
+            }
+        }
+
+        // Check for valid approved override before validation
+        let valid_override = self
+            .restriction_repo
+            .find_valid_approved_override(org_id, user_id, "clock_in")
+            .await?;
+
+        // Validate clock restrictions
+        let validation = self.validate_clock_action(org_id, user_id, "clock_in").await?;
+        if !validation.allowed {
+            let message = validation.message.unwrap_or_else(|| "Clock in is not allowed at this time".to_string());
+            if validation.can_request_override {
+                return Err(AppError::ValidationError(format!(
+                    "{}. You can request an override with justification.",
+                    message
+                )));
+            }
+            return Err(AppError::ValidationError(message));
+        }
+
+        let entry = self.clock_repo.clock_in(org_id, user_id, notes).await?;
+
+        // Mark the override as used if one was found
+        if let Some(override_req) = valid_override {
+            let _ = self
+                .restriction_repo
+                .mark_override_as_used(org_id, override_req.id, entry.id)
+                .await;
+        }
+
+        Ok(entry)
     }
 
     /// Clock out - closes the current open entry with optional notes
@@ -63,7 +118,36 @@ impl ClockService {
             .await?
             .ok_or_else(|| AppError::ValidationError("You are not clocked in".to_string()))?;
 
-        self.clock_repo.clock_out(org_id, entry.id, notes).await
+        // Check for valid approved override before validation
+        let valid_override = self
+            .restriction_repo
+            .find_valid_approved_override(org_id, user_id, "clock_out")
+            .await?;
+
+        // Validate clock restrictions
+        let validation = self.validate_clock_action(org_id, user_id, "clock_out").await?;
+        if !validation.allowed {
+            let message = validation.message.unwrap_or_else(|| "Clock out is not allowed at this time".to_string());
+            if validation.can_request_override {
+                return Err(AppError::ValidationError(format!(
+                    "{}. You can request an override with justification.",
+                    message
+                )));
+            }
+            return Err(AppError::ValidationError(message));
+        }
+
+        let result = self.clock_repo.clock_out(org_id, entry.id, notes).await?;
+
+        // Mark the override as used if one was found
+        if let Some(override_req) = valid_override {
+            let _ = self
+                .restriction_repo
+                .mark_override_as_used(org_id, override_req.id, result.id)
+                .await;
+        }
+
+        Ok(result)
     }
 
     /// Get current clock status for a user
@@ -127,6 +211,7 @@ impl ClockService {
                 team_name,
                 approver_name,
                 None, // theoretical_hours not needed for history view
+                None, // override_info not needed for history view
             ));
         }
 
@@ -169,6 +254,7 @@ impl ClockService {
             team_name,
             approver_name,
             None, // theoretical_hours not needed for single entry view
+            None, // override_info not needed for single entry view
         ))
     }
 
@@ -388,15 +474,40 @@ impl ClockService {
         let organization = self.org_repo.find_by_id(org_id).await?;
         let org_name = organization.name;
 
+        // Batch fetch override info for all entries
+        let entry_ids: Vec<Uuid> = filtered_entries.iter().map(|e| e.id).collect();
+        let overrides_map = self
+            .restriction_repo
+            .find_overrides_by_clock_entry_ids(org_id, &entry_ids)
+            .await?;
+
         let mut responses = Vec::with_capacity(filtered_entries.len());
         for entry in &filtered_entries {
             let (user_name, user_email) = self.clock_repo.get_user_info(entry.user_id).await?;
             let teams = self.team_repo.get_user_teams(org_id, entry.user_id).await.unwrap_or_default();
             let team_id = teams.first().map(|t| t.id);
             let team_name = teams.first().map(|t| t.name.clone());
-            // TODO: Calculate theoretical_hours from user's schedule when WorkScheduleRepository is added
+
+            // Get override info if this entry was made via override
+            let override_info = overrides_map.get(&entry.id).map(|o| {
+                (o.id, o.reason.clone(), o.status)
+            });
+
+            // Calculate theoretical hours for this entry's day from user's schedule
+            let theoretical_hours = self
+                .work_schedule_repo
+                .get_theoretical_hours(
+                    org_id,
+                    entry.user_id,
+                    entry.clock_in.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc(),
+                    entry.clock_in.date_naive().and_hms_opt(23, 59, 59).unwrap().and_utc(),
+                )
+                .await
+                .ok()
+                .filter(|h| *h > 0.0);
+
             responses.push(ClockEntryResponse::from_entry(
-                entry, org_name.clone(), user_name, user_email, team_id, team_name, None, None,
+                entry, org_name.clone(), user_name, user_email, team_id, team_name, None, theoretical_hours, override_info,
             ));
         }
 
@@ -409,5 +520,165 @@ impl ClockService {
             per_page: pagination.per_page,
             total_pages,
         })
+    }
+
+    // =====================
+    // Clock Restriction Validation
+    // =====================
+
+    /// Validate if a clock action is allowed based on restrictions
+    /// Checks for approved overrides before blocking
+    pub async fn validate_clock_action(
+        &self,
+        org_id: Uuid,
+        user_id: Uuid,
+        action: &str,
+    ) -> Result<ClockValidationResult, AppError> {
+        use chrono::{NaiveTime, Timelike};
+
+        // Get effective restriction for the user
+        let effective = self
+            .restriction_repo
+            .get_effective_restriction(org_id, user_id)
+            .await?;
+
+        // If no restriction, user can clock freely
+        let Some(effective_restriction) = effective else {
+            return Ok(ClockValidationResult {
+                allowed: true,
+                message: None,
+                can_request_override: false,
+                effective_restriction: None,
+            });
+        };
+
+        let restriction = &effective_restriction.restriction;
+
+        // Unrestricted mode - always allowed
+        if restriction.mode == ClockRestrictionMode::Unrestricted {
+            return Ok(ClockValidationResult {
+                allowed: true,
+                message: None,
+                can_request_override: false,
+                effective_restriction: Some(effective_restriction),
+            });
+        }
+
+        // Get current time
+        let now = Utc::now();
+        let current_time = NaiveTime::from_hms_opt(now.hour(), now.minute(), now.second())
+            .unwrap_or_default();
+
+        // Check time window based on action
+        let (earliest, latest) = if action == "clock_in" {
+            (restriction.clock_in_earliest, restriction.clock_in_latest)
+        } else {
+            (restriction.clock_out_earliest, restriction.clock_out_latest)
+        };
+
+        let within_window = self.check_time_window(current_time, earliest, latest);
+
+        if within_window {
+            return Ok(ClockValidationResult {
+                allowed: true,
+                message: None,
+                can_request_override: false,
+                effective_restriction: Some(effective_restriction),
+            });
+        }
+
+        // Outside allowed window - check if there's a valid approved override
+        let valid_override = self
+            .restriction_repo
+            .find_valid_approved_override(org_id, user_id, action)
+            .await?;
+
+        if valid_override.is_some() {
+            // User has an approved override - allow the action
+            return Ok(ClockValidationResult {
+                allowed: true,
+                message: None,
+                can_request_override: false,
+                effective_restriction: Some(effective_restriction),
+            });
+        }
+
+        // No valid override - build restriction message
+        let message = self.build_restriction_message(action, earliest, latest);
+
+        match restriction.mode {
+            ClockRestrictionMode::Strict => Ok(ClockValidationResult {
+                allowed: false,
+                message: Some(message),
+                can_request_override: false,
+                effective_restriction: Some(effective_restriction),
+            }),
+            ClockRestrictionMode::Flexible => Ok(ClockValidationResult {
+                allowed: false,
+                message: Some(message),
+                can_request_override: true,
+                effective_restriction: Some(effective_restriction),
+            }),
+            ClockRestrictionMode::Unrestricted => Ok(ClockValidationResult {
+                allowed: true,
+                message: None,
+                can_request_override: false,
+                effective_restriction: Some(effective_restriction),
+            }),
+        }
+    }
+
+    /// Get the current clock restrictions status for a user (for UI display)
+    pub async fn get_restriction_status(
+        &self,
+        org_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Option<ClockValidationResult>, AppError> {
+        // Return both clock_in and clock_out validation status
+        // For simplicity, we return the clock_in validation
+        let validation = self.validate_clock_action(org_id, user_id, "clock_in").await?;
+        Ok(Some(validation))
+    }
+
+    fn check_time_window(
+        &self,
+        current: chrono::NaiveTime,
+        earliest: Option<chrono::NaiveTime>,
+        latest: Option<chrono::NaiveTime>,
+    ) -> bool {
+        let after_earliest = earliest.map_or(true, |e| current >= e);
+        let before_latest = latest.map_or(true, |l| current <= l);
+        after_earliest && before_latest
+    }
+
+    fn build_restriction_message(
+        &self,
+        action: &str,
+        earliest: Option<chrono::NaiveTime>,
+        latest: Option<chrono::NaiveTime>,
+    ) -> String {
+        let action_name = if action == "clock_in" {
+            "Clock in"
+        } else {
+            "Clock out"
+        };
+
+        match (earliest, latest) {
+            (Some(e), Some(l)) => {
+                format!(
+                    "{} is only allowed between {} and {}",
+                    action_name,
+                    e.format("%H:%M"),
+                    l.format("%H:%M")
+                )
+            }
+            (Some(e), None) => {
+                format!("{} is not allowed before {}", action_name, e.format("%H:%M"))
+            }
+            (None, Some(l)) => {
+                format!("{} is not allowed after {}", action_name, l.format("%H:%M"))
+            }
+            (None, None) => format!("{} is currently restricted", action_name),
+        }
     }
 }

@@ -17,6 +17,8 @@ const TeamsPage = lazy(() => import('../pages/admin/TeamsPage').then(m => ({ def
 const SchedulesPage = lazy(() => import('../pages/admin/SchedulesPage').then(m => ({ default: m.SchedulesPage })));
 const AbsenceTypesPage = lazy(() => import('../pages/admin/AbsenceTypesPage').then(m => ({ default: m.AbsenceTypesPage })));
 const ClosedDaysPage = lazy(() => import('../pages/admin/ClosedDaysPage').then(m => ({ default: m.ClosedDaysPage })));
+const ClockRestrictionsPage = lazy(() => import('../pages/admin/ClockRestrictionsPage').then(m => ({ default: m.ClockRestrictionsPage })));
+const BreakPoliciesPage = lazy(() => import('../pages/admin/BreakPoliciesPage').then(m => ({ default: m.BreakPoliciesPage })));
 const AuditLogsPage = lazy(() => import('../pages/admin/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
 const OrganizationsPage = lazy(() => import('../pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })));
 
@@ -217,6 +219,30 @@ export const router = createBrowserRouter([
         <MainLayout>
           <LazyPage>
             <ClosedDaysPage />
+          </LazyPage>
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/clock-restrictions',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Admin}>
+        <MainLayout>
+          <LazyPage>
+            <ClockRestrictionsPage />
+          </LazyPage>
+        </MainLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/admin/break-policies',
+    element: (
+      <ProtectedRoute requiredRole={UserRole.Admin}>
+        <MainLayout>
+          <LazyPage>
+            <BreakPoliciesPage />
           </LazyPage>
         </MainLayout>
       </ProtectedRoute>
