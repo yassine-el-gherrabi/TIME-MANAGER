@@ -39,3 +39,38 @@ pub async fn list_notifications(
 
     Ok((StatusCode::OK, Json(notifications)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_list_notifications_query_defaults() {
+        let query = ListNotificationsQuery {
+            page: None,
+            per_page: None,
+        };
+        assert_eq!(query.page.unwrap_or(1), 1);
+        assert_eq!(query.per_page.unwrap_or(20), 20);
+    }
+
+    #[test]
+    fn test_list_notifications_query_custom_values() {
+        let query = ListNotificationsQuery {
+            page: Some(5),
+            per_page: Some(50),
+        };
+        assert_eq!(query.page.unwrap_or(1), 5);
+        assert_eq!(query.per_page.unwrap_or(20), 50);
+    }
+
+    #[test]
+    fn test_pagination_structure() {
+        let pagination = Pagination {
+            page: 3,
+            per_page: 25,
+        };
+        assert_eq!(pagination.page, 3);
+        assert_eq!(pagination.per_page, 25);
+    }
+}

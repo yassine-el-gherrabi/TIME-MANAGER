@@ -18,3 +18,21 @@ pub async fn unread_count(
 
     Ok((StatusCode::OK, Json(response)))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::models::UnreadCountResponse;
+
+    #[test]
+    fn test_unread_count_response_serialization() {
+        let response = UnreadCountResponse { count: 42 };
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("\"count\":42"));
+    }
+
+    #[test]
+    fn test_unread_count_response_zero() {
+        let response = UnreadCountResponse { count: 0 };
+        assert_eq!(response.count, 0);
+    }
+}

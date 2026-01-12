@@ -100,3 +100,52 @@ impl NotificationService {
             .await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pagination_total_pages_calculation() {
+        // Test pagination calculation logic
+        // total=10, per_page=3 => ceil(10/3) = 4 pages
+        let total: i64 = 10;
+        let per_page: i64 = 3;
+        let total_pages = (total as f64 / per_page as f64).ceil() as i64;
+        assert_eq!(total_pages, 4);
+
+        // total=10, per_page=10 => 1 page
+        let total_pages = (10_f64 / 10_f64).ceil() as i64;
+        assert_eq!(total_pages, 1);
+
+        // total=0, per_page=10 => 0 pages
+        let total_pages = (0_f64 / 10_f64).ceil() as i64;
+        assert_eq!(total_pages, 0);
+
+        // total=1, per_page=10 => 1 page
+        let total_pages = (1_f64 / 10_f64).ceil() as i64;
+        assert_eq!(total_pages, 1);
+    }
+
+    #[test]
+    fn test_unread_count_response_structure() {
+        let response = UnreadCountResponse { count: 5 };
+        assert_eq!(response.count, 5);
+    }
+
+    #[test]
+    fn test_paginated_notifications_structure() {
+        let response = PaginatedNotifications {
+            data: vec![],
+            total: 100,
+            page: 1,
+            per_page: 20,
+            total_pages: 5,
+        };
+        assert_eq!(response.total, 100);
+        assert_eq!(response.page, 1);
+        assert_eq!(response.per_page, 20);
+        assert_eq!(response.total_pages, 5);
+        assert!(response.data.is_empty());
+    }
+}

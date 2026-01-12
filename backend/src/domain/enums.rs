@@ -346,3 +346,72 @@ impl FromSql<BreakTrackingModeSqlType, Pg> for BreakTrackingMode {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_notification_type_serialization() {
+        // Test JSON serialization uses snake_case
+        let json = serde_json::to_string(&NotificationType::AbsenceApproved).unwrap();
+        assert_eq!(json, "\"absence_approved\"");
+
+        let json = serde_json::to_string(&NotificationType::ClockCorrection).unwrap();
+        assert_eq!(json, "\"clock_correction\"");
+    }
+
+    #[test]
+    fn test_notification_type_deserialization() {
+        let notif: NotificationType = serde_json::from_str("\"absence_rejected\"").unwrap();
+        assert_eq!(notif, NotificationType::AbsenceRejected);
+
+        let notif: NotificationType = serde_json::from_str("\"clock_approved\"").unwrap();
+        assert_eq!(notif, NotificationType::ClockApproved);
+    }
+
+    #[test]
+    fn test_user_role_hierarchy() {
+        // Test that role comparisons work correctly
+        assert!(UserRole::SuperAdmin > UserRole::Admin);
+        assert!(UserRole::Admin > UserRole::Manager);
+        assert!(UserRole::Manager > UserRole::Employee);
+    }
+
+    #[test]
+    fn test_user_role_serialization() {
+        // UserRole uses PascalCase for JSON (no rename_all attribute)
+        let json = serde_json::to_string(&UserRole::SuperAdmin).unwrap();
+        assert_eq!(json, "\"SuperAdmin\"");
+
+        let json = serde_json::to_string(&UserRole::Employee).unwrap();
+        assert_eq!(json, "\"Employee\"");
+    }
+
+    #[test]
+    fn test_absence_status_serialization() {
+        let json = serde_json::to_string(&AbsenceStatus::Pending).unwrap();
+        assert_eq!(json, "\"pending\"");
+
+        let json = serde_json::to_string(&AbsenceStatus::Approved).unwrap();
+        assert_eq!(json, "\"approved\"");
+    }
+
+    #[test]
+    fn test_clock_entry_status_serialization() {
+        let json = serde_json::to_string(&ClockEntryStatus::Pending).unwrap();
+        assert_eq!(json, "\"pending\"");
+
+        let json = serde_json::to_string(&ClockEntryStatus::Approved).unwrap();
+        assert_eq!(json, "\"approved\"");
+    }
+
+    #[test]
+    fn test_audit_action_serialization() {
+        let json = serde_json::to_string(&AuditAction::Create).unwrap();
+        assert_eq!(json, "\"create\"");
+
+        let json = serde_json::to_string(&AuditAction::Update).unwrap();
+        assert_eq!(json, "\"update\"");
+    }
+}
