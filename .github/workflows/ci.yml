@@ -112,8 +112,12 @@ jobs:
         with:
           tool: cargo-nextest,cargo-llvm-cov
 
-      - name: Run tests with coverage
-        run: cargo llvm-cov nextest --no-fail-fast --lcov --output-path lcov.info
+      - name: Run tests with coverage (60% minimum)
+        run: |
+          # Run tests and show coverage summary in terminal
+          cargo llvm-cov nextest --no-fail-fast --fail-under-lines 60
+          # Also generate lcov report for potential upload
+          cargo llvm-cov report --lcov --output-path lcov.info
 
       - name: Run doctests
         run: cargo test --doc
@@ -143,7 +147,18 @@ jobs:
         uses: taiki-e/install-action@nextest
 
       - name: Run integration tests
-        run: cargo nextest run --release --run-ignored only || echo "No ignored tests found"
+        run: |
+          # Run ignored tests (integration tests requiring Docker)
+          # This will pass if no ignored tests exist, but fail on actual test failures
+          cargo nextest run --release --run-ignored only 2>&1 || {
+            EXIT_CODE=$?
+            # Exit code 4 means no tests matched - that's OK during transition
+            if [ $EXIT_CODE -eq 4 ]; then
+              echo "No integration tests found (ignored tests)"
+              exit 0
+            fi
+            exit $EXIT_CODE
+          }
 
   # ===== FRONTEND =====
   frontend-lint:
@@ -172,7 +187,7 @@ jobs:
         run: npm run type-check
 
   frontend-unit:
-    name: "Frontend · vitest (unit tests)"
+    name: "Frontend · vitest (unit + coverage)"
     runs-on: ubuntu-latest
     needs: [frontend-lint]
     defaults:
