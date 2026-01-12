@@ -35,8 +35,24 @@
       "options": {"graphMode": "none", "colorMode": "background"}
     },
     {
-      "id": 3,
+      "id": 8,
       "gridPos": {"h": 3, "w": 4, "x": 4, "y": 1},
+      "type": "stat",
+      "title": "Frontend",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "count(container_cpu_usage_seconds_total{container_label_com_docker_compose_service=\"frontend\"}) > 0 or vector(0)", "legendFormat": "Status"}],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "red"}, {"value": 1, "color": "green"}]},
+          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}],
+          "noValue": "DOWN"
+        }
+      },
+      "options": {"graphMode": "none", "colorMode": "background"}
+    },
+    {
+      "id": 3,
+      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 1},
       "type": "stat",
       "title": "Traefik",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -50,23 +66,24 @@
       "options": {"graphMode": "none", "colorMode": "background"}
     },
     {
-      "id": 4,
-      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 1},
+      "id": 7,
+      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 1},
       "type": "stat",
-      "title": "cAdvisor",
+      "title": "PostgreSQL",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "up{job=\"cadvisor\"}", "legendFormat": "Status"}],
+      "targets": [{"expr": "count(container_cpu_usage_seconds_total{container_label_com_docker_compose_service=\"postgres\"}) > 0 or vector(0)", "legendFormat": "Status"}],
       "fieldConfig": {
         "defaults": {
           "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "red"}, {"value": 1, "color": "green"}]},
-          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}]
+          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}],
+          "noValue": "DOWN"
         }
       },
       "options": {"graphMode": "none", "colorMode": "background"}
     },
     {
       "id": 5,
-      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 1},
+      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 1},
       "type": "stat",
       "title": "Requetes/min",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -76,7 +93,7 @@
     },
     {
       "id": 6,
-      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 1},
+      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 1},
       "type": "stat",
       "title": "Erreurs %",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -116,25 +133,12 @@
       "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2, "fillOpacity": 10}}}
     },
     {
-      "id": 13,
-      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 13},
-      "type": "timeseries",
-      "title": "Latence (P50, P95, P99)",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [
-        {"expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) or vector(0)", "legendFormat": "P50"},
-        {"expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) or vector(0)", "legendFormat": "P95"},
-        {"expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) or vector(0)", "legendFormat": "P99"}
-      ],
-      "fieldConfig": {"defaults": {"unit": "s", "min": 0, "custom": {"lineWidth": 2, "fillOpacity": 10}}}
-    },
-    {
       "id": 14,
-      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 13},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 13},
       "type": "piechart",
       "title": "Repartition Status HTTP",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "sum by (status) (increase(http_requests_total[1h]))", "legendFormat": "{{status}}"}],
+      "targets": [{"expr": "sum by (status) (increase(http_requests_total{status=~\"2..|3..|4..|5..\"}[1h]))", "legendFormat": "{{status}}"}],
       "options": {"legend": {"displayMode": "table", "placement": "right"}}
     },
     {
@@ -178,45 +182,6 @@
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [{"expr": "{container=\"timemanager-backend\"} | json", "refId": "A"}],
       "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "prettifyLogMessage": true, "enableLogDetails": true, "sortOrder": "Descending"}
-    },
-    {
-      "id": 50,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 39},
-      "type": "row",
-      "title": "Database & Health",
-      "collapsed": false
-    },
-    {
-      "id": 51,
-      "gridPos": {"h": 4, "w": 8, "x": 0, "y": 40},
-      "type": "stat",
-      "title": "PostgreSQL",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "count(container_start_time_seconds{name=\"timemanager-postgres\"}) or vector(0)", "legendFormat": "Status"}],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "red"}, {"value": 1, "color": "green"}]},
-          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}],
-          "noValue": "DOWN"
-        }
-      },
-      "options": {"graphMode": "none", "colorMode": "background"}
-    },
-    {
-      "id": 52,
-      "gridPos": {"h": 4, "w": 8, "x": 8, "y": 40},
-      "type": "stat",
-      "title": "Backend API",
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"expr": "up{job=\"backend\"}", "legendFormat": "API"}],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {"mode": "absolute", "steps": [{"value": 0, "color": "red"}, {"value": 1, "color": "green"}]},
-          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN"}, "1": {"text": "UP"}}}],
-          "noValue": "DOWN"
-        }
-      },
-      "options": {"graphMode": "none", "colorMode": "background"}
     }
   ]
 }
