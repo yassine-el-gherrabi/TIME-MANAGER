@@ -453,12 +453,14 @@ impl BreakRepository {
             }
             if let Some(ref start_date) = filter.start_date {
                 if let Ok(date) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") {
-                    count_query = count_query.filter(break_entries::break_start.ge(start_of_day(date)));
+                    count_query =
+                        count_query.filter(break_entries::break_start.ge(start_of_day(date)));
                 }
             }
             if let Some(ref end_date) = filter.end_date {
                 if let Ok(date) = chrono::NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
-                    count_query = count_query.filter(break_entries::break_start.le(end_of_day(date)));
+                    count_query =
+                        count_query.filter(break_entries::break_start.le(end_of_day(date)));
                 }
             }
 
